@@ -1,0 +1,11 @@
+C:\Users\Samet\Desktop\BarberBooking\src\BarberBooking.Shared\bin\Debug\net10.0\BarberBooking.Shared.deps.json
+C:\Users\Samet\Desktop\BarberBooking\src\BarberBooking.Shared\bin\Debug\net10.0\BarberBooking.Shared.dll
+C:\Users\Samet\Desktop\BarberBooking\src\BarberBooking.Shared\bin\Debug\net10.0\BarberBooking.Shared.pdb
+C:\Users\Samet\Desktop\BarberBooking\src\BarberBooking.Shared\obj\Debug\net10.0\BarberBooking.Shared.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Samet\Desktop\BarberBooking\src\BarberBooking.Shared\obj\Debug\net10.0\BarberBooking.Shared.AssemblyInfoInputs.cache
+C:\Users\Samet\Desktop\BarberBooking\src\BarberBooking.Shared\obj\Debug\net10.0\BarberBooking.Shared.AssemblyInfo.cs
+C:\Users\Samet\Desktop\BarberBooking\src\BarberBooking.Shared\obj\Debug\net10.0\BarberBooking.Shared.csproj.CoreCompileInputs.cache
+C:\Users\Samet\Desktop\BarberBooking\src\BarberBooking.Shared\obj\Debug\net10.0\BarberBooking.Shared.dll
+C:\Users\Samet\Desktop\BarberBooking\src\BarberBooking.Shared\obj\Debug\net10.0\refint\BarberBooking.Shared.dll
+C:\Users\Samet\Desktop\BarberBooking\src\BarberBooking.Shared\obj\Debug\net10.0\BarberBooking.Shared.pdb
+C:\Users\Samet\Desktop\BarberBooking\src\BarberBooking.Shared\obj\Debug\net10.0\ref\BarberBooking.Shared.dll

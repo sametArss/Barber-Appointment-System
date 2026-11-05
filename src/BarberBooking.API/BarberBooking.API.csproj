@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>e66c33b6-7dfc-4870-a901-35f4024a9876</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BarberBooking.Business\BarberBooking.Business.csproj" />
+    <ProjectReference Include="..\BarberBooking.Shared\BarberBooking.Shared.csproj" />
+    <ProjectReference Include="..\BarberBooking.DataAccess\BarberBooking.DataAccess.csproj" />
+  </ItemGroup>
+
+</Project>

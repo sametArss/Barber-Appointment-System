@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\BarberBooking.DataAccess\BarberBooking.DataAccess.csproj" />
+    <ProjectReference Include="..\BarberBooking.Entities\BarberBooking.Entities.csproj" />
+    <ProjectReference Include="..\BarberBooking.Shared\BarberBooking.Shared.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
