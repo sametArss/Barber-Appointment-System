@@ -1,16 +1,59 @@
+using BarberBooking.API.Filters;
+using BarberBooking.Business;
 using BarberBooking.DataAccess;
-using BarberBooking.DataAccess.Context;
+using BarberBooking.Shared.Configuration;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddDataAccess(builder.Configuration);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+// DataAccess & Business Kayıtları
+builder.Services.AddDataAccess(builder.Configuration);
+builder.Services.AddBusinessServices(builder.Configuration);
+
+// JWT Authentication Kaydı
+var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
+if (jwtSettings != null)
+{
+    builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings.Issuer,
+            ValidAudience = jwtSettings.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey)),
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+}
+
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<ValidateModelAttribute>();
+});
+
+// Varsayılan otomatik ModelState filtresini bizim filter'ımız yönetsin diye kapatıyoruz:
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.SuppressModelStateInvalidFilter = true;
+});
+
+builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -18,34 +61,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+// Authentication her zaman Authorization'dan önce gelmeli
+app.UseAuthentication();
+app.UseAuthorization();
 
-app.MapGet("/health/database", async (BarberBookingDbContext db) =>
-{
-    var canConnect = await db.Database.CanConnectAsync();
-
-    if (!canConnect)
-    {
-        return Results.Problem(
-            title: "Database connection failed",
-            statusCode: StatusCodes.Status503ServiceUnavailable
-        );
-    }
-
-    return Results.Ok(new
-    {
-        status = "Healthy",
-        database = "Connected",
-        message = "PostgreSQL bağlantısı başarılı."
-    });
-});
+app.MapControllers();
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}

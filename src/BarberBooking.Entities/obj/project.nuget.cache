@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "+y84fzErF/w=",
+  "dgSpecHash": "Y/L7Et6rN6M=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Samet\\Desktop\\BarberBooking\\src\\BarberBooking.Entities\\BarberBooking.Entities.csproj",
+  "projectFilePath": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Entities\\BarberBooking.Entities.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Samet\\.nuget\\packages\\nettopologysuite\\2.6.0\\nettopologysuite.2.6.0.nupkg.sha512"
   ],

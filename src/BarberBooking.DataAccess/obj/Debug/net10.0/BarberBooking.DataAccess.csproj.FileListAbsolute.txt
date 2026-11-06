@@ -61,3 +61,22 @@ C:\Users\Samet\Desktop\BarberBooking\src\BarberBooking.DataAccess\bin\Debug\net1
 C:\Users\Samet\Desktop\BarberBooking\src\BarberBooking.DataAccess\bin\Debug\net10.0\BuildHost-netcore\zh-Hant\System.CommandLine.resources.dll
 C:\Users\Samet\Desktop\BarberBooking\src\BarberBooking.DataAccess\bin\Debug\net10.0\BarberBooking.DataAccess.runtimeconfig.json
 C:\Users\Samet\Desktop\BarberBooking\src\BarberBooking.DataAccess\obj\Debug\net10.0\BarberBooking.DataAccess.genruntimeconfig.cache
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.DataAccess\bin\Debug\net10.0\BarberBooking.DataAccess.deps.json
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.DataAccess\bin\Debug\net10.0\BarberBooking.DataAccess.runtimeconfig.json
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.DataAccess\bin\Debug\net10.0\BarberBooking.DataAccess.dll
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.DataAccess\bin\Debug\net10.0\BarberBooking.DataAccess.pdb
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.DataAccess\bin\Debug\net10.0\BarberBooking.Entities.dll
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.DataAccess\bin\Debug\net10.0\BarberBooking.Entities.pdb
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.DataAccess\obj\Debug\net10.0\BarberBooking.DataAccess.csproj.AssemblyReference.cache
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.DataAccess\obj\Debug\net10.0\BarberBooking.DataAccess.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.DataAccess\obj\Debug\net10.0\BarberBooking.DataAccess.AssemblyInfoInputs.cache
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.DataAccess\obj\Debug\net10.0\BarberBooking.DataAccess.AssemblyInfo.cs
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.DataAccess\obj\Debug\net10.0\BarberBooking.DataAccess.csproj.CoreCompileInputs.cache
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.DataAccess\obj\Debug\net10.0\BarberBooking.DataAccess.sourcelink.json
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.DataAccess\obj\Debug\net10.0\BarberBo.0C0442B5.Up2Date
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.DataAccess\obj\Debug\net10.0\BarberBooking.DataAccess.dll
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.DataAccess\obj\Debug\net10.0\refint\BarberBooking.DataAccess.dll
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.DataAccess\obj\Debug\net10.0\BarberBooking.DataAccess.pdb
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.DataAccess\obj\Debug\net10.0\BarberBooking.DataAccess.genruntimeconfig.cache
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.DataAccess\obj\Debug\net10.0\ref\BarberBooking.DataAccess.dll
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.DataAccess\obj\Debug\net10.0\EFCoreNpgsqlNetTopologySuite.cs

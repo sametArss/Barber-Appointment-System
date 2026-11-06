@@ -1,6 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.3.13" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.14" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.23.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\BarberBooking.DataAccess\BarberBooking.DataAccess.csproj" />
     <ProjectReference Include="..\BarberBooking.Entities\BarberBooking.Entities.csproj" />
     <ProjectReference Include="..\BarberBooking.Shared\BarberBooking.Shared.csproj" />

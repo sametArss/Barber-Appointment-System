@@ -63,3 +63,23 @@ C:\Users\Samet\Desktop\BarberBooking\src\BarberBooking.Business\bin\Debug\net10.
 C:\Users\Samet\Desktop\BarberBooking\src\BarberBooking.Business\bin\Debug\net10.0\BuildHost-netcore\tr\System.CommandLine.resources.dll
 C:\Users\Samet\Desktop\BarberBooking\src\BarberBooking.Business\bin\Debug\net10.0\BuildHost-netcore\zh-Hans\System.CommandLine.resources.dll
 C:\Users\Samet\Desktop\BarberBooking\src\BarberBooking.Business\bin\Debug\net10.0\BuildHost-netcore\zh-Hant\System.CommandLine.resources.dll
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.Business\bin\Debug\net10.0\BarberBooking.Business.deps.json
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.Business\bin\Debug\net10.0\BarberBooking.Business.dll
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.Business\bin\Debug\net10.0\BarberBooking.Business.pdb
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.Business\bin\Debug\net10.0\BarberBooking.DataAccess.dll
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.Business\bin\Debug\net10.0\BarberBooking.Entities.dll
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.Business\bin\Debug\net10.0\BarberBooking.Shared.dll
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.Business\bin\Debug\net10.0\BarberBooking.DataAccess.pdb
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.Business\bin\Debug\net10.0\BarberBooking.Entities.pdb
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.Business\bin\Debug\net10.0\BarberBooking.Shared.pdb
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.Business\obj\Debug\net10.0\BarberBooking.Business.csproj.AssemblyReference.cache
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.Business\obj\Debug\net10.0\BarberBooking.Business.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.Business\obj\Debug\net10.0\BarberBooking.Business.AssemblyInfoInputs.cache
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.Business\obj\Debug\net10.0\BarberBooking.Business.AssemblyInfo.cs
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.Business\obj\Debug\net10.0\BarberBooking.Business.csproj.CoreCompileInputs.cache
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.Business\obj\Debug\net10.0\BarberBooking.Business.sourcelink.json
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.Business\obj\Debug\net10.0\BarberBo.79F7C7E2.Up2Date
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.Business\obj\Debug\net10.0\BarberBooking.Business.dll
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.Business\obj\Debug\net10.0\refint\BarberBooking.Business.dll
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.Business\obj\Debug\net10.0\BarberBooking.Business.pdb
+C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.Business\obj\Debug\net10.0\ref\BarberBooking.Business.dll

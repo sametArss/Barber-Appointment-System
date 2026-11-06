@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Samet\\Desktop\\BarberBooking\\src\\BarberBooking.DataAccess\\BarberBooking.DataAccess.csproj": {}
+    "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.DataAccess\\BarberBooking.DataAccess.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Samet\\Desktop\\BarberBooking\\src\\BarberBooking.DataAccess\\BarberBooking.DataAccess.csproj": {
+    "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.DataAccess\\BarberBooking.DataAccess.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Samet\\Desktop\\BarberBooking\\src\\BarberBooking.DataAccess\\BarberBooking.DataAccess.csproj",
+        "projectUniqueName": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.DataAccess\\BarberBooking.DataAccess.csproj",
         "projectName": "BarberBooking.DataAccess",
-        "projectPath": "C:\\Users\\Samet\\Desktop\\BarberBooking\\src\\BarberBooking.DataAccess\\BarberBooking.DataAccess.csproj",
+        "projectPath": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.DataAccess\\BarberBooking.DataAccess.csproj",
         "packagesPath": "C:\\Users\\Samet\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Samet\\Desktop\\BarberBooking\\src\\BarberBooking.DataAccess\\obj\\",
+        "outputPath": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.DataAccess\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -33,8 +33,8 @@
           "net10.0": {
             "targetAlias": "net10.0",
             "projectReferences": {
-              "C:\\Users\\Samet\\Desktop\\BarberBooking\\src\\BarberBooking.Entities\\BarberBooking.Entities.csproj": {
-                "projectPath": "C:\\Users\\Samet\\Desktop\\BarberBooking\\src\\BarberBooking.Entities\\BarberBooking.Entities.csproj"
+              "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Entities\\BarberBooking.Entities.csproj": {
+                "projectPath": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Entities\\BarberBooking.Entities.csproj"
               }
             }
           }
@@ -55,23 +55,35 @@
         "net10.0": {
           "targetAlias": "net10.0",
           "dependencies": {
+            "Microsoft.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[10.0.5, )"
+            },
             "Microsoft.EntityFrameworkCore.Design": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "suppressParent": "All",
               "target": "Package",
-              "version": "[10.0.0, )"
+              "version": "[10.0.5, )"
+            },
+            "Microsoft.EntityFrameworkCore.Relational": {
+              "target": "Package",
+              "version": "[10.0.5, )"
             },
             "Microsoft.Extensions.Configuration.Abstractions": {
               "target": "Package",
-              "version": "[10.0.0, )"
+              "version": "[10.0.5, )"
             },
             "Microsoft.Extensions.DependencyInjection.Abstractions": {
               "target": "Package",
-              "version": "[10.0.0, )"
+              "version": "[10.0.5, )"
             },
             "Npgsql.EntityFrameworkCore.PostgreSQL": {
               "target": "Package",
-              "version": "[10.0.0, )"
+              "version": "[10.0.3, )"
+            },
+            "Npgsql.EntityFrameworkCore.PostgreSQL.NetTopologySuite": {
+              "target": "Package",
+              "version": "[10.0.3, )"
             }
           },
           "imports": [
@@ -368,14 +380,14 @@
         }
       }
     },
-    "C:\\Users\\Samet\\Desktop\\BarberBooking\\src\\BarberBooking.Entities\\BarberBooking.Entities.csproj": {
+    "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Entities\\BarberBooking.Entities.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Samet\\Desktop\\BarberBooking\\src\\BarberBooking.Entities\\BarberBooking.Entities.csproj",
+        "projectUniqueName": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Entities\\BarberBooking.Entities.csproj",
         "projectName": "BarberBooking.Entities",
-        "projectPath": "C:\\Users\\Samet\\Desktop\\BarberBooking\\src\\BarberBooking.Entities\\BarberBooking.Entities.csproj",
+        "projectPath": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Entities\\BarberBooking.Entities.csproj",
         "packagesPath": "C:\\Users\\Samet\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Samet\\Desktop\\BarberBooking\\src\\BarberBooking.Entities\\obj\\",
+        "outputPath": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Entities\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
