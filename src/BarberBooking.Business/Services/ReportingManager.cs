@@ -27,15 +27,25 @@ namespace BarberBooking.Business.Services
                 return DataResult<DashboardSummaryResponseDto>.Fail("İşletme yetkiniz bulunamadı.", 403);
             }
 
-            var startUtc = query.StartDate?.ToUniversalTime() ?? DateTimeOffset.UtcNow.AddDays(-30);
-            var endUtc = query.EndDate?.ToUniversalTime() ?? DateTimeOffset.UtcNow;
-
             var appointmentsQuery = _unitOfWork.Repository<Appointment>().Query()
                 .Include(a => a.Service)
                 .Include(a => a.StaffProfile)
                     .ThenInclude(sp => sp.BusinessMember)
                         .ThenInclude(bm => bm.User)
-                .Where(a => a.BusinessId == businessId.Value && a.StartAt >= startUtc && a.StartAt <= endUtc);
+                .Where(a => a.BusinessId == businessId.Value);
+
+            // Tarih filtrelerini sadece parametre olarak gönderildiyse uyguluyoruz
+            if (query.StartDate.HasValue)
+            {
+                var startUtc = query.StartDate.Value.ToUniversalTime();
+                appointmentsQuery = appointmentsQuery.Where(a => a.StartAt >= startUtc);
+            }
+
+            if (query.EndDate.HasValue)
+            {
+                var endUtc = query.EndDate.Value.ToUniversalTime();
+                appointmentsQuery = appointmentsQuery.Where(a => a.StartAt <= endUtc);
+            }
 
             if (query.BranchId.HasValue)
             {

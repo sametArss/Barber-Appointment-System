@@ -30,11 +30,11 @@ namespace BarberBooking.DataAccess.Seed
             }
             await context.SaveChangesAsync();
 
+            // Şifre: 123456 (PasswordHasher formatı: SaltBase64.HashBase64 - PBKDF2 SHA512 100.000 iterasyon)
+            const string defaultPasswordHash = "u9c4vYqT3f8L1xXz0wKmJQ==.R2DCgtTdKQYdsd0/y0xH/v+aWi+Mo7Ic8h5P/ZZdm58=";
+
             // Eğer zaten kullanıcı varsa devam etme
             if (await context.Users.AnyAsync()) return;
-
-            // Şifre: 123456 (Önceden üretilmiş geçerli BCrypt hash)
-            const string defaultPasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy";
 
             // 2. Kullanıcılar
             var ownerUser = new User
