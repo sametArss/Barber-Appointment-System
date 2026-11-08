@@ -315,6 +315,50 @@ namespace BarberBooking.DataAccess.Migrations
                     b.ToTable("StaffProfiles");
                 });
 
+            modelBuilder.Entity("BarberBooking.Entities.Customers.CustomerPenalty", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("AppointmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BusinessId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CustomerUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Reason")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppointmentId");
+
+                    b.HasIndex("BusinessId");
+
+                    b.HasIndex("CustomerUserId", "BusinessId", "IsActive");
+
+                    b.ToTable("CustomerPenalties", (string)null);
+                });
+
             modelBuilder.Entity("BarberBooking.Entities.Favorites.Favorite", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -476,7 +520,8 @@ namespace BarberBooking.DataAccess.Migrations
 
                     b.Property<string>("Message")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<DateTimeOffset?>("ReadAt")
                         .HasColumnType("timestamp with time zone");
@@ -486,7 +531,8 @@ namespace BarberBooking.DataAccess.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<int>("Type")
                         .HasColumnType("integer");
@@ -499,9 +545,9 @@ namespace BarberBooking.DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "IsRead", "CreatedAt");
 
-                    b.ToTable("Notifications");
+                    b.ToTable("Notifications", (string)null);
                 });
 
             modelBuilder.Entity("BarberBooking.Entities.Reviews.Review", b =>
@@ -517,13 +563,11 @@ namespace BarberBooking.DataAccess.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("Comment")
-                        .HasColumnType("text");
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("CustomerId")
-                        .HasColumnType("uuid");
 
                     b.Property<Guid>("CustomerUserId")
                         .HasColumnType("uuid");
@@ -536,13 +580,14 @@ namespace BarberBooking.DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AppointmentId");
+                    b.HasIndex("AppointmentId")
+                        .IsUnique();
 
-                    b.HasIndex("BusinessId");
+                    b.HasIndex("CustomerUserId");
 
-                    b.HasIndex("CustomerId");
+                    b.HasIndex("BusinessId", "CreatedAt");
 
-                    b.ToTable("Reviews");
+                    b.ToTable("Reviews", (string)null);
                 });
 
             modelBuilder.Entity("BarberBooking.Entities.Scheduling.BranchScheduleException", b =>
@@ -825,6 +870,137 @@ namespace BarberBooking.DataAccess.Migrations
                     b.ToTable("StaffServices", (string)null);
                 });
 
+            modelBuilder.Entity("BarberBooking.Entities.Subscriptions.BusinessSubscription", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("AutoRenew")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("BillingCycle")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("BusinessId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CancellationReason")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("CancelledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PlanId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlanId");
+
+                    b.HasIndex("BusinessId", "Status");
+
+                    b.ToTable("BusinessSubscriptions", (string)null);
+                });
+
+            modelBuilder.Entity("BarberBooking.Entities.Subscriptions.SubscriptionPlan", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("AnnualPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("HasAdvancedReporting")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("HasSmsNotification")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("MaxBranchCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MaxMonthlyAppointments")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MaxStaffPerBranch")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("MonthlyPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SubscriptionPlans", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("11111111-1111-1111-1111-111111111111"),
+                            AnnualPrice = 4990.00m,
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Description = "Tek şubeli butik kuaförler için ideal başlangıç paketi",
+                            HasAdvancedReporting = false,
+                            HasSmsNotification = false,
+                            IsActive = true,
+                            MaxBranchCount = 1,
+                            MaxMonthlyAppointments = 300,
+                            MaxStaffPerBranch = 3,
+                            MonthlyPrice = 499.00m,
+                            Name = "Starter"
+                        },
+                        new
+                        {
+                            Id = new Guid("22222222-2222-2222-2222-222222222222"),
+                            AnnualPrice = 9990.00m,
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Description = "Büyüyen ve birden fazla şubesi olan salonlar için profesyonel paket",
+                            HasAdvancedReporting = true,
+                            HasSmsNotification = true,
+                            IsActive = true,
+                            MaxBranchCount = 3,
+                            MaxMonthlyAppointments = 2000,
+                            MaxStaffPerBranch = 10,
+                            MonthlyPrice = 999.00m,
+                            Name = "Pro"
+                        });
+                });
+
             modelBuilder.Entity("BarberBooking.Entities.Appointments.Appointment", b =>
                 {
                     b.HasOne("BarberBooking.Entities.Businesses.Branch", "Branch")
@@ -945,6 +1121,32 @@ namespace BarberBooking.DataAccess.Migrations
                     b.Navigation("BusinessMember");
                 });
 
+            modelBuilder.Entity("BarberBooking.Entities.Customers.CustomerPenalty", b =>
+                {
+                    b.HasOne("BarberBooking.Entities.Appointments.Appointment", "Appointment")
+                        .WithMany()
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("BarberBooking.Entities.Businesses.Business", "Business")
+                        .WithMany()
+                        .HasForeignKey("BusinessId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BarberBooking.Entities.Identity.User", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Appointment");
+
+                    b.Navigation("Business");
+
+                    b.Navigation("Customer");
+                });
+
             modelBuilder.Entity("BarberBooking.Entities.Favorites.Favorite", b =>
                 {
                     b.HasOne("BarberBooking.Entities.Businesses.Business", "Business")
@@ -1010,7 +1212,7 @@ namespace BarberBooking.DataAccess.Migrations
                     b.HasOne("BarberBooking.Entities.Appointments.Appointment", "Appointment")
                         .WithMany()
                         .HasForeignKey("AppointmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("BarberBooking.Entities.Businesses.Business", "Business")
@@ -1021,8 +1223,8 @@ namespace BarberBooking.DataAccess.Migrations
 
                     b.HasOne("BarberBooking.Entities.Identity.User", "Customer")
                         .WithMany()
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("CustomerUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Appointment");
@@ -1152,6 +1354,25 @@ namespace BarberBooking.DataAccess.Migrations
                     b.Navigation("StaffProfile");
                 });
 
+            modelBuilder.Entity("BarberBooking.Entities.Subscriptions.BusinessSubscription", b =>
+                {
+                    b.HasOne("BarberBooking.Entities.Businesses.Business", "Business")
+                        .WithMany()
+                        .HasForeignKey("BusinessId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BarberBooking.Entities.Subscriptions.SubscriptionPlan", "Plan")
+                        .WithMany("Subscriptions")
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Business");
+
+                    b.Navigation("Plan");
+                });
+
             modelBuilder.Entity("BarberBooking.Entities.Appointments.Appointment", b =>
                 {
                     b.Navigation("StatusHistory");
@@ -1206,6 +1427,11 @@ namespace BarberBooking.DataAccess.Migrations
                     b.Navigation("BranchServices");
 
                     b.Navigation("StaffServices");
+                });
+
+            modelBuilder.Entity("BarberBooking.Entities.Subscriptions.SubscriptionPlan", b =>
+                {
+                    b.Navigation("Subscriptions");
                 });
 #pragma warning restore 612, 618
         }

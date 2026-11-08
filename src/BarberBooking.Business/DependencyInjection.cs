@@ -6,6 +6,7 @@ using BarberBooking.Entities.Common;
 using BarberBooking.Shared.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using BarberBooking.Business.Notifications;
 
 namespace BarberBooking.Business
 {
@@ -23,7 +24,18 @@ namespace BarberBooking.Business
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
             services.AddScoped<IBusinessService, BusinessManager>();
             services.AddScoped<IStaffService, StaffManager>();
-
+            services.AddScoped<IServiceManagementService, ServiceManager>();
+            services.AddScoped<IScheduleService, ScheduleManager>();
+            services.AddScoped<IAppointmentService, AppointmentManager>();
+            services.AddScoped<ISearchService, SearchManager>();
+            services.AddScoped<IPenaltyService, PenaltyManager>();
+            services.AddScoped<ISubscriptionService, SubscriptionManager>();
+            services.AddScoped<IReviewService, ReviewManager>();
+            services.AddSingleton<IEmailSender, NullEmailSender>();
+            services.AddSingleton<ISmsSender, NullSmsSender>();
+            services.AddScoped<INotificationService, NotificationManager>();
+            services.AddScoped<IReportingService, ReportingManager>();
+            services.AddScoped<ICustomerService, CustomerManager>();
 
             return services;
         }

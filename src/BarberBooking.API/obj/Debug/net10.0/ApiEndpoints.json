@@ -1,0 +1,948 @@
+[
+  {
+    "ContainingType": "BarberBooking.API.Controllers.AppointmentsController",
+    "Method": "CreateAppointment",
+    "RelativePath": "api/Appointments",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "BarberBooking.Shared.DTOs.Appointments.CreateAppointmentRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.AppointmentsController",
+    "Method": "GetAvailableSlots",
+    "RelativePath": "api/Appointments/available-slots",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "BranchId",
+        "Type": "System.Guid",
+        "IsRequired": false
+      },
+      {
+        "Name": "StaffProfileId",
+        "Type": "System.Guid",
+        "IsRequired": false
+      },
+      {
+        "Name": "ServiceId",
+        "Type": "System.Guid",
+        "IsRequired": false
+      },
+      {
+        "Name": "Date",
+        "Type": "System.DateOnly",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.AppointmentsController",
+    "Method": "GetBranchAppointments",
+    "RelativePath": "api/Appointments/branch/{branchId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "branchId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "date",
+        "Type": "System.Nullable\u00601[[System.DateOnly, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.AppointmentsController",
+    "Method": "CancelAppointment",
+    "RelativePath": "api/Appointments/cancel",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "BarberBooking.Shared.DTOs.Appointments.CancelAppointmentRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.AppointmentsController",
+    "Method": "GetMyAppointments",
+    "RelativePath": "api/Appointments/my-appointments",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.AppointmentsController",
+    "Method": "UpdateStatus",
+    "RelativePath": "api/Appointments/status",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "BarberBooking.Shared.DTOs.Appointments.UpdateAppointmentStatusRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.AuthController",
+    "Method": "Login",
+    "RelativePath": "api/Auth/login",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "BarberBooking.Shared.DTOs.Auth.LoginRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "BarberBooking.Shared.DTOs.Auth.AuthResponseDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      },
+      {
+        "Type": "Microsoft.AspNetCore.Mvc.ProblemDetails",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 401
+      }
+    ]
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.AuthController",
+    "Method": "RefreshToken",
+    "RelativePath": "api/Auth/refresh-token",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "BarberBooking.Shared.DTOs.Auth.RefreshTokenRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "BarberBooking.Shared.DTOs.Auth.AuthResponseDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      },
+      {
+        "Type": "Microsoft.AspNetCore.Mvc.ProblemDetails",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 401
+      }
+    ]
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.AuthController",
+    "Method": "Register",
+    "RelativePath": "api/Auth/register",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "BarberBooking.Shared.DTOs.Auth.RegisterRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "BarberBooking.Shared.DTOs.Auth.AuthResponseDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      },
+      {
+        "Type": "Microsoft.AspNetCore.Mvc.ProblemDetails",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 400
+      }
+    ]
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.BusinessesController",
+    "Method": "CreateBusiness",
+    "RelativePath": "api/Businesses",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "BarberBooking.Shared.DTOs.Businesses.CreateBusinessRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.BusinessesController",
+    "Method": "AddBranch",
+    "RelativePath": "api/Businesses/branches",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "BarberBooking.Shared.DTOs.Businesses.CreateBranchRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.BusinessesController",
+    "Method": "GetMyBusiness",
+    "RelativePath": "api/Businesses/me",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.BusinessesController",
+    "Method": "GetMyBranches",
+    "RelativePath": "api/Businesses/me/branches",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.CustomersController",
+    "Method": "ChangePassword",
+    "RelativePath": "api/Customers/change-password",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "BarberBooking.Shared.DTOs.Customer.ChangePasswordRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.CustomersController",
+    "Method": "GetMyFavorites",
+    "RelativePath": "api/Customers/favorites",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.CustomersController",
+    "Method": "ToggleFavorite",
+    "RelativePath": "api/Customers/favorites/{businessId}/toggle",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "businessId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.CustomersController",
+    "Method": "GetMyProfile",
+    "RelativePath": "api/Customers/me",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.CustomersController",
+    "Method": "UpdateProfile",
+    "RelativePath": "api/Customers/me",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "BarberBooking.Shared.DTOs.Customer.UpdateProfileRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.NotificationsController",
+    "Method": "GetMyNotifications",
+    "RelativePath": "api/Notifications",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "unreadOnly",
+        "Type": "System.Boolean",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.NotificationsController",
+    "Method": "MarkAsRead",
+    "RelativePath": "api/Notifications/{id}/read",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.NotificationsController",
+    "Method": "MarkAllAsRead",
+    "RelativePath": "api/Notifications/read-all",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.NotificationsController",
+    "Method": "GetUnreadCount",
+    "RelativePath": "api/Notifications/unread-count",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.PenaltiesController",
+    "Method": "AddPenalty",
+    "RelativePath": "api/Penalties",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "BarberBooking.Shared.DTOs.Customers.CreatePenaltyRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.PenaltiesController",
+    "Method": "ForgivePenalty",
+    "RelativePath": "api/Penalties/forgive/{penaltyId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "penaltyId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.PenaltiesController",
+    "Method": "GetMyStatus",
+    "RelativePath": "api/Penalties/my-status/{businessId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "businessId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.ReportsController",
+    "Method": "GetDashboardSummary",
+    "RelativePath": "api/Reports/dashboard",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "BranchId",
+        "Type": "System.Nullable\u00601[[System.Guid, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "StartDate",
+        "Type": "System.Nullable\u00601[[System.DateTimeOffset, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "EndDate",
+        "Type": "System.Nullable\u00601[[System.DateTimeOffset, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.ReviewsController",
+    "Method": "CreateReview",
+    "RelativePath": "api/Reviews",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "BarberBooking.Shared.DTOs.Reviews.CreateReviewRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.ReviewsController",
+    "Method": "GetBranchReviews",
+    "RelativePath": "api/Reviews/branch/{branchId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "branchId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.ReviewsController",
+    "Method": "GetBusinessSummary",
+    "RelativePath": "api/Reviews/business/{businessId}/summary",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "businessId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.ReviewsController",
+    "Method": "GetStaffReviews",
+    "RelativePath": "api/Reviews/staff/{staffProfileId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "staffProfileId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.SchedulesController",
+    "Method": "AddBranchException",
+    "RelativePath": "api/Schedules/branch-exception",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "BarberBooking.Shared.DTOs.Scheduling.CreateBranchExceptionRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.SchedulesController",
+    "Method": "SetBranchWorkingHours",
+    "RelativePath": "api/Schedules/branch-working-hours",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "BarberBooking.Shared.DTOs.Scheduling.SetBranchWorkingHoursRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.SchedulesController",
+    "Method": "GetBranchExceptions",
+    "RelativePath": "api/Schedules/branch/{branchId}/exceptions",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "branchId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.SchedulesController",
+    "Method": "GetBranchWorkingHours",
+    "RelativePath": "api/Schedules/branch/{branchId}/working-hours",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "branchId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.SchedulesController",
+    "Method": "AddStaffException",
+    "RelativePath": "api/Schedules/staff-exception",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "BarberBooking.Shared.DTOs.Scheduling.CreateStaffExceptionRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.SchedulesController",
+    "Method": "SetStaffWorkingHours",
+    "RelativePath": "api/Schedules/staff-working-hours",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "BarberBooking.Shared.DTOs.Scheduling.SetStaffWorkingHoursRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.SchedulesController",
+    "Method": "GetStaffExceptions",
+    "RelativePath": "api/Schedules/staff/{staffProfileId}/branch/{branchId}/exceptions",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "staffProfileId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "branchId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.SchedulesController",
+    "Method": "GetStaffWorkingHours",
+    "RelativePath": "api/Schedules/staff/{staffProfileId}/branch/{branchId}/working-hours",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "staffProfileId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "branchId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.SearchController",
+    "Method": "GetNearbyBranches",
+    "RelativePath": "api/Search/nearby",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "Latitude",
+        "Type": "System.Double",
+        "IsRequired": false
+      },
+      {
+        "Name": "Longitude",
+        "Type": "System.Double",
+        "IsRequired": false
+      },
+      {
+        "Name": "RadiusKm",
+        "Type": "System.Double",
+        "IsRequired": false
+      },
+      {
+        "Name": "QueryText",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "City",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "District",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "PageNumber",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "PageSize",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.ServicesController",
+    "Method": "CreateService",
+    "RelativePath": "api/Services",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "BarberBooking.Shared.DTOs.Services.CreateServiceRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.ServicesController",
+    "Method": "UpdateService",
+    "RelativePath": "api/Services",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "BarberBooking.Shared.DTOs.Services.UpdateServiceRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.ServicesController",
+    "Method": "DeleteService",
+    "RelativePath": "api/Services/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.ServicesController",
+    "Method": "AssignToBranch",
+    "RelativePath": "api/Services/assign-branch",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "BarberBooking.Shared.DTOs.Services.AssignBranchServiceRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.ServicesController",
+    "Method": "AssignToStaff",
+    "RelativePath": "api/Services/assign-staff",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "BarberBooking.Shared.DTOs.Services.AssignStaffServicesRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.ServicesController",
+    "Method": "GetBranchServices",
+    "RelativePath": "api/Services/branch/{branchId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "branchId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.ServicesController",
+    "Method": "GetBusinessServices",
+    "RelativePath": "api/Services/my-business",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.ServicesController",
+    "Method": "GetStaffServices",
+    "RelativePath": "api/Services/staff/{staffProfileId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "staffProfileId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.StaffController",
+    "Method": "CreateStaff",
+    "RelativePath": "api/Staff",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "BarberBooking.Shared.DTOs.Staff.CreateStaffRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.StaffController",
+    "Method": "GetBusinessStaff",
+    "RelativePath": "api/Staff",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.StaffController",
+    "Method": "AssignBranches",
+    "RelativePath": "api/Staff/assign-branches",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "BarberBooking.Shared.DTOs.Staff.AssignStaffBranchesRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.StaffController",
+    "Method": "GetBranchStaff",
+    "RelativePath": "api/Staff/branch/{branchId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "branchId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.SubscriptionsController",
+    "Method": "Cancel",
+    "RelativePath": "api/Subscriptions/cancel",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "reason",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.SubscriptionsController",
+    "Method": "GetMySubscription",
+    "RelativePath": "api/Subscriptions/my-subscription",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.SubscriptionsController",
+    "Method": "GetPlans",
+    "RelativePath": "api/Subscriptions/plans",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BarberBooking.API.Controllers.SubscriptionsController",
+    "Method": "Subscribe",
+    "RelativePath": "api/Subscriptions/subscribe",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "BarberBooking.Shared.DTOs.Subscriptions.SubscribeRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  }
+]

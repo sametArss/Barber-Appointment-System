@@ -1,8 +1,12 @@
 using BarberBooking.API.Filters;
+using BarberBooking.API.Middlewares;
 using BarberBooking.Business;
 using BarberBooking.DataAccess;
+using BarberBooking.DataAccess.Context;
+using BarberBooking.DataAccess.Seed;
 using BarberBooking.Shared.Configuration;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -12,6 +16,14 @@ var builder = WebApplication.CreateBuilder(args);
 // DataAccess & Business Kayıtları
 builder.Services.AddDataAccess(builder.Configuration);
 builder.Services.AddBusinessServices(builder.Configuration);
+
+// Exception Handling & ProblemDetails
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
+// Health Checks Kaydı (Database Kontrolü ile)
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<BarberBookingDbContext>("Database");
 
 // JWT Authentication Kaydı
 var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
@@ -38,6 +50,7 @@ if (jwtSettings != null)
     });
 }
 
+// Controller & Validation Filter Kaydı
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<ValidateModelAttribute>();
@@ -49,10 +62,16 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
     options.SuppressModelStateInvalidFilter = true;
 });
 
-builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+// Otomatik Migration ve Seed Veri Yükleme
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<BarberBookingDbContext>();
+    await DatabaseSeeder.SeedAsync(dbContext);
+}
 
 if (app.Environment.IsDevelopment())
 {
@@ -61,9 +80,35 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// Middlewares
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseExceptionHandler();
+
 // Authentication her zaman Authorization'dan önce gelmeli
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Health Check Endpoint'i
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        var response = new
+        {
+            Status = report.Status.ToString(),
+            TotalDuration = report.TotalDuration.TotalMilliseconds + " ms",
+            Checks = report.Entries.Select(e => new
+            {
+                Component = e.Key,
+                Status = e.Value.Status.ToString(),
+                Description = e.Value.Description,
+                Duration = e.Value.Duration.TotalMilliseconds + " ms"
+            })
+        };
+        await context.Response.WriteAsJsonAsync(response);
+    }
+});
 
 app.MapControllers();
 

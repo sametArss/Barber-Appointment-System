@@ -3,16 +3,103 @@
   "WorkspaceRootPath": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{DACFE84F-0477-4BFA-AE66-B7F407871654}|src\\BarberBooking.API\\BarberBooking.API.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.api\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{DACFE84F-0477-4BFA-AE66-B7F407871654}|src\\BarberBooking.API\\BarberBooking.API.csproj|solutionrelative:src\\barberbooking.api\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DACFE84F-0477-4BFA-AE66-B7F407871654}|src\\BarberBooking.API\\BarberBooking.API.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.api\\barberbooking.api.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|",
+      "RelativeMoniker": "D:0:0:{DACFE84F-0477-4BFA-AE66-B7F407871654}|src\\BarberBooking.API\\BarberBooking.API.csproj|solutionrelative:src\\barberbooking.api\\barberbooking.api.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DACFE84F-0477-4BFA-AE66-B7F407871654}|src\\BarberBooking.API\\BarberBooking.API.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{DACFE84F-0477-4BFA-AE66-B7F407871654}|src\\BarberBooking.API\\BarberBooking.API.csproj|solutionrelative:src\\barberbooking.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E1289099-C4DE-47A8-B36A-2F8E0389F096}|src\\BarberBooking.DataAccess\\BarberBooking.DataAccess.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.dataaccess\\context\\barberbookingdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E1289099-C4DE-47A8-B36A-2F8E0389F096}|src\\BarberBooking.DataAccess\\BarberBooking.DataAccess.csproj|solutionrelative:src\\barberbooking.dataaccess\\context\\barberbookingdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E1289099-C4DE-47A8-B36A-2F8E0389F096}|src\\BarberBooking.DataAccess\\BarberBooking.DataAccess.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.dataaccess\\seed\\databaseseeder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E1289099-C4DE-47A8-B36A-2F8E0389F096}|src\\BarberBooking.DataAccess\\BarberBooking.DataAccess.csproj|solutionrelative:src\\barberbooking.dataaccess\\seed\\databaseseeder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E1289099-C4DE-47A8-B36A-2F8E0389F096}|src\\BarberBooking.DataAccess\\BarberBooking.DataAccess.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.dataaccess\\dependencyinjection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E1289099-C4DE-47A8-B36A-2F8E0389F096}|src\\BarberBooking.DataAccess\\BarberBooking.DataAccess.csproj|solutionrelative:src\\barberbooking.dataaccess\\dependencyinjection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3C633EEC-77DD-4871-95FD-17156F0F2DBA}|src\\BarberBooking.Business\\BarberBooking.Business.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.business\\dependencyinjection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3C633EEC-77DD-4871-95FD-17156F0F2DBA}|src\\BarberBooking.Business\\BarberBooking.Business.csproj|solutionrelative:src\\barberbooking.business\\dependencyinjection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DACFE84F-0477-4BFA-AE66-B7F407871654}|src\\BarberBooking.API\\BarberBooking.API.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DACFE84F-0477-4BFA-AE66-B7F407871654}|src\\BarberBooking.API\\BarberBooking.API.csproj|solutionrelative:src\\barberbooking.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3C633EEC-77DD-4871-95FD-17156F0F2DBA}|src\\BarberBooking.Business\\BarberBooking.Business.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.business\\services\\customermanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3C633EEC-77DD-4871-95FD-17156F0F2DBA}|src\\BarberBooking.Business\\BarberBooking.Business.csproj|solutionrelative:src\\barberbooking.business\\services\\customermanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3C633EEC-77DD-4871-95FD-17156F0F2DBA}|src\\BarberBooking.Business\\BarberBooking.Business.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.business\\services\\notificationmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3C633EEC-77DD-4871-95FD-17156F0F2DBA}|src\\BarberBooking.Business\\BarberBooking.Business.csproj|solutionrelative:src\\barberbooking.business\\services\\notificationmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E1289099-C4DE-47A8-B36A-2F8E0389F096}|src\\BarberBooking.DataAccess\\BarberBooking.DataAccess.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.dataaccess\\configurations\\notificationconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E1289099-C4DE-47A8-B36A-2F8E0389F096}|src\\BarberBooking.DataAccess\\BarberBooking.DataAccess.csproj|solutionrelative:src\\barberbooking.dataaccess\\configurations\\notificationconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3C633EEC-77DD-4871-95FD-17156F0F2DBA}|src\\BarberBooking.Business\\BarberBooking.Business.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.business\\services\\searchmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3C633EEC-77DD-4871-95FD-17156F0F2DBA}|src\\BarberBooking.Business\\BarberBooking.Business.csproj|solutionrelative:src\\barberbooking.business\\services\\searchmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3C633EEC-77DD-4871-95FD-17156F0F2DBA}|src\\BarberBooking.Business\\BarberBooking.Business.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.business\\services\\appointmentmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3C633EEC-77DD-4871-95FD-17156F0F2DBA}|src\\BarberBooking.Business\\BarberBooking.Business.csproj|solutionrelative:src\\barberbooking.business\\services\\appointmentmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\dotnet\\sdk\\10.0.101\\Sdks\\Microsoft.NET.Sdk\\targets\\Microsoft.NET.Sdk.DefaultItems.targets||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3C633EEC-77DD-4871-95FD-17156F0F2DBA}|src\\BarberBooking.Business\\BarberBooking.Business.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.business\\services\\reviewmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3C633EEC-77DD-4871-95FD-17156F0F2DBA}|src\\BarberBooking.Business\\BarberBooking.Business.csproj|solutionrelative:src\\barberbooking.business\\services\\reviewmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E1289099-C4DE-47A8-B36A-2F8E0389F096}|src\\BarberBooking.DataAccess\\BarberBooking.DataAccess.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.dataaccess\\configurations\\reviewconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E1289099-C4DE-47A8-B36A-2F8E0389F096}|src\\BarberBooking.DataAccess\\BarberBooking.DataAccess.csproj|solutionrelative:src\\barberbooking.dataaccess\\configurations\\reviewconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3C633EEC-77DD-4871-95FD-17156F0F2DBA}|src\\BarberBooking.Business\\BarberBooking.Business.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.business\\services\\penaltymanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3C633EEC-77DD-4871-95FD-17156F0F2DBA}|src\\BarberBooking.Business\\BarberBooking.Business.csproj|solutionrelative:src\\barberbooking.business\\services\\penaltymanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3C633EEC-77DD-4871-95FD-17156F0F2DBA}|src\\BarberBooking.Business\\BarberBooking.Business.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.business\\services\\schedulemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3C633EEC-77DD-4871-95FD-17156F0F2DBA}|src\\BarberBooking.Business\\BarberBooking.Business.csproj|solutionrelative:src\\barberbooking.business\\services\\schedulemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{84D20DF8-C3FE-44F3-97C5-A2A3AD8F277A}|src\\BarberBooking.Shared\\BarberBooking.Shared.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.shared\\dtos\\scheduling\\scheduledtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{84D20DF8-C3FE-44F3-97C5-A2A3AD8F277A}|src\\BarberBooking.Shared\\BarberBooking.Shared.csproj|solutionrelative:src\\barberbooking.shared\\dtos\\scheduling\\scheduledtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3C633EEC-77DD-4871-95FD-17156F0F2DBA}|src\\BarberBooking.Business\\BarberBooking.Business.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.business\\services\\staffmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3C633EEC-77DD-4871-95FD-17156F0F2DBA}|src\\BarberBooking.Business\\BarberBooking.Business.csproj|solutionrelative:src\\barberbooking.business\\services\\staffmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{84D20DF8-C3FE-44F3-97C5-A2A3AD8F277A}|src\\BarberBooking.Shared\\BarberBooking.Shared.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.shared\\dtos\\staff\\staffdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{84D20DF8-C3FE-44F3-97C5-A2A3AD8F277A}|src\\BarberBooking.Shared\\BarberBooking.Shared.csproj|solutionrelative:src\\barberbooking.shared\\dtos\\staff\\staffdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DACFE84F-0477-4BFA-AE66-B7F407871654}|src\\BarberBooking.API\\BarberBooking.API.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.api\\controllers\\staffcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DACFE84F-0477-4BFA-AE66-B7F407871654}|src\\BarberBooking.API\\BarberBooking.API.csproj|solutionrelative:src\\barberbooking.api\\controllers\\staffcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3C633EEC-77DD-4871-95FD-17156F0F2DBA}|src\\BarberBooking.Business\\BarberBooking.Business.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.business\\services\\istaffservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3C633EEC-77DD-4871-95FD-17156F0F2DBA}|src\\BarberBooking.Business\\BarberBooking.Business.csproj|solutionrelative:src\\barberbooking.business\\services\\istaffservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{3C633EEC-77DD-4871-95FD-17156F0F2DBA}|src\\BarberBooking.Business\\BarberBooking.Business.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.business\\services\\businessmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{3C633EEC-77DD-4871-95FD-17156F0F2DBA}|src\\BarberBooking.Business\\BarberBooking.Business.csproj|solutionrelative:src\\barberbooking.business\\services\\businessmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{DACFE84F-0477-4BFA-AE66-B7F407871654}|src\\BarberBooking.API\\BarberBooking.API.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.api\\controllers\\businessescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{DACFE84F-0477-4BFA-AE66-B7F407871654}|src\\BarberBooking.API\\BarberBooking.API.csproj|solutionrelative:src\\barberbooking.api\\controllers\\businessescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{3C633EEC-77DD-4871-95FD-17156F0F2DBA}|src\\BarberBooking.Business\\BarberBooking.Business.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.business\\dependencyinjection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{3C633EEC-77DD-4871-95FD-17156F0F2DBA}|src\\BarberBooking.Business\\BarberBooking.Business.csproj|solutionrelative:src\\barberbooking.business\\dependencyinjection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{3C633EEC-77DD-4871-95FD-17156F0F2DBA}|src\\BarberBooking.Business\\BarberBooking.Business.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.business\\services\\ibusinessservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -25,10 +112,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{84D20DF8-C3FE-44F3-97C5-A2A3AD8F277A}|src\\BarberBooking.Shared\\BarberBooking.Shared.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.shared\\barberbooking.shared.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
       "RelativeMoniker": "D:0:0:{84D20DF8-C3FE-44F3-97C5-A2A3AD8F277A}|src\\BarberBooking.Shared\\BarberBooking.Shared.csproj|solutionrelative:src\\barberbooking.shared\\barberbooking.shared.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{DACFE84F-0477-4BFA-AE66-B7F407871654}|src\\BarberBooking.API\\BarberBooking.API.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{DACFE84F-0477-4BFA-AE66-B7F407871654}|src\\BarberBooking.API\\BarberBooking.API.csproj|solutionrelative:src\\barberbooking.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{DACFE84F-0477-4BFA-AE66-B7F407871654}|src\\BarberBooking.API\\BarberBooking.API.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.api\\filters\\validatemodelattribute.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -71,10 +154,6 @@
       "RelativeMoniker": "D:0:0:{3C633EEC-77DD-4871-95FD-17156F0F2DBA}|src\\BarberBooking.Business\\BarberBooking.Business.csproj|solutionrelative:src\\barberbooking.business\\security\\itokenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{DACFE84F-0477-4BFA-AE66-B7F407871654}|src\\BarberBooking.API\\BarberBooking.API.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{DACFE84F-0477-4BFA-AE66-B7F407871654}|src\\BarberBooking.API\\BarberBooking.API.csproj|solutionrelative:src\\barberbooking.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{3C633EEC-77DD-4871-95FD-17156F0F2DBA}|src\\BarberBooking.Business\\BarberBooking.Business.csproj|c:\\users\\samet\\desktop\\barber gemini\\src\\barberbooking.business\\security\\currenttenantservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{3C633EEC-77DD-4871-95FD-17156F0F2DBA}|src\\BarberBooking.Business\\BarberBooking.Business.csproj|solutionrelative:src\\barberbooking.business\\security\\currenttenantservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
@@ -89,233 +168,115 @@
           "SelectedChildIndex": 1,
           "Children": [
             {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "BusinessesController.cs",
-              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.API\\Controllers\\BusinessesController.cs",
-              "RelativeDocumentMoniker": "src\\BarberBooking.API\\Controllers\\BusinessesController.cs",
-              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.API\\Controllers\\BusinessesController.cs",
-              "RelativeToolTip": "src\\BarberBooking.API\\Controllers\\BusinessesController.cs",
-              "ViewState": "AgIAACwAAAAAAAAAAAAgwEYAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-11-06T14:31:46.383Z",
-              "EditorCaption": ""
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
             },
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "BusinessManager.cs",
-              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\BusinessManager.cs",
-              "RelativeDocumentMoniker": "src\\BarberBooking.Business\\Services\\BusinessManager.cs",
-              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\BusinessManager.cs",
-              "RelativeToolTip": "src\\BarberBooking.Business\\Services\\BusinessManager.cs",
-              "ViewState": "AgIAAN4AAAAAAAAAAAAgwPgAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-11-06T14:30:48.384Z",
+              "Title": "launchSettings.json",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.API\\Properties\\launchSettings.json",
+              "RelativeDocumentMoniker": "src\\BarberBooking.API\\Properties\\launchSettings.json",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.API\\Properties\\launchSettings.json",
+              "RelativeToolTip": "src\\BarberBooking.API\\Properties\\launchSettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAAvAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-11-08T13:09:12.054Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "IBusinessService.cs",
-              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\IBusinessService.cs",
-              "RelativeDocumentMoniker": "src\\BarberBooking.Business\\Services\\IBusinessService.cs",
-              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\IBusinessService.cs",
-              "RelativeToolTip": "src\\BarberBooking.Business\\Services\\IBusinessService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-11-06T14:30:25.323Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "BusinessDtos.cs",
-              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Shared\\DTOs\\Businesses\\BusinessDtos.cs",
-              "RelativeDocumentMoniker": "src\\BarberBooking.Shared\\DTOs\\Businesses\\BusinessDtos.cs",
-              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Shared\\DTOs\\Businesses\\BusinessDtos.cs",
-              "RelativeToolTip": "src\\BarberBooking.Shared\\DTOs\\Businesses\\BusinessDtos.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAADMAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-11-06T14:29:00.484Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "BarberBooking.Shared",
-              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Shared\\BarberBooking.Shared.csproj",
-              "RelativeDocumentMoniker": "src\\BarberBooking.Shared\\BarberBooking.Shared.csproj",
-              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Shared\\BarberBooking.Shared.csproj",
-              "RelativeToolTip": "src\\BarberBooking.Shared\\BarberBooking.Shared.csproj",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 1,
+              "Title": "BarberBooking.API",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.API\\BarberBooking.API.csproj",
+              "RelativeDocumentMoniker": "src\\BarberBooking.API\\BarberBooking.API.csproj",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.API\\BarberBooking.API.csproj",
+              "RelativeToolTip": "src\\BarberBooking.API\\BarberBooking.API.csproj",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2026-11-06T14:28:34.049Z",
+              "WhenOpened": "2026-11-08T13:09:08.965Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "ValidateModelAttribute.cs",
-              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.API\\Filters\\ValidateModelAttribute.cs",
-              "RelativeDocumentMoniker": "src\\BarberBooking.API\\Filters\\ValidateModelAttribute.cs",
-              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.API\\Filters\\ValidateModelAttribute.cs",
-              "RelativeToolTip": "src\\BarberBooking.API\\Filters\\ValidateModelAttribute.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABYAAAABAAAAAAAAAA==",
+              "DocumentIndex": 8,
+              "Title": "CustomerManager.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\CustomerManager.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.Business\\Services\\CustomerManager.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\CustomerManager.cs",
+              "RelativeToolTip": "src\\BarberBooking.Business\\Services\\CustomerManager.cs",
+              "ViewState": "AgIAAL8AAAAAAAAAAAAgwNkAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-11-06T14:25:11.969Z",
+              "WhenOpened": "2026-11-08T12:10:23.714Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 9,
+              "Title": "NotificationManager.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\NotificationManager.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.Business\\Services\\NotificationManager.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\NotificationManager.cs",
+              "RelativeToolTip": "src\\BarberBooking.Business\\Services\\NotificationManager.cs",
+              "ViewState": "AgIAAFgAAAAAAAAAAAApwGYAAAApAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-08T11:53:45.89Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
               "Title": "DependencyInjection.cs",
               "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\DependencyInjection.cs",
               "RelativeDocumentMoniker": "src\\BarberBooking.Business\\DependencyInjection.cs",
               "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\DependencyInjection.cs",
               "RelativeToolTip": "src\\BarberBooking.Business\\DependencyInjection.cs",
-              "ViewState": "AgIAAAYAAAAAAAAAAAAAABcAAABEAAAAAAAAAA==",
+              "ViewState": "AgIAABcAAAAAAAAAAAApwCoAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-11-06T14:03:02.218Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "LoginRequestValidator.cs",
-              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\ValidationRules\\Auth\\LoginRequestValidator.cs",
-              "RelativeDocumentMoniker": "src\\BarberBooking.Business\\ValidationRules\\Auth\\LoginRequestValidator.cs",
-              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\ValidationRules\\Auth\\LoginRequestValidator.cs",
-              "RelativeToolTip": "src\\BarberBooking.Business\\ValidationRules\\Auth\\LoginRequestValidator.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-11-06T14:21:58.039Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "RegisterRequestValidator.cs",
-              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\ValidationRules\\Auth\\RegisterRequestValidator.cs",
-              "RelativeDocumentMoniker": "src\\BarberBooking.Business\\ValidationRules\\Auth\\RegisterRequestValidator.cs",
-              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\ValidationRules\\Auth\\RegisterRequestValidator.cs",
-              "RelativeToolTip": "src\\BarberBooking.Business\\ValidationRules\\Auth\\RegisterRequestValidator.cs",
-              "ViewState": "AgIAAAgAAAAAAAAAAAAgwCIAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-11-06T14:21:40.103Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 12,
-              "Title": "IPasswordHasher.cs",
-              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Security\\IPasswordHasher.cs",
-              "RelativeDocumentMoniker": "src\\BarberBooking.Business\\Security\\IPasswordHasher.cs",
-              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Security\\IPasswordHasher.cs",
-              "RelativeToolTip": "src\\BarberBooking.Business\\Security\\IPasswordHasher.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-11-06T14:19:37.152Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 13,
-              "Title": "AuthController.cs",
-              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.API\\Controllers\\AuthController.cs",
-              "RelativeDocumentMoniker": "src\\BarberBooking.API\\Controllers\\AuthController.cs",
-              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.API\\Controllers\\AuthController.cs",
-              "RelativeToolTip": "src\\BarberBooking.API\\Controllers\\AuthController.cs",
-              "ViewState": "AgIAACMAAAAAAAAAAAAkwDsAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-11-06T14:17:43.93Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 10,
-              "Title": "AuthManager.cs",
-              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\AuthManager.cs",
-              "RelativeDocumentMoniker": "src\\BarberBooking.Business\\Services\\AuthManager.cs",
-              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\AuthManager.cs",
-              "RelativeToolTip": "src\\BarberBooking.Business\\Services\\AuthManager.cs",
-              "ViewState": "AgIAAMAAAAAAAAAAAAAkwMMAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-11-06T14:16:12.33Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 7,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.API\\Program.cs",
               "RelativeDocumentMoniker": "src\\BarberBooking.API\\Program.cs",
               "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.API\\Program.cs",
               "RelativeToolTip": "src\\BarberBooking.API\\Program.cs",
-              "ViewState": "AgIAACIAAAAAAAAAAAAAADEAAAADAAAAAAAAAA==",
+              "ViewState": "AgIAABUAAAAAAAAAAAAAABkAAAAgAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-11-06T14:03:33.986Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 14,
-              "Title": "IAuthService.cs",
-              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\IAuthService.cs",
-              "RelativeDocumentMoniker": "src\\BarberBooking.Business\\Services\\IAuthService.cs",
-              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\IAuthService.cs",
-              "RelativeToolTip": "src\\BarberBooking.Business\\Services\\IAuthService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAABAAAAAAAAAA==",
+              "DocumentIndex": 3,
+              "Title": "BarberBookingDbContext.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.DataAccess\\Context\\BarberBookingDbContext.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.DataAccess\\Context\\BarberBookingDbContext.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.DataAccess\\Context\\BarberBookingDbContext.cs",
+              "RelativeToolTip": "src\\BarberBooking.DataAccess\\Context\\BarberBookingDbContext.cs",
+              "ViewState": "AgIAAJ0AAAAAAAAAAAAQwK4AAAA6AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-11-06T14:15:15.581Z",
+              "WhenOpened": "2026-11-08T11:31:04.547Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 15,
-              "Title": "TokenService.cs",
-              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Security\\TokenService.cs",
-              "RelativeDocumentMoniker": "src\\BarberBooking.Business\\Security\\TokenService.cs",
-              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Security\\TokenService.cs",
-              "RelativeToolTip": "src\\BarberBooking.Business\\Security\\TokenService.cs",
-              "ViewState": "AgIAACQAAAAAAAAAAAAgwFMAAAABAAAAAAAAAA==",
+              "DocumentIndex": 5,
+              "Title": "DependencyInjection.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.DataAccess\\DependencyInjection.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.DataAccess\\DependencyInjection.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.DataAccess\\DependencyInjection.cs",
+              "RelativeToolTip": "src\\BarberBooking.DataAccess\\DependencyInjection.cs",
+              "ViewState": "AgIAAA4AAAAAAAAAAAAQwB4AAABrAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-11-06T14:11:40.538Z",
+              "WhenOpened": "2026-11-08T13:00:18.598Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 16,
-              "Title": "ITokenService.cs",
-              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Security\\ITokenService.cs",
-              "RelativeDocumentMoniker": "src\\BarberBooking.Business\\Security\\ITokenService.cs",
-              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Security\\ITokenService.cs",
-              "RelativeToolTip": "src\\BarberBooking.Business\\Security\\ITokenService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-11-06T14:11:27.867Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 11,
-              "Title": "PasswordHasher.cs",
-              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Security\\PasswordHasher.cs",
-              "RelativeDocumentMoniker": "src\\BarberBooking.Business\\Security\\PasswordHasher.cs",
-              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Security\\PasswordHasher.cs",
-              "RelativeToolTip": "src\\BarberBooking.Business\\Security\\PasswordHasher.cs",
-              "ViewState": "AgIAAA4AAAAAAAAAAAAgwCgAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-11-06T14:00:50.951Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 17,
+              "DocumentIndex": 2,
               "Title": "appsettings.json",
               "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.API\\appsettings.json",
               "RelativeDocumentMoniker": "src\\BarberBooking.API\\appsettings.json",
@@ -328,7 +289,367 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "DatabaseSeeder.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.DataAccess\\Seed\\DatabaseSeeder.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.DataAccess\\Seed\\DatabaseSeeder.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.DataAccess\\Seed\\DatabaseSeeder.cs",
+              "RelativeToolTip": "src\\BarberBooking.DataAccess\\Seed\\DatabaseSeeder.cs",
+              "ViewState": "AgIAAB0AAAAAAAAAAAAQwBAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-08T12:54:01.811Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "NotificationConfiguration.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.DataAccess\\Configurations\\NotificationConfiguration.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.DataAccess\\Configurations\\NotificationConfiguration.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.DataAccess\\Configurations\\NotificationConfiguration.cs",
+              "RelativeToolTip": "src\\BarberBooking.DataAccess\\Configurations\\NotificationConfiguration.cs",
+              "ViewState": "AgIAAAIAAAAAAAAAAAAhwA4AAABHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-08T11:52:58.645Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "AppointmentManager.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\AppointmentManager.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.Business\\Services\\AppointmentManager.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\AppointmentManager.cs",
+              "RelativeToolTip": "src\\BarberBooking.Business\\Services\\AppointmentManager.cs",
+              "ViewState": "AgIAALwBAAAAAAAAAAApwMoBAAAmAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-08T11:21:48.864Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "Microsoft.NET.Sdk.DefaultItems.targets",
+              "DocumentMoniker": "C:\\Program Files\\dotnet\\sdk\\10.0.101\\Sdks\\Microsoft.NET.Sdk\\targets\\Microsoft.NET.Sdk.DefaultItems.targets",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\Program Files\\dotnet\\sdk\\10.0.101\\Sdks\\Microsoft.NET.Sdk\\targets\\Microsoft.NET.Sdk.DefaultItems.targets",
+              "ToolTip": "C:\\Program Files\\dotnet\\sdk\\10.0.101\\Sdks\\Microsoft.NET.Sdk\\targets\\Microsoft.NET.Sdk.DefaultItems.targets",
+              "RelativeToolTip": "..\\..\\..\\..\\Program Files\\dotnet\\sdk\\10.0.101\\Sdks\\Microsoft.NET.Sdk\\targets\\Microsoft.NET.Sdk.DefaultItems.targets",
+              "ViewState": "AgIAAIEAAAAAAAAAAIAwwJAAAAAEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003801|",
+              "WhenOpened": "2026-11-08T11:46:44.882Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "ReviewManager.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\ReviewManager.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.Business\\Services\\ReviewManager.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\ReviewManager.cs",
+              "RelativeToolTip": "src\\BarberBooking.Business\\Services\\ReviewManager.cs",
+              "ViewState": "AgIAAG0AAAAAAAAAAAApwHsAAAApAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-08T11:45:45.834Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "ReviewConfiguration.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.DataAccess\\Configurations\\ReviewConfiguration.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.DataAccess\\Configurations\\ReviewConfiguration.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.DataAccess\\Configurations\\ReviewConfiguration.cs",
+              "RelativeToolTip": "src\\BarberBooking.DataAccess\\Configurations\\ReviewConfiguration.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAApwBEAAABBAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-08T11:45:30.25Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "SearchManager.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\SearchManager.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.Business\\Services\\SearchManager.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\SearchManager.cs",
+              "RelativeToolTip": "src\\BarberBooking.Business\\Services\\SearchManager.cs",
+              "ViewState": "AgIAAGoAAAAAAAAAAAApwHgAAAAcAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-08T11:11:32.657Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "PenaltyManager.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\PenaltyManager.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.Business\\Services\\PenaltyManager.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\PenaltyManager.cs",
+              "RelativeToolTip": "src\\BarberBooking.Business\\Services\\PenaltyManager.cs",
+              "ViewState": "AgIAAGAAAAAAAAAAAAApwGUAAAAtAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-08T11:23:48.753Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "ScheduleManager.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\ScheduleManager.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.Business\\Services\\ScheduleManager.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\ScheduleManager.cs",
+              "RelativeToolTip": "src\\BarberBooking.Business\\Services\\ScheduleManager.cs",
+              "ViewState": "AgIAAKMAAAAAAAAAAAAYwK0AAAAOAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-08T11:03:15.455Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 18,
+              "Title": "ScheduleDtos.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Shared\\DTOs\\Scheduling\\ScheduleDtos.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.Shared\\DTOs\\Scheduling\\ScheduleDtos.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Shared\\DTOs\\Scheduling\\ScheduleDtos.cs",
+              "RelativeToolTip": "src\\BarberBooking.Shared\\DTOs\\Scheduling\\ScheduleDtos.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-08T11:00:35.342Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "StaffController.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.API\\Controllers\\StaffController.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.API\\Controllers\\StaffController.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.API\\Controllers\\StaffController.cs",
+              "RelativeToolTip": "src\\BarberBooking.API\\Controllers\\StaffController.cs",
+              "ViewState": "AgIAAC0AAAAAAAAAAAAgwEcAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-06T14:42:30.361Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "StaffManager.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\StaffManager.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.Business\\Services\\StaffManager.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\StaffManager.cs",
+              "RelativeToolTip": "src\\BarberBooking.Business\\Services\\StaffManager.cs",
+              "ViewState": "AgIAAPcAAAAAAAAAAAAiwBEBAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-06T14:41:44.82Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
+              "Title": "IStaffService.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\IStaffService.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.Business\\Services\\IStaffService.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\IStaffService.cs",
+              "RelativeToolTip": "src\\BarberBooking.Business\\Services\\IStaffService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-06T14:40:44.275Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "StaffDtos.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Shared\\DTOs\\Staff\\StaffDtos.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.Shared\\DTOs\\Staff\\StaffDtos.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Shared\\DTOs\\Staff\\StaffDtos.cs",
+              "RelativeToolTip": "src\\BarberBooking.Shared\\DTOs\\Staff\\StaffDtos.cs",
+              "ViewState": "AgIAAAgAAAAAAAAAAAA3wCIAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-06T14:40:24.194Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 24,
+              "Title": "BusinessesController.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.API\\Controllers\\BusinessesController.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.API\\Controllers\\BusinessesController.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.API\\Controllers\\BusinessesController.cs",
+              "RelativeToolTip": "src\\BarberBooking.API\\Controllers\\BusinessesController.cs",
+              "ViewState": "AgIAACwAAAAAAAAAAAAgwEYAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-06T14:31:46.383Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 23,
+              "Title": "BusinessManager.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\BusinessManager.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.Business\\Services\\BusinessManager.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\BusinessManager.cs",
+              "RelativeToolTip": "src\\BarberBooking.Business\\Services\\BusinessManager.cs",
+              "ViewState": "AgIAAN4AAAAAAAAAAAAgwPgAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-06T14:30:48.384Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 25,
+              "Title": "IBusinessService.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\IBusinessService.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.Business\\Services\\IBusinessService.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\IBusinessService.cs",
+              "RelativeToolTip": "src\\BarberBooking.Business\\Services\\IBusinessService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-06T14:30:25.323Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 26,
+              "Title": "BusinessDtos.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Shared\\DTOs\\Businesses\\BusinessDtos.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.Shared\\DTOs\\Businesses\\BusinessDtos.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Shared\\DTOs\\Businesses\\BusinessDtos.cs",
+              "RelativeToolTip": "src\\BarberBooking.Shared\\DTOs\\Businesses\\BusinessDtos.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAADMAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-06T14:29:00.484Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 27,
+              "Title": "BarberBooking.Shared.csproj",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Shared\\BarberBooking.Shared.csproj",
+              "RelativeDocumentMoniker": "src\\BarberBooking.Shared\\BarberBooking.Shared.csproj",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Shared\\BarberBooking.Shared.csproj",
+              "RelativeToolTip": "src\\BarberBooking.Shared\\BarberBooking.Shared.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-11-06T14:28:34.049Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 28,
+              "Title": "ValidateModelAttribute.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.API\\Filters\\ValidateModelAttribute.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.API\\Filters\\ValidateModelAttribute.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.API\\Filters\\ValidateModelAttribute.cs",
+              "RelativeToolTip": "src\\BarberBooking.API\\Filters\\ValidateModelAttribute.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABYAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-06T14:25:11.969Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 29,
+              "Title": "LoginRequestValidator.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\ValidationRules\\Auth\\LoginRequestValidator.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.Business\\ValidationRules\\Auth\\LoginRequestValidator.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\ValidationRules\\Auth\\LoginRequestValidator.cs",
+              "RelativeToolTip": "src\\BarberBooking.Business\\ValidationRules\\Auth\\LoginRequestValidator.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-06T14:21:58.039Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 30,
+              "Title": "RegisterRequestValidator.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\ValidationRules\\Auth\\RegisterRequestValidator.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.Business\\ValidationRules\\Auth\\RegisterRequestValidator.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\ValidationRules\\Auth\\RegisterRequestValidator.cs",
+              "RelativeToolTip": "src\\BarberBooking.Business\\ValidationRules\\Auth\\RegisterRequestValidator.cs",
+              "ViewState": "AgIAAAgAAAAAAAAAAAAgwCIAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-06T14:21:40.103Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 33,
+              "Title": "IPasswordHasher.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Security\\IPasswordHasher.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.Business\\Security\\IPasswordHasher.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Security\\IPasswordHasher.cs",
+              "RelativeToolTip": "src\\BarberBooking.Business\\Security\\IPasswordHasher.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-06T14:19:37.152Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 34,
+              "Title": "AuthController.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.API\\Controllers\\AuthController.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.API\\Controllers\\AuthController.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.API\\Controllers\\AuthController.cs",
+              "RelativeToolTip": "src\\BarberBooking.API\\Controllers\\AuthController.cs",
+              "ViewState": "AgIAACMAAAAAAAAAAAAkwDsAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-06T14:17:43.93Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 31,
+              "Title": "AuthManager.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\AuthManager.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.Business\\Services\\AuthManager.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\AuthManager.cs",
+              "RelativeToolTip": "src\\BarberBooking.Business\\Services\\AuthManager.cs",
+              "ViewState": "AgIAAMAAAAAAAAAAAAAkwMMAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-06T14:16:12.33Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 35,
+              "Title": "IAuthService.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\IAuthService.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.Business\\Services\\IAuthService.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Services\\IAuthService.cs",
+              "RelativeToolTip": "src\\BarberBooking.Business\\Services\\IAuthService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-06T14:15:15.581Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 36,
+              "Title": "TokenService.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Security\\TokenService.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.Business\\Security\\TokenService.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Security\\TokenService.cs",
+              "RelativeToolTip": "src\\BarberBooking.Business\\Security\\TokenService.cs",
+              "ViewState": "AgIAACQAAAAAAAAAAAAgwFMAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-06T14:11:40.538Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 37,
+              "Title": "ITokenService.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Security\\ITokenService.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.Business\\Security\\ITokenService.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Security\\ITokenService.cs",
+              "RelativeToolTip": "src\\BarberBooking.Business\\Security\\ITokenService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-06T14:11:27.867Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 32,
+              "Title": "PasswordHasher.cs",
+              "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Security\\PasswordHasher.cs",
+              "RelativeDocumentMoniker": "src\\BarberBooking.Business\\Security\\PasswordHasher.cs",
+              "ToolTip": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Security\\PasswordHasher.cs",
+              "RelativeToolTip": "src\\BarberBooking.Business\\Security\\PasswordHasher.cs",
+              "ViewState": "AgIAAA4AAAAAAAAAAAAgwCgAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-06T14:00:50.951Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 38,
               "Title": "CurrentTenantService.cs",
               "DocumentMoniker": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\Security\\CurrentTenantService.cs",
               "RelativeDocumentMoniker": "src\\BarberBooking.Business\\Security\\CurrentTenantService.cs",
@@ -336,8 +657,7 @@
               "RelativeToolTip": "src\\BarberBooking.Business\\Security\\CurrentTenantService.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAAfAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-11-06T14:01:22.85Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-11-06T14:01:22.85Z"
             }
           ]
         },

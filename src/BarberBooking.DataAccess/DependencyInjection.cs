@@ -1,6 +1,7 @@
 using BarberBooking.DataAccess.Context;
 using BarberBooking.DataAccess.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -27,6 +28,7 @@ namespace BarberBooking.DataAccess
                 {
                     npgsqlOptions.UseNetTopologySuite();
                     npgsqlOptions.MigrationsAssembly(typeof(BarberBookingDbContext).Assembly.FullName);
+                    options.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
                 });
             });
 

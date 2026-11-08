@@ -10,6 +10,8 @@ using BarberBooking.Entities.Reviews;
 using BarberBooking.Entities.Scheduling;
 using BarberBooking.Entities.Services;
 using Microsoft.EntityFrameworkCore;
+using BarberBooking.Entities.Customers;
+using BarberBooking.Entities.Subscriptions;
 
 namespace BarberBooking.DataAccess.Context
 {
@@ -59,6 +61,13 @@ namespace BarberBooking.DataAccess.Context
         public DbSet<Review> Reviews => Set<Review>();
         public DbSet<Favorite> Favorites => Set<Favorite>();
         public DbSet<Notification> Notifications => Set<Notification>();
+
+        //CustomersPenalty
+        public DbSet<CustomerPenalty> CustomerPenalties => Set<CustomerPenalty>();
+
+        //Subscription
+        public DbSet<SubscriptionPlan> SubscriptionPlans => Set<SubscriptionPlan>();
+        public DbSet<BusinessSubscription> BusinessSubscriptions => Set<BusinessSubscription>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -120,7 +129,46 @@ namespace BarberBooking.DataAccess.Context
                     }
                 }
             }
+            var starterPlanId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+            var proPlanId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+            var staticSeedDate = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
+            modelBuilder.Entity<SubscriptionPlan>().HasData(
+                new SubscriptionPlan
+                {
+                    Id = starterPlanId,
+                    Name = "Starter",
+                    Description = "Tek şubeli butik kuaförler için ideal başlangıç paketi",
+                    MonthlyPrice = 499.00m,
+                    AnnualPrice = 4990.00m,
+                    MaxBranchCount = 1,
+                    MaxStaffPerBranch = 3,
+                    MaxMonthlyAppointments = 300,
+                    HasSmsNotification = false,
+                    HasAdvancedReporting = false,
+                    IsActive = true,
+                    CreatedAt = staticSeedDate
+                },
+                new SubscriptionPlan
+                {
+                    Id = proPlanId,
+                    Name = "Pro",
+                    Description = "Büyüyen ve birden fazla şubesi olan salonlar için profesyonel paket",
+                    MonthlyPrice = 999.00m,
+                    AnnualPrice = 9990.00m,
+                    MaxBranchCount = 3,
+                    MaxStaffPerBranch = 10,
+                    MaxMonthlyAppointments = 2000,
+                    HasSmsNotification = true,
+                    HasAdvancedReporting = true,
+                    IsActive = true,
+                    CreatedAt = staticSeedDate
+                }
+            );
+
         }
+
+
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
