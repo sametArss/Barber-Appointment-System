@@ -1,0 +1,49 @@
+services:
+  barberbooking-db:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: barberbooking-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: BarberBookingDb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Password12*
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d BarberBookingDb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - barber-network
+
+  barberbooking-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: barberbooking-api
+    restart: always
+    depends_on:
+      barberbooking-db:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=barberbooking-db;Port=5432;Database=BarberBookingDb;Username=postgres;Password=Password12*;
+      - JwtSettings__SecretKey=SuperSecretKeyForBarberBookingPlatformSaaS2026!
+      - JwtSettings__Issuer=BarberBookingAPI
+      - JwtSettings__Audience=BarberBookingClient
+      - JwtSettings__AccessTokenExpirationMinutes=60
+      - JwtSettings__RefreshTokenExpirationDays=7
+    ports:
+      - "5000:8080"
+    networks:
+      - barber-network
+
+volumes:
+  postgres_data:
+
+networks:
+  barber-network:
+    driver: bridge
