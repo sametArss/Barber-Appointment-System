@@ -55,7 +55,7 @@ namespace BarberBooking.API.Controllers
         }
 
         [HttpPatch("status")]
-        [Authorize(Roles = "BusinessOwner,BusinessManager,Employee")]
+        [Authorize(Roles = "BusinessOwner,BusinessManager")]
         public async Task<IActionResult> UpdateStatus([FromBody] UpdateAppointmentStatusRequestDto request, CancellationToken cancellationToken)
         {
             var result = await _appointmentService.UpdateStatusAsync(request, cancellationToken);
@@ -79,8 +79,26 @@ namespace BarberBooking.API.Controllers
             return Ok(result);
         }
 
+        [HttpGet("my-work-appointments")]
+        [Authorize(Roles = "Employee")]
+        public async Task<IActionResult> GetMyWorkAppointments(CancellationToken cancellationToken)
+        {
+            var result = await _appointmentService.GetMyWorkAppointmentsAsync(cancellationToken);
+            if (!result.Success) return StatusCode(result.StatusCode, result);
+            return Ok(result);
+        }
+
+        [HttpPatch("my-work-status")]
+        [Authorize(Roles = "Employee")]
+        public async Task<IActionResult> UpdateMyWorkStatus([FromBody] UpdateAppointmentStatusRequestDto request, CancellationToken cancellationToken)
+        {
+            var result = await _appointmentService.UpdateMyWorkAppointmentStatusAsync(request, cancellationToken);
+            if (!result.Success) return StatusCode(result.StatusCode, result);
+            return Ok(result);
+        }
+
         [HttpGet("branch/{branchId:guid}")]
-        [Authorize(Roles = "BusinessOwner,BusinessManager,Employee")]
+        [Authorize(Roles = "BusinessOwner,BusinessManager")]
         public async Task<IActionResult> GetBranchAppointments([FromRoute] Guid branchId, [FromQuery] DateOnly? date, CancellationToken cancellationToken)
         {
             var result = await _appointmentService.GetBranchAppointmentsAsync(branchId, date, cancellationToken);

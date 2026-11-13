@@ -335,5 +335,35 @@ namespace BarberBooking.Business.Services
 
             return DataResult<IReadOnlyList<StaffResponseDto>>.Ok(response);
         }
+
+        public async Task<IDataResult<IReadOnlyList<EmployeeWorkplaceResponseDto>>> GetMyWorkplacesAsync(CancellationToken cancellationToken = default)
+        {
+            var userId = _tenantService.UserId;
+            if (!userId.HasValue)
+                return DataResult<IReadOnlyList<EmployeeWorkplaceResponseDto>>.Fail("Oturum açmanız gerekmektedir.", 401);
+
+            var profiles = await _unitOfWork.Repository<StaffProfile>().Query()
+                .Include(profile => profile.BusinessMember).ThenInclude(member => member.Business)
+                .Include(profile => profile.BranchAssignments).ThenInclude(assignment => assignment.Branch)
+                .Where(profile => profile.BusinessMember.UserId == userId.Value && profile.BusinessMember.IsActive)
+                .ToListAsync(cancellationToken);
+
+            var workplaces = profiles.SelectMany(profile => profile.BranchAssignments.Select(assignment => new EmployeeWorkplaceResponseDto
+            {
+                StaffProfileId = profile.Id,
+                BusinessId = profile.BusinessMember.BusinessId,
+                BusinessName = profile.BusinessMember.Business.Name,
+                BranchId = assignment.BranchId,
+                BranchName = assignment.Branch.Name,
+                Address = assignment.Branch.Address,
+                City = assignment.Branch.City,
+                District = assignment.Branch.District,
+                BusinessPhoneNumber = profile.BusinessMember.Business.PhoneNumber,
+                Biography = profile.Biography,
+                IsBookable = profile.IsBookable
+            })).ToList();
+
+            return DataResult<IReadOnlyList<EmployeeWorkplaceResponseDto>>.Ok(workplaces);
+        }
     }
 }

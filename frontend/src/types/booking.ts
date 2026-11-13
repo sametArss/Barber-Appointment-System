@@ -78,6 +78,20 @@ export interface StaffResponse {
   assignedBranchIds: string[];
 }
 
+export interface EmployeeWorkplace {
+  staffProfileId: string;
+  businessId: string;
+  businessName: string;
+  branchId: string;
+  branchName: string;
+  address: string;
+  city: string;
+  district: string;
+  businessPhoneNumber: string;
+  biography: string | null;
+  isBookable: boolean;
+}
+
 /**
  * Çalışma saati mola aralığı (WorkingHourBreakDto).
  */

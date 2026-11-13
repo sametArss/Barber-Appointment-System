@@ -42,4 +42,19 @@
         public bool IsBookable { get; set; }
         public List<Guid> AssignedBranchIds { get; set; } = new();
     }
+
+    public class EmployeeWorkplaceResponseDto
+    {
+        public Guid StaffProfileId { get; set; }
+        public Guid BusinessId { get; set; }
+        public string BusinessName { get; set; } = string.Empty;
+        public Guid BranchId { get; set; }
+        public string BranchName { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
+        public string City { get; set; } = string.Empty;
+        public string District { get; set; } = string.Empty;
+        public string BusinessPhoneNumber { get; set; } = string.Empty;
+        public string? Biography { get; set; }
+        public bool IsBookable { get; set; }
+    }
 }

@@ -458,6 +458,87 @@ namespace BarberBooking.Business.Services
             return DataResult<IReadOnlyList<AppointmentResponseDto>>.Ok(response);
         }
 
+        public async Task<IDataResult<IReadOnlyList<AppointmentResponseDto>>> GetMyWorkAppointmentsAsync(CancellationToken cancellationToken = default)
+        {
+            var userId = _tenantService.UserId;
+            if (!userId.HasValue)
+                return DataResult<IReadOnlyList<AppointmentResponseDto>>.Fail("Oturum açmanız gerekmektedir.", 401);
+
+            var appointments = await _unitOfWork.Repository<Appointment>().Query()
+                .Include(a => a.Branch).Include(a => a.Service)
+                .Include(a => a.StaffProfile).ThenInclude(profile => profile.BusinessMember).ThenInclude(member => member.User)
+                .Include(a => a.Customer)
+                .Where(a => a.StaffProfile.BusinessMember.UserId == userId.Value)
+                .OrderBy(a => a.StartAt)
+                .ToListAsync(cancellationToken);
+
+            var response = appointments.Select(a => new AppointmentResponseDto
+            {
+                Id = a.Id,
+                CustomerUserId = a.CustomerUserId,
+                CustomerFullName = $"{a.Customer.FirstName} {a.Customer.LastName}",
+                CustomerPhoneNumber = a.Customer.PhoneNumber,
+                BusinessId = a.BusinessId,
+                BranchId = a.BranchId,
+                BranchName = a.Branch.Name,
+                StaffProfileId = a.StaffProfileId,
+                StaffFullName = $"{a.StaffProfile.BusinessMember.User.FirstName} {a.StaffProfile.BusinessMember.User.LastName}",
+                ServiceId = a.ServiceId,
+                ServiceName = a.Service.Name,
+                StartAt = a.StartAt,
+                EndAt = a.EndAt,
+                PriceSnapshot = a.PriceSnapshot,
+                DurationSnapshot = a.DurationSnapshot,
+                Status = (int)a.Status,
+                StatusName = a.Status.ToString(),
+                CancellationReason = a.CancellationReason
+            }).ToList();
+
+            return DataResult<IReadOnlyList<AppointmentResponseDto>>.Ok(response);
+        }
+
+        public async Task<IResult> UpdateMyWorkAppointmentStatusAsync(UpdateAppointmentStatusRequestDto request, CancellationToken cancellationToken = default)
+        {
+            var userId = _tenantService.UserId;
+            if (!userId.HasValue) return Result.Fail("Oturum açmanız gerekmektedir.", 401);
+            if (!Enum.IsDefined(typeof(AppointmentStatus), request.NewStatus)) return Result.Fail("Geçersiz randevu durumu.", 400);
+
+            var appointmentRepo = _unitOfWork.Repository<Appointment>();
+            var appointment = await appointmentRepo.Query()
+                .Include(a => a.StaffProfile).ThenInclude(profile => profile.BusinessMember)
+                .FirstOrDefaultAsync(a => a.Id == request.AppointmentId && a.StaffProfile.BusinessMember.UserId == userId.Value, cancellationToken);
+            if (appointment == null) return Result.Fail("Bu randevu çalışan hesabınızda bulunamadı.", 404);
+
+            var newStatus = (AppointmentStatus)request.NewStatus;
+            var allowedTransition = appointment.Status == AppointmentStatus.Pending
+                ? newStatus is AppointmentStatus.Confirmed or AppointmentStatus.Cancelled
+                : appointment.Status == AppointmentStatus.Confirmed
+                    && newStatus is AppointmentStatus.Completed or AppointmentStatus.Cancelled;
+            if (!allowedTransition)
+                return Result.Fail("Bu randevu için seçilen durum değişikliğine izin verilmiyor.", 400);
+
+            var oldStatus = appointment.Status;
+            appointment.Status = newStatus;
+            if (newStatus == AppointmentStatus.Cancelled)
+            {
+                appointment.CancelledAt = DateTimeOffset.UtcNow;
+                appointment.CancelledByUserId = userId.Value;
+                appointment.CancellationReason = string.IsNullOrWhiteSpace(request.Note) ? "Çalışan tarafından iptal edildi." : request.Note.Trim();
+            }
+            appointmentRepo.Update(appointment);
+            await _unitOfWork.Repository<AppointmentStatusHistory>().AddAsync(new AppointmentStatusHistory
+            {
+                Id = Guid.NewGuid(),
+                AppointmentId = appointment.Id,
+                OldStatus = oldStatus,
+                NewStatus = newStatus,
+                ChangedByUserId = userId.Value,
+                Note = request.Note?.Trim()
+            }, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            return Result.Ok("Randevu durumu güncellendi.");
+        }
+
         public async Task<IDataResult<IReadOnlyList<AppointmentResponseDto>>> GetBranchAppointmentsAsync(Guid branchId, DateOnly? date = null, CancellationToken cancellationToken = default)
         {
             var query = _unitOfWork.Repository<Appointment>().Query()

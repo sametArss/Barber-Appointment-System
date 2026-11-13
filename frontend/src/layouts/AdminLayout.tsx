@@ -4,6 +4,7 @@ import {
   BarChart3,
   Building2,
   CalendarDays,
+  CalendarCheck2,
   ChevronLeft,
   ChevronRight,
   CreditCard,
@@ -34,11 +35,20 @@ const sidebarItems = [
   { to: '/admin/reports', label: 'Gelir Raporları', icon: BarChart3 },
 ];
 
+const employeeSidebarItems = [
+  { to: '/admin/dashboard', label: 'Ana Sayfa', icon: LayoutDashboard },
+  { to: '/admin/workplaces', label: 'Çalıştığım Yerler', icon: Building2 },
+  { to: '/admin/appointments', label: 'Randevularım', icon: CalendarCheck2 },
+  { to: '/admin/profile', label: 'Hesabım', icon: UserCircle2 },
+];
+
 export const AdminLayout: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user, logout } = useAuthStore();
+  const { user, logout, hasRole } = useAuthStore();
   const navigate = useNavigate();
+  const employeeOnly = hasRole('Employee') && !hasRole(['BusinessOwner', 'BusinessManager']);
+  const navigationItems = employeeOnly ? employeeSidebarItems : sidebarItems;
 
   const handleLogout = () => {
     logout();
@@ -75,7 +85,7 @@ export const AdminLayout: React.FC = () => {
                   Salon<span className="text-amber-500 dark:text-amber-400">Yönetim</span>
                 </span>
                 <span className="block text-[10px] uppercase tracking-widest text-slate-500 dark:text-zinc-400 font-semibold">
-                  İşletme Portalı
+                  {employeeOnly ? 'Çalışan Portalı' : 'İşletme Portalı'}
                 </span>
               </div>
             )}
@@ -102,7 +112,7 @@ export const AdminLayout: React.FC = () => {
 
         {/* Navigation Links */}
         <nav className="flex-1 space-y-1.5 p-3 overflow-y-auto">
-          {sidebarItems.map((item) => {
+          {navigationItems.map((item) => {
             const Icon = item.icon;
             return (
               <NavLink
@@ -157,10 +167,10 @@ export const AdminLayout: React.FC = () => {
             </button>
             <div className="hidden sm:block">
               <p className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
-                Salon Yönetim Sistemi
+                {employeeOnly ? 'ÇALIŞAN PORTALI' : 'SALON YÖNETİM SİSTEMİ'}
               </p>
               <p className="text-sm font-bold text-slate-800 dark:text-zinc-200">
-                Kontrol &amp; Takvim Merkezi
+                {employeeOnly ? 'Çalışma alanı ve randevular' : 'Kontrol & Takvim Merkezi'}
               </p>
             </div>
           </div>
@@ -180,7 +190,7 @@ export const AdminLayout: React.FC = () => {
                 <p className="text-[10px] text-slate-500 dark:text-zinc-400 leading-tight">{user?.email}</p>
               </div>
               <Badge variant="amber" className="hidden md:inline-flex text-[10px] py-0">
-                {user?.roles?.[0] === 'BusinessOwner' ? 'İşletme Sahibi' : 'Yönetici'}
+                {employeeOnly ? 'Çalışan' : user?.roles?.includes('BusinessOwner') ? 'İşletme Sahibi' : 'Yönetici'}
               </Badge>
             </div>
 

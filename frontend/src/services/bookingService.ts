@@ -64,6 +64,16 @@ export const bookingService = {
     return data;
   },
 
+  async getMyWorkAppointments(): Promise<DataResult<AppointmentResponse[]>> {
+    const { data } = await apiClient.get<DataResult<AppointmentResponse[]>>('/api/appointments/my-work-appointments');
+    return data;
+  },
+
+  async updateMyWorkAppointmentStatus(payload: { appointmentId: string; newStatus: number; note?: string }): Promise<Result> {
+    const { data } = await apiClient.patch<Result>('/api/appointments/my-work-status', payload);
+    return data;
+  },
+
   async cancelAppointment(payload: CancelAppointmentRequest): Promise<Result> {
     const { data } = await apiClient.post<Result>('/api/appointments/cancel', payload);
     return data;

@@ -65,6 +65,15 @@ namespace BarberBooking.API.Controllers
             return Ok(result);
         }
 
+        [HttpGet("me/workplaces")]
+        [Authorize(Roles = "Employee")]
+        public async Task<IActionResult> GetMyWorkplaces(CancellationToken cancellationToken)
+        {
+            var result = await _staffService.GetMyWorkplacesAsync(cancellationToken);
+            if (!result.Success) return StatusCode(result.StatusCode, result);
+            return Ok(result);
+        }
+
         [HttpGet("branch/{branchId:guid}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetBranchStaff([FromRoute] Guid branchId, CancellationToken cancellationToken)

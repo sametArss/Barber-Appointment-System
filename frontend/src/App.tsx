@@ -5,6 +5,7 @@ import { AdminLayout } from '@/layouts/AdminLayout';
 import { CustomerLayout } from '@/layouts/CustomerLayout';
 import { AdminCalendarPage } from '@/pages/AdminCalendarPage';
 import { AdminDashboardPage } from '@/pages/AdminDashboardPage';
+import { EmployeeAppointmentsPage, EmployeeDashboardPage, EmployeeWorkplacesPage } from '@/pages/EmployeePortalPages';
 import {
   AdminBranchesPage,
   AdminBusinessProfilePage,
@@ -22,6 +23,13 @@ import { HomePage } from '@/pages/HomePage';
 import { LoginPage } from '@/pages/LoginPage';
 import { MyAppointmentsPage } from '@/pages/MyAppointmentsPage';
 import { RegisterPage } from '@/pages/RegisterPage';
+import { useAuthStore } from '@/store/useAuthStore';
+
+const AdminHomePage: React.FC = () => {
+  const { hasRole } = useAuthStore();
+  const employeeOnly = hasRole('Employee') && !hasRole(['BusinessOwner', 'BusinessManager']);
+  return employeeOnly ? <EmployeeDashboardPage /> : <AdminDashboardPage />;
+};
 
 export function App() {
   return (
@@ -58,15 +66,21 @@ export function App() {
           >
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<Navigate to="/admin/dashboard" replace />} />
-              <Route path="dashboard" element={<AdminDashboardPage />} />
-              <Route path="calendar" element={<AdminCalendarPage />} />
-              <Route path="branches" element={<AdminBranchesPage />} />
-              <Route path="business" element={<AdminBusinessProfilePage />} />
               <Route path="profile" element={<CustomerProfilePage />} />
-              <Route path="staff" element={<AdminStaffPage />} />
-              <Route path="services" element={<AdminServicesPage />} />
-              <Route path="subscription" element={<AdminSubscriptionPage />} />
-              <Route path="reports" element={<AdminReportsPage />} />
+              <Route path="dashboard" element={<AdminHomePage />} />
+              <Route element={<RoleGuard allowedRoles={['BusinessOwner', 'BusinessManager']} />}>
+                <Route path="calendar" element={<AdminCalendarPage />} />
+                <Route path="branches" element={<AdminBranchesPage />} />
+                <Route path="business" element={<AdminBusinessProfilePage />} />
+                <Route path="staff" element={<AdminStaffPage />} />
+                <Route path="services" element={<AdminServicesPage />} />
+                <Route path="subscription" element={<AdminSubscriptionPage />} />
+                <Route path="reports" element={<AdminReportsPage />} />
+              </Route>
+              <Route element={<RoleGuard allowedRoles={['Employee']} />}>
+                <Route path="workplaces" element={<EmployeeWorkplacesPage />} />
+                <Route path="appointments" element={<EmployeeAppointmentsPage />} />
+              </Route>
             </Route>
           </Route>
         </Route>
