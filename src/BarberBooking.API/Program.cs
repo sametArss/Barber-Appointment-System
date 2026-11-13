@@ -66,6 +66,18 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 
 builder.Services.AddOpenApi();
 
+// Cors engellemesi
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000", "http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
 var app = builder.Build();
 
 // Otomatik Migration ve Seed Veri Yükleme
@@ -87,6 +99,7 @@ if (app.Environment.IsDevelopment())
 }
 app.UseHttpsRedirection();
 
+app.UseCors("AllowFrontend");
 // Middlewares
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseExceptionHandler();

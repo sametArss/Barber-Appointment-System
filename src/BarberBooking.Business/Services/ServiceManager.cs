@@ -51,24 +51,29 @@ namespace BarberBooking.Business.Services
 
             await _unitOfWork.Repository<Service>().AddAsync(service, cancellationToken);
 
+            var assignedBranchIds = new List<Guid>();
+            var assignedBranchNames = new List<string>();
+
             if (request.AssignToBranchIds != null && request.AssignToBranchIds.Count > 0)
             {
                 var branchRepo = _unitOfWork.Repository<Branch>();
-                var validBranchIds = await branchRepo.Query()
+                var validBranches = await branchRepo.Query()
                     .Where(b => b.BusinessId == businessId.Value && request.AssignToBranchIds.Contains(b.Id))
-                    .Select(b => b.Id)
+                    .Select(b => new { b.Id, b.Name })
                     .ToListAsync(cancellationToken);
 
                 var branchServiceRepo = _unitOfWork.Repository<BranchService>();
-                foreach (var branchId in validBranchIds)
+                foreach (var branch in validBranches)
                 {
                     await branchServiceRepo.AddAsync(new BranchService
                     {
                         Id = Guid.NewGuid(),
-                        BranchId = branchId,
+                        BranchId = branch.Id,
                         ServiceId = service.Id,
                         IsActive = true
                     }, cancellationToken);
+                    assignedBranchIds.Add(branch.Id);
+                    assignedBranchNames.Add(branch.Name);
                 }
             }
 
@@ -83,7 +88,9 @@ namespace BarberBooking.Business.Services
                 BasePrice = service.BasePrice,
                 DurationMinutes = service.DurationMinutes,
                 ImageUrl = service.ImageUrl,
-                IsActive = service.IsActive
+                IsActive = service.IsActive,
+                AssignedBranchIds = assignedBranchIds,
+                AssignedBranchNames = assignedBranchNames
             };
 
             return DataResult<ServiceResponseDto>.Ok(response, "Hizmet başarıyla eklendi.");
@@ -164,8 +171,11 @@ namespace BarberBooking.Business.Services
                 return DataResult<IReadOnlyList<ServiceResponseDto>>.Fail("İşletme yetkiniz bulunamadı.", 403);
             }
 
-            var services = await _unitOfWork.Repository<Service>()
-                .GetAsync(s => s.BusinessId == businessId.Value, cancellationToken);
+            var services = await _unitOfWork.Repository<Service>().Query()
+                .Include(s => s.BranchServices)
+                    .ThenInclude(bs => bs.Branch)
+                .Where(s => s.BusinessId == businessId.Value)
+                .ToListAsync(cancellationToken);
 
             var response = services.Select(s => new ServiceResponseDto
             {
@@ -176,7 +186,9 @@ namespace BarberBooking.Business.Services
                 BasePrice = s.BasePrice,
                 DurationMinutes = s.DurationMinutes,
                 ImageUrl = s.ImageUrl,
-                IsActive = s.IsActive
+                IsActive = s.IsActive,
+                AssignedBranchIds = s.BranchServices.Where(bs => bs.IsActive).Select(bs => bs.BranchId).ToList(),
+                AssignedBranchNames = s.BranchServices.Where(bs => bs.IsActive && bs.Branch != null).Select(bs => bs.Branch.Name).ToList()
             }).ToList();
 
             return DataResult<IReadOnlyList<ServiceResponseDto>>.Ok(response);
@@ -239,9 +251,18 @@ namespace BarberBooking.Business.Services
 
         public async Task<IDataResult<IReadOnlyList<BranchServiceResponseDto>>> GetBranchServicesAsync(Guid branchId, CancellationToken cancellationToken = default)
         {
+            var branch = await _unitOfWork.Repository<Branch>().FirstOrDefaultAsync(b => b.Id == branchId && b.IsActive, cancellationToken);
+            if (branch == null)
+            {
+                return DataResult<IReadOnlyList<BranchServiceResponseDto>>.Ok(new List<BranchServiceResponseDto>());
+            }
+
             var branchServices = await _unitOfWork.Repository<BranchService>().Query()
                 .Include(bs => bs.Service)
-                .Where(bs => bs.BranchId == branchId && bs.IsActive && bs.Service.IsActive)
+                .Where(bs => bs.BranchId == branchId &&
+                             bs.IsActive &&
+                             bs.Service.IsActive &&
+                             bs.Service.BusinessId == branch.BusinessId)
                 .ToListAsync(cancellationToken);
 
             var response = branchServices.Select(bs => new BranchServiceResponseDto

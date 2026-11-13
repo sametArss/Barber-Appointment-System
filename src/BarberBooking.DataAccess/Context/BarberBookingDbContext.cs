@@ -19,6 +19,10 @@ namespace BarberBooking.DataAccess.Context
     {
         private readonly ICurrentTenantService? _tenantService;
 
+        public Guid? CurrentTenantId => _tenantService?.BusinessId;
+        public bool IsSuperAdmin => _tenantService?.IsSuperAdmin ?? false;
+        public bool HasTenantService => _tenantService != null;
+
         public BarberBookingDbContext(
             DbContextOptions<BarberBookingDbContext> options,
             ICurrentTenantService? tenantService = null)
@@ -102,23 +106,23 @@ namespace BarberBooking.DataAccess.Context
                     if (isTenant)
                     {
                         var businessIdProp = Expression.Property(parameter, nameof(ITenantEntity.BusinessId));
-                        
-                        // _tenantService == null || _tenantService.IsSuperAdmin || e.BusinessId == _tenantService.BusinessId
-                        var tenantServiceExpr = Expression.Constant(_tenantService, typeof(ICurrentTenantService));
-                        var isSuperAdminExpr = Expression.Property(tenantServiceExpr, nameof(ICurrentTenantService.IsSuperAdmin));
-                        var currentTenantIdExpr = Expression.Property(tenantServiceExpr, nameof(ICurrentTenantService.BusinessId));
 
-                        var tenantNullCheck = Expression.Equal(tenantServiceExpr, Expression.Constant(null, typeof(ICurrentTenantService)));
+                        var dbContextExpr = Expression.Constant(this);
+                        var hasTenantServiceExpr = Expression.Property(dbContextExpr, nameof(HasTenantService));
+                        var isSuperAdminExpr = Expression.Property(dbContextExpr, nameof(IsSuperAdmin));
+                        var currentTenantIdExpr = Expression.Property(dbContextExpr, nameof(CurrentTenantId));
+
+                        var tenantNullCheck = Expression.IsFalse(hasTenantServiceExpr);
                         var superAdminCheck = Expression.IsTrue(isSuperAdminExpr);
                         var tenantIdEquals = Expression.Equal(
-                            businessIdProp, 
+                            businessIdProp,
                             Expression.Coalesce(currentTenantIdExpr, Expression.Constant(Guid.Empty))
                         );
 
                         var tenantFilter = Expression.OrElse(tenantNullCheck, Expression.OrElse(superAdminCheck, tenantIdEquals));
 
-                        filterBody = filterBody == null 
-                            ? tenantFilter 
+                        filterBody = filterBody == null
+                            ? tenantFilter
                             : Expression.AndAlso(filterBody, tenantFilter);
                     }
 

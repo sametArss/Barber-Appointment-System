@@ -167,6 +167,7 @@ namespace BarberBooking.Business.Services
 
             // Müşteri ceza & blokaj kontrolü
             var penaltyCheck = await _unitOfWork.Repository<CustomerPenalty>().Query()
+                .IgnoreQueryFilters()
                 .Where(p => p.CustomerUserId == customerUserId.Value &&
                             p.BusinessId == branch.BusinessId &&
                             p.IsActive &&
@@ -383,6 +384,33 @@ namespace BarberBooking.Business.Services
             };
 
             await _unitOfWork.Repository<AppointmentStatusHistory>().AddAsync(history, cancellationToken);
+
+            if (newStatusEnum == AppointmentStatus.NoShow)
+            {
+                var hasPenalty = await _unitOfWork.Repository<CustomerPenalty>().Query()
+                    .IgnoreQueryFilters()
+                    .AnyAsync(p => p.AppointmentId == appointment.Id, cancellationToken);
+
+                if (!hasPenalty)
+                {
+                    var autoPenalty = new CustomerPenalty
+                    {
+                        Id = Guid.NewGuid(),
+                        BusinessId = appointment.BusinessId,
+                        CustomerUserId = appointment.CustomerUserId,
+                        AppointmentId = appointment.Id,
+                        Reason = PenaltyReason.NoShow,
+                        Note = string.IsNullOrWhiteSpace(request.Note)
+                            ? "Randevuya gelmedi (Otomatik No-Show cezası)."
+                            : request.Note.Trim(),
+                        IsActive = true,
+                        ExpiresAt = DateTimeOffset.UtcNow.AddDays(30)
+                    };
+
+                    await _unitOfWork.Repository<CustomerPenalty>().AddAsync(autoPenalty, cancellationToken);
+                }
+            }
+
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return Result.Ok("Randevu durumu güncellendi.");

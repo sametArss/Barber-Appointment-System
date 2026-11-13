@@ -1,8 +1,9 @@
-﻿using BarberBooking.Business.Security;
+using BarberBooking.Business.Security;
 using BarberBooking.DataAccess.Repositories;
 using BarberBooking.Entities.Businesses;
 using BarberBooking.Entities.Common;
 using BarberBooking.Entities.Identity;
+using BarberBooking.Entities.Scheduling;
 using BarberBooking.Shared.DTOs.Staff;
 using BarberBooking.Shared.Results;
 using Microsoft.EntityFrameworkCore;
@@ -14,15 +15,18 @@ namespace BarberBooking.Business.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentTenantService _tenantService;
         private readonly IPasswordHasher _passwordHasher;
+        private readonly ISubscriptionService _subscriptionService;
 
         public StaffManager(
             IUnitOfWork unitOfWork,
             ICurrentTenantService tenantService,
-            IPasswordHasher passwordHasher)
+            IPasswordHasher passwordHasher,
+            ISubscriptionService subscriptionService)
         {
             _unitOfWork = unitOfWork;
             _tenantService = tenantService;
             _passwordHasher = passwordHasher;
+            _subscriptionService = subscriptionService;
         }
 
         public async Task<IDataResult<StaffResponseDto>> CreateStaffAsync(CreateStaffRequestDto request, CancellationToken cancellationToken = default)
@@ -31,6 +35,18 @@ namespace BarberBooking.Business.Services
             if (!businessId.HasValue)
             {
                 return DataResult<StaffResponseDto>.Fail("İşletme yetkiniz bulunamadı.", 403);
+            }
+
+            if (request.BranchIds.Count > 0)
+            {
+                foreach (var branchId in request.BranchIds.Distinct())
+                {
+                    var limitCheck = await _subscriptionService.CheckStaffLimitAsync(businessId.Value, branchId, cancellationToken);
+                    if (!limitCheck.Success)
+                    {
+                        return DataResult<StaffResponseDto>.Fail(limitCheck.Message ?? "Paket personel limitine ulaşıldı.", 403);
+                    }
+                }
             }
 
             var emailTrimmed = request.Email.Trim();
@@ -124,6 +140,9 @@ namespace BarberBooking.Business.Services
                         .ToListAsync(cancellationToken);
 
                     var assignmentRepo = _unitOfWork.Repository<StaffBranchAssignment>();
+                    var workingHourRepo = _unitOfWork.Repository<StaffWorkingHour>();
+                    var breakRepo = _unitOfWork.Repository<StaffWorkingHourBreak>();
+
                     foreach (var branchId in validBranchIds)
                     {
                         await assignmentRepo.AddAsync(new StaffBranchAssignment
@@ -132,6 +151,29 @@ namespace BarberBooking.Business.Services
                             BranchId = branchId,
                             AssignedAt = DateTimeOffset.UtcNow
                         }, cancellationToken);
+
+                        // Varsayılan 7 gün mesai (09:00 - 19:00) ve öğle molası (13:00 - 14:00)
+                        for (int day = 0; day <= 6; day++)
+                        {
+                            var newHour = new StaffWorkingHour
+                            {
+                                Id = Guid.NewGuid(),
+                                StaffProfileId = staffProfile.Id,
+                                BranchId = branchId,
+                                DayOfWeek = (DayOfWeek)day,
+                                StartTime = new TimeOnly(9, 0),
+                                EndTime = new TimeOnly(19, 0)
+                            };
+                            await workingHourRepo.AddAsync(newHour, cancellationToken);
+
+                            await breakRepo.AddAsync(new StaffWorkingHourBreak
+                            {
+                                Id = Guid.NewGuid(),
+                                StaffWorkingHourId = newHour.Id,
+                                StartTime = new TimeOnly(13, 0),
+                                EndTime = new TimeOnly(14, 0)
+                            }, cancellationToken);
+                        }
                     }
                 }
 

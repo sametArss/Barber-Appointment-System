@@ -34,6 +34,18 @@ namespace BarberBooking.Business.Services
                 return Result.Fail("Geçersiz ceza nedeni.", 400);
             }
 
+            if (request.AppointmentId.HasValue)
+            {
+                var alreadyExists = await _unitOfWork.Repository<CustomerPenalty>().Query()
+                    .IgnoreQueryFilters()
+                    .AnyAsync(p => p.AppointmentId == request.AppointmentId.Value && p.IsActive, cancellationToken);
+
+                if (alreadyExists)
+                {
+                    return Result.Ok("Müşteri ceza kaydı başarıyla eklendi.");
+                }
+            }
+
             var penalty = new CustomerPenalty
             {
                 Id = Guid.NewGuid(),
@@ -57,8 +69,9 @@ namespace BarberBooking.Business.Services
             var now = DateTimeOffset.UtcNow;
 
             var activePenalties = await _unitOfWork.Repository<CustomerPenalty>().Query()
+                .IgnoreQueryFilters()
                 .Where(p => p.CustomerUserId == customerUserId &&
-                            p.BusinessId == businessId &&
+                            (businessId == Guid.Empty || p.BusinessId == businessId) &&
                             p.IsActive &&
                             p.ExpiresAt > now)
                 .OrderByDescending(p => p.CreatedAt)

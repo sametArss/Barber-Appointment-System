@@ -256,4 +256,3 @@ C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.API\bin\Debug\net10.0\Mic
 C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.API\bin\Debug\net10.0\Microsoft.Extensions.Options.ConfigurationExtensions.dll
 C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.API\bin\Debug\net10.0\Microsoft.Extensions.Primitives.dll
 C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.API\bin\Debug\net10.0\Scalar.AspNetCore.dll
-C:\Users\Samet\Desktop\Barber Gemini\src\BarberBooking.API\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt

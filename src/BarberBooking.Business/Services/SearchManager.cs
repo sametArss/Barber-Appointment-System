@@ -31,43 +31,9 @@ namespace BarberBooking.Business.Services
 
             var radiusMeters = query.RadiusKm * 1000.0;
 
-            var branchQuery = _unitOfWork.Repository<Branch>().Query()
+            var branches = await _unitOfWork.Repository<Branch>().Query()
                 .Include(b => b.Business)
-                .Where(b => b.IsActive && b.Business.IsActive && b.Location != null);
-
-            // Şehir & İlçe filtreleri
-            if (!string.IsNullOrWhiteSpace(query.City))
-            {
-                var cityTrim = query.City.Trim().ToUpperInvariant();
-                branchQuery = branchQuery.Where(b => b.City.ToUpper() == cityTrim);
-            }
-
-            if (!string.IsNullOrWhiteSpace(query.District))
-            {
-                var distTrim = query.District.Trim().ToUpperInvariant();
-                branchQuery = branchQuery.Where(b => b.District.ToUpper() == distTrim);
-            }
-
-            // Metin araması (İşletme adı, şube adı veya hizmet adına göre)
-            if (!string.IsNullOrWhiteSpace(query.QueryText))
-            {
-                var term = query.QueryText.Trim().ToUpperInvariant();
-
-                var matchingBranchIdsFromServices = await _unitOfWork.Repository<BranchService>().Query()
-                    .Include(bs => bs.Service)
-                    .Where(bs => bs.IsActive && bs.Service.IsActive && bs.Service.Name.ToUpper().Contains(term))
-                    .Select(bs => bs.BranchId)
-                    .Distinct()
-                    .ToListAsync(cancellationToken);
-
-                branchQuery = branchQuery.Where(b =>
-                    b.Name.ToUpper().Contains(term) ||
-                    b.Business.Name.ToUpper().Contains(term) ||
-                    matchingBranchIdsFromServices.Contains(b.Id));
-            }
-
-            // Temel şube bilgilerini çek
-            var branches = await branchQuery
+                .Where(b => b.IsActive && b.Business.IsActive && b.Location != null)
                 .Select(b => new
                 {
                     Branch = b,
@@ -76,14 +42,61 @@ namespace BarberBooking.Business.Services
                 })
                 .ToListAsync(cancellationToken);
 
+            var allBranchIds = branches.Select(b => b.Branch.Id).ToList();
+            var branchServices = await _unitOfWork.Repository<BranchService>().Query()
+                .Include(bs => bs.Service)
+                .Include(bs => bs.Branch)
+                .Where(bs => allBranchIds.Contains(bs.BranchId) &&
+                             bs.IsActive &&
+                             bs.Service.IsActive &&
+                             bs.Service.BusinessId == bs.Branch.BusinessId)
+                .Select(bs => new { bs.BranchId, ServiceName = bs.Service.Name })
+                .ToListAsync(cancellationToken);
+
+            var servicesByBranchId = branchServices
+                .GroupBy(bs => bs.BranchId)
+                .ToDictionary(g => g.Key, g => g.Select(s => s.ServiceName).ToList());
+
+            var filteredBranches = branches.AsEnumerable();
+
+            // Şehir filtresi (Türkçe karakter duyarsız)
+            if (!string.IsNullOrWhiteSpace(query.City))
+            {
+                var cityNorm = NormalizeSearchText(query.City);
+                filteredBranches = filteredBranches.Where(x =>
+                    NormalizeSearchText(x.Branch.City).Contains(cityNorm));
+            }
+
+            // İlçe filtresi (Türkçe karakter duyarsız)
+            if (!string.IsNullOrWhiteSpace(query.District))
+            {
+                var distNorm = NormalizeSearchText(query.District);
+                filteredBranches = filteredBranches.Where(x =>
+                    NormalizeSearchText(x.Branch.District).Contains(distNorm));
+            }
+
+            // Metin araması (İşletme adı, şube adı veya yalnızca o şubeye atanmış hizmet adına göre)
+            if (!string.IsNullOrWhiteSpace(query.QueryText))
+            {
+                var termNorm = NormalizeSearchText(query.QueryText);
+                filteredBranches = filteredBranches.Where(x =>
+                {
+                    var branchMatch = NormalizeSearchText(x.Branch.Name).Contains(termNorm);
+                    var bizMatch = NormalizeSearchText(x.BusinessName).Contains(termNorm);
+                    var srvMatch = servicesByBranchId.TryGetValue(x.Branch.Id, out var sList) &&
+                                   sList.Any(s => NormalizeSearchText(s).Contains(termNorm));
+                    return branchMatch || bizMatch || srvMatch;
+                });
+            }
+
             // Metre cinsinden Haversine / Geodesic mesafe hesabı ve filtreleme
-            var nearbyCandidates = branches
+            var nearbyCandidates = filteredBranches
                 .Select(x => new
                 {
                     x.Branch,
                     x.BusinessName,
                     x.BusinessPhone,
-                    DistanceMeters = CalculateDistanceMeters(query.Latitude, query.Longitude, x.Branch.Location.Y, x.Branch.Location.X)
+                    DistanceMeters = CalculateDistanceMeters(query.Latitude, query.Longitude, x.Branch.Location!.Y, x.Branch.Location!.X)
                 })
                 .Where(x => x.DistanceMeters <= radiusMeters)
                 .OrderBy(x => x.DistanceMeters)
@@ -96,18 +109,6 @@ namespace BarberBooking.Business.Services
                 return DataResult<IReadOnlyList<NearbyBranchResponseDto>>.Ok(new List<NearbyBranchResponseDto>());
             }
 
-            // Yalnızca sayfaya giren şubelerin aktif hizmetlerini çek
-            var pagedBranchIds = nearbyCandidates.Select(c => c.Branch.Id).ToList();
-            var branchServices = await _unitOfWork.Repository<BranchService>().Query()
-                .Include(bs => bs.Service)
-                .Where(bs => pagedBranchIds.Contains(bs.BranchId) && bs.IsActive && bs.Service.IsActive)
-                .Select(bs => new { bs.BranchId, ServiceName = bs.Service.Name })
-                .ToListAsync(cancellationToken);
-
-            var servicesByBranchId = branchServices
-                .GroupBy(bs => bs.BranchId)
-                .ToDictionary(g => g.Key, g => g.Select(s => s.ServiceName).ToList());
-
             var results = nearbyCandidates.Select(x => new NearbyBranchResponseDto
             {
                 BranchId = x.Branch.Id,
@@ -118,13 +119,33 @@ namespace BarberBooking.Business.Services
                 City = x.Branch.City,
                 District = x.Branch.District,
                 PhoneNumber = x.BusinessPhone,
-                Longitude = x.Branch.Location.X,
-                Latitude = x.Branch.Location.Y,
+                Longitude = x.Branch.Location!.X,
+                Latitude = x.Branch.Location!.Y,
                 DistanceMeters = Math.Round(x.DistanceMeters, 1),
                 OfferedServices = servicesByBranchId.TryGetValue(x.Branch.Id, out var sList) ? sList : new List<string>()
             }).ToList();
 
             return DataResult<IReadOnlyList<NearbyBranchResponseDto>>.Ok(results);
+        }
+
+        private static string NormalizeSearchText(string? input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return string.Empty;
+            return input.Trim()
+                .Replace('İ', 'i')
+                .Replace('I', 'i')
+                .Replace('ı', 'i')
+                .Replace('Ş', 's')
+                .Replace('ş', 's')
+                .Replace('Ğ', 'g')
+                .Replace('ğ', 'g')
+                .Replace('Ü', 'u')
+                .Replace('ü', 'u')
+                .Replace('Ö', 'o')
+                .Replace('ö', 'o')
+                .Replace('Ç', 'c')
+                .Replace('ç', 'c')
+                .ToLowerInvariant();
         }
 
         private static double CalculateDistanceMeters(double lat1, double lon1, double lat2, double lon2)

@@ -1,7 +1,8 @@
-﻿using BarberBooking.DataAccess.Repositories;
+using BarberBooking.DataAccess.Repositories;
 using BarberBooking.Entities.Businesses;
 using BarberBooking.Entities.Common;
 using BarberBooking.Entities.Identity;
+using BarberBooking.Entities.Subscriptions;
 using BarberBooking.Shared.DTOs.Businesses;
 using BarberBooking.Shared.Results;
 using Microsoft.EntityFrameworkCore;
@@ -14,11 +15,16 @@ namespace BarberBooking.Business.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentTenantService _tenantService;
+        private readonly ISubscriptionService _subscriptionService;
 
-        public BusinessManager(IUnitOfWork unitOfWork, ICurrentTenantService tenantService)
+        public BusinessManager(
+            IUnitOfWork unitOfWork,
+            ICurrentTenantService tenantService,
+            ISubscriptionService subscriptionService)
         {
             _unitOfWork = unitOfWork;
             _tenantService = tenantService;
+            _subscriptionService = subscriptionService;
         }
 
         public async Task<IDataResult<BusinessResponseDto>> CreateBusinessAsync(CreateBusinessRequestDto request, CancellationToken cancellationToken = default)
@@ -97,6 +103,25 @@ namespace BarberBooking.Business.Services
 
                 await _unitOfWork.Repository<Branch>().AddAsync(branch, cancellationToken);
 
+                // Varsayılan Başlangıç (Starter) Aboneliği Ataması (Max 1 Şube, 3 Personel)
+                var starterPlan = await _unitOfWork.Repository<SubscriptionPlan>()
+                    .FirstOrDefaultAsync(p => p.Name == "Starter" && p.IsActive, cancellationToken);
+                if (starterPlan != null)
+                {
+                    var now = DateTimeOffset.UtcNow;
+                    await _unitOfWork.Repository<BusinessSubscription>().AddAsync(new BusinessSubscription
+                    {
+                        Id = Guid.NewGuid(),
+                        BusinessId = businessId,
+                        PlanId = starterPlan.Id,
+                        Status = SubscriptionStatus.Active,
+                        BillingCycle = SubscriptionBillingCycle.Monthly,
+                        StartDate = now,
+                        EndDate = now.AddMonths(1),
+                        AutoRenew = true
+                    }, cancellationToken);
+                }
+
                 await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
                 var response = new BusinessResponseDto
@@ -138,6 +163,12 @@ namespace BarberBooking.Business.Services
             if (!businessId.HasValue)
             {
                 return DataResult<BranchResponseDto>.Fail("İşletme yetkiniz bulunamadı.", 403);
+            }
+
+            var limitCheck = await _subscriptionService.CheckBranchLimitAsync(businessId.Value, cancellationToken);
+            if (!limitCheck.Success)
+            {
+                return DataResult<BranchResponseDto>.Fail(limitCheck.Message ?? "Paket şube limitine ulaşıldı.", 403);
             }
 
             var branchLocation = new Point(request.Longitude, request.Latitude) { SRID = 4326 };
