@@ -1,18 +1,23 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Building2,
   CheckCircle2,
   Clock,
   Crown,
   MapPin,
+  LocateFixed,
   Phone,
+  Pencil,
   Plus,
   Sparkles,
+  Search,
+  RefreshCw,
   User,
   Users,
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import {
   Badge,
   Button,
@@ -26,40 +31,111 @@ import {
 } from '@/components/ui';
 import { formatCurrency, getApiErrorMessage } from '@/lib/utils';
 import { adminService } from '@/services/adminService';
+import { bookingService } from '@/services/bookingService';
 import type { BusinessServiceItem } from '@/types/admin';
 import type { StaffResponse } from '@/types/booking';
 import type { DashboardSummaryResponse } from '@/types/dashboard';
 import type {
   BranchResponse,
+  BusinessProfileResponse,
   BusinessSubscriptionDetails,
   SubscriptionPlan,
 } from '@/types/subscription';
+
+export const AdminBusinessProfilePage: React.FC = () => {
+  const [profile, setProfile] = useState<BusinessProfileResponse | null>(null);
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    adminService.getMyBusiness().then((res) => {
+      if (res.success && res.data) {
+        setProfile(res.data); setName(res.data.name); setDescription(res.data.description ?? ''); setPhoneNumber(res.data.phoneNumber);
+      } else toast.error(res.message || 'İşletme bilgileri alınamadı.');
+    }).catch((error) => toast.error(getApiErrorMessage(error, 'İşletme bilgileri alınamadı.')))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault(); setSaving(true);
+    try {
+      const res = await adminService.updateMyBusiness({ name: name.trim(), description: description.trim(), phoneNumber: phoneNumber.trim() });
+      if (!res.success || !res.data) { toast.error(res.message || 'Değişiklikler kaydedilemedi.'); return; }
+      setProfile(res.data); toast.success('İşletme profili güncellendi.');
+    } catch (error) { toast.error(getApiErrorMessage(error, 'Değişiklikler kaydedilemedi.')); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-6">
+      <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-700 dark:text-amber-400">İşletme ayarları</p><h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 dark:text-zinc-50">İşletme profili</h1><p className="mt-1 text-sm text-slate-500 dark:text-zinc-400">Müşterilerin göreceği işletme adını, açıklamayı ve iletişim telefonunu düzenle.</p></div>
+      <Card>
+        <CardHeader><CardTitle>Genel bilgiler</CardTitle><CardDescription>Telefon numarası tüm şubelerde ortak iletişim numarası olarak gösterilir.</CardDescription></CardHeader>
+        <CardContent>
+          {loading ? <div className="space-y-3"><Skeleton className="h-12"/><Skeleton className="h-24"/><Skeleton className="h-12"/></div> : !profile ? <p className="text-sm text-slate-500">İşletme profili yüklenemedi. Sayfayı yenileyip tekrar dene.</p> : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <Input label="İşletme adı" value={name} onChange={(e) => setName(e.target.value)} required maxLength={120}/>
+              <label className="block space-y-1.5"><span className="text-xs font-semibold text-slate-700 dark:text-zinc-300">Kısa tanıtım</span><textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} maxLength={600} placeholder="Salonunuzu ve sunduğunuz deneyimi kısaca anlatın." className="w-full resize-y rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100"/><span className="block text-right text-[11px] text-slate-400">{description.length}/600</span></label>
+              <Input label="İletişim telefonu" type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} required autoComplete="tel"/>
+              <div className="flex justify-end border-t border-slate-100 pt-4 dark:border-zinc-800"><Button type="submit" isLoading={saving}>Değişiklikleri kaydet</Button></div>
+            </form>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
 
 /* =========================================================================
    1. ŞUBELERİM (BRANCHES) YÖNETİM SAYFASI
    ========================================================================= */
 export const AdminBranchesPage: React.FC = () => {
+  const navigate = useNavigate();
   const [branches, setBranches] = useState<BranchResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [openModal, setOpenModal] = useState(false);
+  const [editingBranch, setEditingBranch] = useState<BranchResponse | null>(null);
   const [creating, setCreating] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [subscription, setSubscription] = useState<BusinessSubscriptionDetails | null>(null);
+  const [branchActive, setBranchActive] = useState(true);
 
   // Form states
   const [name, setName] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [city, setCity] = useState('İstanbul');
-  const [district, setDistrict] = useState('Beşiktaş');
+  const [city, setCity] = useState('');
+  const [district, setDistrict] = useState('');
   const [address, setAddress] = useState('');
-  const [latitude, setLatitude] = useState(41.0422);
-  const [longitude, setLongitude] = useState(29.0067);
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
+
+  const resetBranchForm = () => {
+    setName(''); setCity(''); setDistrict(''); setAddress(''); setLatitude(''); setLongitude(''); setEditingBranch(null); setBranchActive(true);
+  };
+  const openCreateModal = () => { resetBranchForm(); setOpenModal(true); };
+  const openEditModal = (branch: BranchResponse) => {
+    setEditingBranch(branch); setName(branch.name); setCity(branch.city); setDistrict(branch.district);
+    setAddress(branch.address); setLatitude(String(branch.latitude)); setLongitude(String(branch.longitude)); setBranchActive(branch.isActive); setOpenModal(true);
+  };
+  const captureBranchLocation = () => {
+    if (!navigator.geolocation) { toast.error('Tarayıcı konum almayı desteklemiyor.'); return; }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(({ coords }) => {
+      setLatitude(coords.latitude.toFixed(6)); setLongitude(coords.longitude.toFixed(6)); setLocating(false);
+      toast.success('Şube konumu alındı.');
+    }, () => { setLocating(false); toast.error('Konum alınamadı. Tarayıcı iznini kontrol edin.'); }, { enableHighAccuracy: true, timeout: 12000 });
+  };
 
   const fetchBranches = async () => {
     setLoading(true);
     try {
-      const res = await adminService.getMyBranches();
+      const [res, subRes] = await Promise.all([adminService.getMyBranches(), adminService.getMySubscription()]);
       if (res.success && res.data) {
         setBranches(res.data);
       }
+      if (subRes.success && subRes.data) setSubscription(subRes.data);
     } catch (err) {
       toast.error(getApiErrorMessage(err, 'Şubeler yüklenemedi.'));
     } finally {
@@ -73,29 +149,26 @@ export const AdminBranchesPage: React.FC = () => {
 
   const handleCreateBranch = async (e: React.FormEvent) => {
     e.preventDefault();
+    const lat = Number(latitude); const lng = Number(longitude);
+    if (!latitude || !longitude || !Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      toast.warning('Şube için geçerli konum bilgisi girin veya konumunuzu alın.'); return;
+    }
     setCreating(true);
 
     try {
-      const res = await adminService.createBranch({
-        name: name.trim(),
-        phoneNumber: phoneNumber.trim(),
-        city: city.trim(),
-        district: district.trim(),
-        address: address.trim(),
-        latitude,
-        longitude,
-      });
+      const payload = { name: name.trim(), city: city.trim(), district: district.trim(), address: address.trim(), latitude: lat, longitude: lng };
+      const res = editingBranch
+        ? await adminService.updateBranch({ ...payload, id: editingBranch.id, isActive: branchActive })
+        : await adminService.createBranch(payload);
 
       if (!res.success) {
         toast.error(res.message || 'Şube eklenemedi.');
         return;
       }
 
-      toast.success('Yeni şubeniz başarıyla açıldı!');
+      toast.success(editingBranch ? 'Şube bilgileri güncellendi.' : 'Yeni şubeniz başarıyla açıldı!');
       setOpenModal(false);
-      setName('');
-      setAddress('');
-      setPhoneNumber('');
+      resetBranchForm();
       await fetchBranches();
     } catch (err: any) {
       const msg = getApiErrorMessage(err, 'Şube açılırken bir hata oluştu.');
@@ -115,12 +188,13 @@ export const AdminBranchesPage: React.FC = () => {
           <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
             İşletmenize bağlı tüm şubeleri görüntüleyin, yeni şube tanımlayın.
           </p>
+          {subscription && <p className="mt-2 text-xs text-slate-500 dark:text-zinc-400">Şube kotası: <strong className="text-slate-800 dark:text-zinc-200">{branches.length} / {subscription.maxBranchCount}</strong></p>}
         </div>
 
-        <Button onClick={() => setOpenModal(true)} className="gap-2 shadow-sm">
+        {subscription && branches.length >= subscription.maxBranchCount ? <Button variant="outline" onClick={() => navigate('/admin/subscription')}>Şube kotasını yükselt</Button> : <Button onClick={openCreateModal} className="gap-2 shadow-sm">
           <Plus className="h-4 w-4" />
           Yeni Şube Ekle
-        </Button>
+        </Button>}
       </div>
 
       {loading ? (
@@ -150,7 +224,7 @@ export const AdminBranchesPage: React.FC = () => {
                   <Badge variant={b.isActive ? 'success' : 'default'} className="text-[10px]">
                     {b.isActive ? 'Hizmete Açık' : 'Kapalı'}
                   </Badge>
-                  <span className="text-[10px] text-slate-400 font-mono">
+                  <span className="text-[10px] text-slate-400">
                     {b.city} / {b.district}
                   </span>
                 </div>
@@ -165,6 +239,9 @@ export const AdminBranchesPage: React.FC = () => {
                   <Phone className="h-3.5 w-3.5 text-amber-500 shrink-0" />
                   <span>{b.phoneNumber || 'Telefon belirtilmedi'}</span>
                 </p>
+                <Button variant="outline" size="sm" className="mt-2 w-full gap-2" onClick={() => openEditModal(b)}>
+                  <Pencil className="h-3.5 w-3.5" /> Şubeyi düzenle
+                </Button>
               </CardContent>
             </Card>
           ))}
@@ -174,18 +251,18 @@ export const AdminBranchesPage: React.FC = () => {
       {/* New Branch Modal */}
       {openModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card accent className="w-full max-w-lg shadow-2xl">
+          <Card accent className="max-h-[90vh] w-full max-w-lg overflow-y-auto shadow-2xl">
             <CardHeader className="relative">
               <button
                 type="button"
-                onClick={() => setOpenModal(false)}
+                  onClick={() => { setOpenModal(false); resetBranchForm(); }}
                 className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200"
               >
                 <X className="h-5 w-5" />
               </button>
-              <CardTitle>Yeni Şube Oluştur</CardTitle>
+              <CardTitle>{editingBranch ? 'Şubeyi Düzenle' : 'Yeni Şube Oluştur'}</CardTitle>
               <CardDescription>
-                Şube bilgilerinizi giriniz. SaaS paket sınırlarınız otomatik denetlenir.
+                Adres ve konum bilgilerini güncel tutun. Salon telefonu işletme profilinizden yönetilir.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -195,13 +272,6 @@ export const AdminBranchesPage: React.FC = () => {
                   placeholder="Örn: Beşiktaş Çarşı Şubesi"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  required
-                />
-                <Input
-                  label="Telefon Numarası"
-                  placeholder="0212 222 33 44"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
                   required
                 />
                 <div className="grid grid-cols-2 gap-3">
@@ -216,21 +286,7 @@ export const AdminBranchesPage: React.FC = () => {
                     label="İlçe"
                     placeholder="Beşiktaş"
                     value={district}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setDistrict(val);
-                      const norm = val.trim().toLowerCase();
-                      if (norm.includes('ataşehir') || norm.includes('atasehir')) {
-                        setLatitude(40.9923);
-                        setLongitude(29.1244);
-                      } else if (norm.includes('kadıköy') || norm.includes('kadikoy')) {
-                        setLatitude(40.9856);
-                        setLongitude(29.0268);
-                      } else if (norm.includes('beşiktaş') || norm.includes('besiktas')) {
-                        setLatitude(41.0422);
-                        setLongitude(29.0067);
-                      }
-                    }}
+                    onChange={(e) => setDistrict(e.target.value)}
                     required
                   />
                 </div>
@@ -241,13 +297,20 @@ export const AdminBranchesPage: React.FC = () => {
                   onChange={(e) => setAddress(e.target.value)}
                   required
                 />
+                <div className="flex flex-col gap-3 rounded-2xl border border-amber-500/20 bg-amber-50/70 p-3 dark:bg-amber-500/5 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex gap-2">
+                    <MapPin className="mt-0.5 h-4 w-4 text-amber-600" />
+                    <div><p className="text-sm font-semibold text-slate-800 dark:text-zinc-100">Haritadaki konum</p><p className="text-xs text-slate-500">En doğru sonuç için şubedeyken konumunu al.</p></div>
+                  </div>
+                  <Button type="button" size="sm" variant="outline" onClick={captureBranchLocation} isLoading={locating} className="gap-2"><LocateFixed className="h-4 w-4" /> Konumumu al</Button>
+                </div>
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <Input
                     label="Enlem (Lat)"
                     type="number"
                     step="0.0001"
                     value={latitude}
-                    onChange={(e) => setLatitude(parseFloat(e.target.value) || 0)}
+                    onChange={(e) => setLatitude(e.target.value)}
                     required
                   />
                   <Input
@@ -255,17 +318,18 @@ export const AdminBranchesPage: React.FC = () => {
                     type="number"
                     step="0.0001"
                     value={longitude}
-                    onChange={(e) => setLongitude(parseFloat(e.target.value) || 0)}
+                    onChange={(e) => setLongitude(e.target.value)}
                     required
                   />
                 </div>
+                {editingBranch && <label className="flex items-center gap-2 rounded-xl border border-slate-200 p-3 text-sm font-medium text-slate-700 dark:border-zinc-800 dark:text-zinc-200"><input type="checkbox" checked={branchActive} onChange={(e) => setBranchActive(e.target.checked)} className="h-4 w-4 accent-amber-600"/> Şube müşterilere açık ve randevu alabilir</label>}
 
                 <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-zinc-800">
-                  <Button variant="ghost" size="sm" onClick={() => setOpenModal(false)}>
+                  <Button variant="ghost" size="sm" onClick={() => { setOpenModal(false); resetBranchForm(); }}>
                     İptal
                   </Button>
                   <Button type="submit" size="sm" isLoading={creating}>
-                    Şubeyi Kaydet
+                    {editingBranch ? 'Değişiklikleri kaydet' : 'Şubeyi kaydet'}
                   </Button>
                 </div>
               </form>
@@ -288,7 +352,12 @@ export const AdminStaffPage: React.FC = () => {
   // Modals
   const [openAddModal, setOpenAddModal] = useState(false);
   const [openHoursModal, setOpenHoursModal] = useState(false);
+  const [createdStaffLogin, setCreatedStaffLogin] = useState<{ fullName: string; email: string; temporaryPassword: string | null; accountAlreadyExisted: boolean } | null>(null);
   const [selectedStaff, setSelectedStaff] = useState<StaffResponse | null>(null);
+  const [editingStaff, setEditingStaff] = useState<StaffResponse | null>(null);
+  const [editingBiography, setEditingBiography] = useState('');
+  const [editingBookable, setEditingBookable] = useState(true);
+  const [savingStaffProfile, setSavingStaffProfile] = useState(false);
 
   // Form states
   const [firstName, setFirstName] = useState('');
@@ -297,13 +366,13 @@ export const AdminStaffPage: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [biography, setBiography] = useState('');
   const [selectedBranchId, setSelectedBranchId] = useState('');
+  const [selectedStaffBranchIds, setSelectedStaffBranchIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
-  // Hours form states (standard 09:00 - 19:00 with 13:00 - 14:00 lunch break)
-  const [workStart, setWorkStart] = useState('09:00:00');
-  const [workEnd, setWorkEnd] = useState('19:00:00');
-  const [breakStart, setBreakStart] = useState('13:00:00');
-  const [breakEnd, setBreakEnd] = useState('14:00:00');
+  const [workingHours, setWorkingHours] = useState<Array<{ dayOfWeek: number; active: boolean; start: string; end: string; hasBreak: boolean; breakStart: string; breakEnd: string }>>(
+    Array.from({ length: 7 }, (_, dayOfWeek) => ({ dayOfWeek, active: dayOfWeek !== 0, start: '09:00', end: '19:00', hasBreak: true, breakStart: '13:00', breakEnd: '14:00' })),
+  );
+  const [loadingWorkingHours, setLoadingWorkingHours] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -320,6 +389,7 @@ export const AdminStaffPage: React.FC = () => {
         setBranches(branchRes.data);
         if (branchRes.data.length > 0) {
           setSelectedBranchId(branchRes.data[0].id);
+          setSelectedStaffBranchIds((current) => current.length ? current : [branchRes.data![0].id]);
         }
       }
     } catch (err) {
@@ -335,7 +405,7 @@ export const AdminStaffPage: React.FC = () => {
 
   const handleCreateStaff = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedBranchId) {
+    if (selectedStaffBranchIds.length === 0) {
       toast.warning('Lütfen personelin atanacağı en az 1 şube seçin.');
       return;
     }
@@ -349,7 +419,7 @@ export const AdminStaffPage: React.FC = () => {
         phoneNumber: phoneNumber.trim(),
         biography: biography.trim() || 'Uzman Berber',
         isBookable: true,
-        branchIds: [selectedBranchId],
+        branchIds: selectedStaffBranchIds,
       });
 
       if (!res.success) {
@@ -358,12 +428,14 @@ export const AdminStaffPage: React.FC = () => {
       }
 
       toast.success('Yeni berber kadroya eklendi!');
+      setCreatedStaffLogin({ fullName: res.data?.fullName ?? `${firstName.trim()} ${lastName.trim()}`.trim(), email: res.data?.email ?? email.trim(), temporaryPassword: res.data?.temporaryPassword ?? null, accountAlreadyExisted: res.data?.accountAlreadyExisted ?? false });
       setOpenAddModal(false);
       setFirstName('');
       setLastName('');
       setEmail('');
       setPhoneNumber('');
       setBiography('');
+      setSelectedStaffBranchIds(branches[0]?.id ? [branches[0].id] : []);
       await fetchData();
     } catch (err) {
       toast.error(getApiErrorMessage(err, 'Personel eklenirken hata oluştu.'));
@@ -372,21 +444,61 @@ export const AdminStaffPage: React.FC = () => {
     }
   };
 
+  const loadWorkingHours = async (staffId: string, branchId: string) => {
+    setLoadingWorkingHours(true);
+    try {
+      const res = await bookingService.getStaffWorkingHours(staffId, branchId);
+      const defaults = Array.from({ length: 7 }, (_, dayOfWeek) => ({ dayOfWeek, active: false, start: '09:00', end: '19:00', hasBreak: true, breakStart: '13:00', breakEnd: '14:00' }));
+      for (const hour of res.data ?? []) {
+        const row = defaults[hour.dayOfWeek];
+        if (row) {
+          row.active = true;
+          row.start = hour.startTime.slice(0, 5);
+          row.end = hour.endTime.slice(0, 5);
+          row.hasBreak = hour.breaks.length > 0;
+          if (hour.breaks[0]) { row.breakStart = hour.breaks[0].startTime.slice(0, 5); row.breakEnd = hour.breaks[0].endTime.slice(0, 5); }
+        }
+      }
+      setWorkingHours(defaults);
+    } catch (error) {
+      setWorkingHours(Array.from({ length: 7 }, (_, dayOfWeek) => ({ dayOfWeek, active: false, start: '09:00', end: '19:00', hasBreak: true, breakStart: '13:00', breakEnd: '14:00' })));
+      toast.error(getApiErrorMessage(error, 'Mevcut çalışma saatleri yüklenemedi.'));
+    } finally { setLoadingWorkingHours(false); }
+  };
+
+  const openWorkingHours = (staff: StaffResponse) => {
+    const branchId = staff.assignedBranchIds[0] ?? branches[0]?.id ?? '';
+    setSelectedStaff(staff); setSelectedBranchId(branchId); setOpenHoursModal(true);
+    if (branchId) loadWorkingHours(staff.id, branchId);
+  };
+
+  const saveStaffProfile = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!editingStaff) return;
+    setSavingStaffProfile(true);
+    try {
+      const res = await adminService.updateStaffProfile({ staffProfileId: editingStaff.id, biography: editingBiography.trim(), isBookable: editingBookable });
+      if (!res.success) { toast.error(res.message || 'Personel profili güncellenemedi.'); return; }
+      setStaffList((current) => current.map((staff) => staff.id === editingStaff.id ? { ...staff, biography: editingBiography.trim(), isBookable: editingBookable } : staff));
+      setEditingStaff(null); toast.success('Personel profili güncellendi.');
+    } catch (error) { toast.error(getApiErrorMessage(error, 'Personel profili güncellenemedi.')); }
+    finally { setSavingStaffProfile(false); }
+  };
+
   const handleSaveWorkingHours = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedStaff || !selectedBranchId) return;
+    if (!workingHours.some((day) => day.active)) { toast.warning('En az bir çalışma günü seçin.'); return; }
     setSaving(true);
 
     try {
-      const days = [];
-      for (let d = 0; d <= 6; d++) {
-        days.push({
-          dayOfWeek: d,
-          startTime: workStart,
-          endTime: workEnd,
-          breaks: [{ startTime: breakStart, endTime: breakEnd }],
-        });
-      }
+      const toApiTime = (value: string) => value.length === 5 ? `${value}:00` : value;
+      const days = workingHours.filter((day) => day.active).map((day) => ({
+        dayOfWeek: day.dayOfWeek,
+        startTime: toApiTime(day.start),
+        endTime: toApiTime(day.end),
+        breaks: day.hasBreak ? [{ startTime: toApiTime(day.breakStart), endTime: toApiTime(day.breakEnd) }] : [],
+      }));
 
       const res = await adminService.setStaffWorkingHours({
         staffProfileId: selectedStaff.id,
@@ -399,7 +511,7 @@ export const AdminStaffPage: React.FC = () => {
         return;
       }
 
-      toast.success('Çalışma saatleri ve öğle molası başarıyla tanımlandı!');
+      toast.success('Çalışma günleri ve saatleri güncellendi.');
       setOpenHoursModal(false);
     } catch (err) {
       toast.error(getApiErrorMessage(err, 'Mesai saatleri kaydedilemedi.'));
@@ -420,7 +532,7 @@ export const AdminStaffPage: React.FC = () => {
           </p>
         </div>
 
-        <Button onClick={() => setOpenAddModal(true)} className="gap-2 shadow-sm">
+        <Button onClick={() => { setSelectedStaffBranchIds(branches[0]?.id ? [branches[0].id] : []); setOpenAddModal(true); }} className="gap-2 shadow-sm" disabled={branches.length === 0}>
           <Plus className="h-4 w-4" />
           Yeni Personel Ekle
         </Button>
@@ -473,15 +585,13 @@ export const AdminStaffPage: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 flex gap-2">
+                <div className="grid grid-cols-2 gap-2 border-t border-slate-100 pt-2 dark:border-zinc-800">
+                  <Button size="sm" variant="outline" className="text-xs" onClick={() => { setEditingStaff(s); setEditingBiography(s.biography ?? ''); setEditingBookable(s.isBookable); }}><Pencil className="h-3.5 w-3.5"/> Profili düzenle</Button>
                   <Button
                     size="sm"
                     variant="outline"
-                    className="flex-1 text-xs"
-                    onClick={() => {
-                      setSelectedStaff(s);
-                      setOpenHoursModal(true);
-                    }}
+                    className="text-xs"
+                    onClick={() => openWorkingHours(s)}
                   >
                     <Clock className="h-3.5 w-3.5 text-amber-500" />
                     Mesai &amp; Mola Ayarla
@@ -493,10 +603,17 @@ export const AdminStaffPage: React.FC = () => {
         </div>
       )}
 
+      {editingStaff && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+        <Card className="max-h-[90vh] w-full max-w-lg overflow-y-auto">
+          <CardHeader className="relative"><button type="button" onClick={() => setEditingStaff(null)} className="absolute right-5 top-5 text-slate-400" aria-label="Kapat"><X className="h-5 w-5"/></button><CardTitle>{editingStaff.fullName} · Profil</CardTitle><CardDescription>Tanıtım metnini ve müşterilerin bu personelden randevu alıp alamayacağını düzenle.</CardDescription></CardHeader>
+          <CardContent><form onSubmit={saveStaffProfile} className="space-y-4"><Input label="Uzmanlık / Biyografi" value={editingBiography} onChange={(e) => setEditingBiography(e.target.value)} maxLength={400} placeholder="Uzmanlık alanı ve deneyim"/><label className="flex items-center gap-2 rounded-xl border border-slate-200 p-3 text-sm font-medium text-slate-700 dark:border-zinc-800 dark:text-zinc-200"><input type="checkbox" checked={editingBookable} onChange={(e) => setEditingBookable(e.target.checked)} className="h-4 w-4 accent-amber-600"/> Müşteriler randevu alabilsin</label><div className="flex justify-end gap-2 border-t border-slate-100 pt-4 dark:border-zinc-800"><Button type="button" variant="ghost" onClick={() => setEditingStaff(null)}>İptal</Button><Button type="submit" isLoading={savingStaffProfile}>Değişiklikleri kaydet</Button></div></form></CardContent>
+        </Card>
+      </div>}
+
       {/* Add Staff Modal */}
       {openAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card accent className="w-full max-w-lg shadow-2xl">
+          <Card accent className="max-h-[90vh] w-full max-w-lg overflow-y-auto shadow-2xl">
             <CardHeader className="relative">
               <button
                 type="button"
@@ -549,23 +666,13 @@ export const AdminStaffPage: React.FC = () => {
                   value={biography}
                   onChange={(e) => setBiography(e.target.value)}
                 />
+                <p className="rounded-xl bg-amber-50 p-3 text-xs leading-relaxed text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">Bu e-posta zaten kayıtlıysa mevcut hesap kullanılır; çalışanın adı ve parolası değişmez. Yeni hesap için giriş parolası kayıt sonrasında yalnızca bir kez gösterilir.</p>
 
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300">
-                    Atanacak Şube
-                  </label>
-                  <select
-                    value={selectedBranchId}
-                    onChange={(e) => setSelectedBranchId(e.target.value)}
-                    className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3.5 text-sm dark:border-zinc-800 dark:bg-zinc-900 text-slate-900 dark:text-zinc-100"
-                    required
-                  >
-                    {branches.map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.name} ({b.district})
-                      </option>
-                    ))}
-                  </select>
+                <div className="space-y-2">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300">Çalışacağı şubeler</label>
+                  <div className="space-y-1.5 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-zinc-800 dark:bg-zinc-900/60">
+                    {branches.map((branch) => <label key={branch.id} className="flex cursor-pointer items-center gap-2.5 py-1 text-xs font-medium text-slate-800 dark:text-zinc-200"><input type="checkbox" checked={selectedStaffBranchIds.includes(branch.id)} onChange={() => setSelectedStaffBranchIds((current) => current.includes(branch.id) ? current.filter((id) => id !== branch.id) : [...current, branch.id])} className="h-4 w-4 accent-amber-600"/>{branch.name} <span className="text-slate-400">({branch.district})</span></label>)}
+                  </div>
                 </div>
 
                 <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-zinc-800">
@@ -582,10 +689,20 @@ export const AdminStaffPage: React.FC = () => {
         </div>
       )}
 
+      {createdStaffLogin && <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+        <Card className="w-full max-w-md shadow-2xl"><CardHeader><CardTitle>Çalışan hesabı hazır</CardTitle><CardDescription>{createdStaffLogin.fullName} · {createdStaffLogin.email}</CardDescription></CardHeader>
+          <CardContent className="space-y-4">
+            {createdStaffLogin.temporaryPassword ? <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30"><p className="text-xs font-semibold text-amber-900 dark:text-amber-200">İlk giriş parolası · çalışana güvenli şekilde ilet</p><code className="mt-2 block select-all text-lg font-bold tracking-wider text-slate-900 dark:text-zinc-100">{createdStaffLogin.temporaryPassword}</code></div> : <p className="rounded-xl bg-slate-100 p-4 text-sm text-slate-700 dark:bg-zinc-800 dark:text-zinc-200">Bu e-posta mevcut bir hesaba ait. Çalışan kendi mevcut parolasıyla giriş yapabilir; hesabına çalışan erişimi eklendi.</p>}
+            <p className="text-xs text-slate-500 dark:text-zinc-400">Giriş yaptıktan sonra çalışan, kendisine atanan salon paneline yönlendirilir.</p>
+            <div className="flex justify-end"><Button onClick={() => setCreatedStaffLogin(null)}>Tamam</Button></div>
+          </CardContent>
+        </Card>
+      </div>}
+
       {/* Set Working Hours Modal */}
       {openHoursModal && selectedStaff && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card accent className="w-full max-w-md shadow-2xl">
+          <Card accent className="max-h-[90vh] w-full max-w-2xl overflow-y-auto shadow-2xl">
             <CardHeader className="relative">
               <button
                 type="button"
@@ -607,10 +724,10 @@ export const AdminStaffPage: React.FC = () => {
                   </label>
                   <select
                     value={selectedBranchId}
-                    onChange={(e) => setSelectedBranchId(e.target.value)}
+                    onChange={(e) => { setSelectedBranchId(e.target.value); loadWorkingHours(selectedStaff.id, e.target.value); }}
                     className="h-10 w-full rounded-xl border border-slate-300 bg-white px-3 text-xs dark:border-zinc-800 dark:bg-zinc-900 text-slate-900 dark:text-zinc-100"
                   >
-                    {branches.map((b) => (
+                    {branches.filter((b) => selectedStaff.assignedBranchIds.includes(b.id)).map((b) => (
                       <option key={b.id} value={b.id}>
                         {b.name}
                       </option>
@@ -618,44 +735,28 @@ export const AdminStaffPage: React.FC = () => {
                   </select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <Input
-                    label="Mesai Başlangıç"
-                    value={workStart}
-                    onChange={(e) => setWorkStart(e.target.value)}
-                    placeholder="09:00:00"
-                    required
-                  />
-                  <Input
-                    label="Mesai Bitiş"
-                    value={workEnd}
-                    onChange={(e) => setWorkEnd(e.target.value)}
-                    placeholder="19:00:00"
-                    required
-                  />
-                </div>
+                {loadingWorkingHours ? <div className="space-y-2"><Skeleton className="h-16"/><Skeleton className="h-16"/></div> : <div className="max-h-[48vh] space-y-2 overflow-y-auto pr-1">
+                  {['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'].map((label, dayOfWeek) => {
+                    const day = workingHours[dayOfWeek];
+                    if (!day) return null;
+                    const updateDay = (patch: Partial<typeof day>) => setWorkingHours((current) => current.map((item) => item.dayOfWeek === dayOfWeek ? { ...item, ...patch } : item));
+                    return <div key={label} className={`rounded-xl border p-3 ${day.active ? 'border-amber-500/30 bg-amber-50/40 dark:bg-amber-500/5' : 'border-slate-200 dark:border-zinc-800'}`}>
+                      <div className="flex items-center justify-between gap-3">
+                        <label className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-zinc-200"><input type="checkbox" checked={day.active} onChange={(e) => updateDay({ active: e.target.checked })} className="h-4 w-4 accent-amber-600"/>{label}</label>
+                        {day.active && <span className="text-[11px] text-emerald-700 dark:text-emerald-400">Çalışıyor</span>}
+                      </div>
+                      {day.active && <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        <label className="text-[10px] text-slate-500">Başlangıç<input type="time" value={day.start} onChange={(e) => updateDay({ start: e.target.value })} required className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"/></label>
+                        <label className="text-[10px] text-slate-500">Bitiş<input type="time" value={day.end} onChange={(e) => updateDay({ end: e.target.value })} required className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"/></label>
+                        <label className="text-[10px] text-slate-500">Mola başlangıcı<input type="time" value={day.breakStart} disabled={!day.hasBreak} onChange={(e) => updateDay({ breakStart: e.target.value })} className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-900 disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"/></label>
+                        <label className="text-[10px] text-slate-500">Mola bitişi<input type="time" value={day.breakEnd} disabled={!day.hasBreak} onChange={(e) => updateDay({ breakEnd: e.target.value })} className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-900 disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"/></label>
+                        <label className="col-span-2 flex items-center gap-2 text-[11px] text-slate-600 dark:text-zinc-400 sm:col-span-4"><input type="checkbox" checked={day.hasBreak} onChange={(e) => updateDay({ hasBreak: e.target.checked })} className="h-3.5 w-3.5 accent-amber-600"/>Mola kullan</label>
+                      </div>}
+                    </div>;
+                  })}
+                </div>}
 
-                <div className="grid grid-cols-2 gap-3">
-                  <Input
-                    label="Mola Başlangıç"
-                    value={breakStart}
-                    onChange={(e) => setBreakStart(e.target.value)}
-                    placeholder="13:00:00"
-                    required
-                  />
-                  <Input
-                    label="Mola Bitiş"
-                    value={breakEnd}
-                    onChange={(e) => setBreakEnd(e.target.value)}
-                    placeholder="14:00:00"
-                    required
-                  />
-                </div>
-
-                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-400">
-                  ⚡ <strong>13:00 - 14:00</strong> arası randevu slot motorunda otomatik olarak
-                  kapatılacak ve çakışma engellenecektir.
-                </div>
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-400">Çalışma saatleri seçilen şube ve personel için kaydedilir. Kapalı günler randevu saatlerinde görünmez.</div>
 
                 <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-zinc-800">
                   <Button variant="ghost" size="sm" onClick={() => setOpenHoursModal(false)}>
@@ -682,7 +783,12 @@ export const AdminServicesPage: React.FC = () => {
   const [branches, setBranches] = useState<BranchResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [openModal, setOpenModal] = useState(false);
+  const [editingService, setEditingService] = useState<BusinessServiceItem | null>(null);
   const [creating, setCreating] = useState(false);
+  const [updatingServiceId, setUpdatingServiceId] = useState<string | null>(null);
+  const [serviceQuery, setServiceQuery] = useState('');
+  const [serviceStatus, setServiceStatus] = useState<'all' | 'active' | 'inactive'>('all');
+  const [serviceBranchId, setServiceBranchId] = useState('all');
 
   // Form
   const [name, setName] = useState('');
@@ -719,6 +825,13 @@ export const AdminServicesPage: React.FC = () => {
     fetchData();
   }, []);
 
+  const filteredServices = useMemo(() => services.filter((service) => {
+    const matchesQuery = `${service.name} ${service.description ?? ''}`.toLocaleLowerCase('tr').includes(serviceQuery.trim().toLocaleLowerCase('tr'));
+    const matchesStatus = serviceStatus === 'all' || service.isActive === (serviceStatus === 'active');
+    const matchesBranch = serviceBranchId === 'all' || service.assignedBranchIds?.includes(serviceBranchId);
+    return matchesQuery && matchesStatus && matchesBranch;
+  }), [services, serviceQuery, serviceStatus, serviceBranchId]);
+
   const toggleBranchSelection = (branchId: string) => {
     setSelectedBranchIds((prev) =>
       prev.includes(branchId) ? prev.filter((id) => id !== branchId) : [...prev, branchId],
@@ -727,28 +840,32 @@ export const AdminServicesPage: React.FC = () => {
 
   const handleCreateService = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedBranchIds.length === 0) {
+    if (!editingService && selectedBranchIds.length === 0) {
       toast.warning('Lütfen hizmetin sunulacağı en az 1 şube seçin.');
       return;
     }
     setCreating(true);
 
     try {
-      const res = await adminService.createService({
+      const payload = {
         name: name.trim(),
-        description: description.trim() || 'Özel Salon Hizmeti',
+        description: description.trim() || undefined,
         durationMinutes,
         basePrice,
         assignToBranchIds: selectedBranchIds,
-      });
+      };
+      const res = editingService
+        ? await adminService.updateService({ ...payload, id: editingService.id, isActive: editingService.isActive })
+        : await adminService.createService(payload);
 
       if (!res.success) {
         toast.error(res.message || 'Hizmet oluşturulamadı.');
         return;
       }
 
-      toast.success('Hizmet başarıyla eklendi ve seçili şubelere atandı!');
+      toast.success(editingService ? 'Hizmet bilgileri güncellendi.' : 'Hizmet eklendi ve seçili şubelere atandı.');
       setOpenModal(false);
+      setEditingService(null);
       setName('');
       setDescription('');
       await fetchData();
@@ -757,6 +874,20 @@ export const AdminServicesPage: React.FC = () => {
     } finally {
       setCreating(false);
     }
+  };
+
+  const toggleServiceStatus = async (service: BusinessServiceItem) => {
+    setUpdatingServiceId(service.id);
+    try {
+      const res = await adminService.updateService({
+        id: service.id, name: service.name, description: service.description,
+        durationMinutes: service.durationMinutes, basePrice: service.basePrice, isActive: !service.isActive,
+      });
+      if (!res.success) { toast.error(res.message || 'Hizmet durumu değiştirilemedi.'); return; }
+      setServices((current) => current.map((item) => item.id === service.id ? { ...item, isActive: !service.isActive } : item));
+      toast.success(service.isActive ? 'Hizmet randevuya kapatıldı.' : 'Hizmet yeniden randevuya açıldı.');
+    } catch (error) { toast.error(getApiErrorMessage(error, 'Hizmet durumu değiştirilemedi.')); }
+    finally { setUpdatingServiceId(null); }
   };
 
   return (
@@ -771,7 +902,7 @@ export const AdminServicesPage: React.FC = () => {
           </p>
         </div>
 
-        <Button onClick={() => setOpenModal(true)} className="gap-2 shadow-sm">
+        <Button onClick={() => { setEditingService(null); setName(''); setDescription(''); setBasePrice(350); setDurationMinutes(45); setOpenModal(true); }} className="gap-2 shadow-sm">
           <Plus className="h-4 w-4" />
           Yeni Hizmet Ekle
         </Button>
@@ -796,8 +927,14 @@ export const AdminServicesPage: React.FC = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {services.map((srv) => (
+        <>
+        <Card><CardContent className="flex flex-col gap-3 p-4 md:flex-row md:items-center">
+          <div className="relative flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"/><Input aria-label="Hizmet ara" placeholder="Hizmet adı veya açıklama ara" value={serviceQuery} onChange={(event) => setServiceQuery(event.target.value)} className="pl-9"/></div>
+          <select aria-label="Hizmet durumu" value={serviceStatus} onChange={(event) => setServiceStatus(event.target.value as typeof serviceStatus)} className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"><option value="all">Tüm durumlar</option><option value="active">Randevuya açık</option><option value="inactive">Pasif</option></select>
+          <select aria-label="Şubeye göre filtrele" value={serviceBranchId} onChange={(event) => setServiceBranchId(event.target.value)} className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"><option value="all">Tüm şubeler</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select>
+        </CardContent></Card>
+        {filteredServices.length === 0 ? <Card><CardContent className="p-10 text-center"><p className="font-semibold text-slate-700 dark:text-zinc-200">Bu filtrelerle eşleşen hizmet yok</p><p className="mt-1 text-sm text-slate-500">Arama kelimesini veya filtreleri değiştirebilirsin.</p></CardContent></Card> : <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredServices.map((srv) => (
             <Card key={srv.id} accent={srv.isActive}>
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between gap-2">
@@ -811,7 +948,7 @@ export const AdminServicesPage: React.FC = () => {
                 </div>
                 <CardTitle className="text-base mt-2">{srv.name}</CardTitle>
                 <CardDescription className="line-clamp-2">
-                  {srv.description || 'Özel berber ve saç tasarım bakımı.'}
+                  {srv.description || 'Açıklama eklenmemiş.'}
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-2 space-y-2">
@@ -829,20 +966,28 @@ export const AdminServicesPage: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-zinc-400 pt-1 border-t border-slate-100 dark:border-zinc-800/80">
                   <span>Şube Bazlı İzole</span>
-                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                    Randevuya Açık
+                  <span className={srv.isActive ? 'font-semibold text-emerald-600 dark:text-emerald-400' : 'font-semibold text-slate-500'}>
+                    {srv.isActive ? 'Randevuya açık' : 'Pasif'}
                   </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => {
+                  setEditingService(srv); setName(srv.name); setDescription(srv.description ?? ''); setBasePrice(srv.basePrice); setDurationMinutes(srv.durationMinutes); setOpenModal(true);
+                }}><Pencil className="h-3.5 w-3.5"/> Hizmeti düzenle</Button>
+                <Button variant="outline" size="sm" disabled={updatingServiceId === srv.id} isLoading={updatingServiceId === srv.id} onClick={() => toggleServiceStatus(srv)}>{srv.isActive ? 'Pasife al' : 'Yayına al'}</Button>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
+        }
+        </>
       )}
 
       {/* Add Service Modal */}
       {openModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card accent className="w-full max-w-lg shadow-2xl">
+          <Card accent className="max-h-[90vh] w-full max-w-lg overflow-y-auto shadow-2xl">
             <CardHeader className="relative">
               <button
                 type="button"
@@ -851,9 +996,9 @@ export const AdminServicesPage: React.FC = () => {
               >
                 <X className="h-5 w-5" />
               </button>
-              <CardTitle>Yeni Hizmet Tanımla</CardTitle>
+              <CardTitle>{editingService ? 'Hizmeti Düzenle' : 'Yeni Hizmet Tanımla'}</CardTitle>
               <CardDescription>
-                Hizmet adını, taban fiyatını ve geçerli olacağı şubeleri belirleyin.
+                Hizmet adını, süresini ve müşteriye gösterilecek fiyatı belirleyin.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -889,8 +1034,8 @@ export const AdminServicesPage: React.FC = () => {
                   />
                 </div>
 
-                {/* Branch Assignment Selector */}
-                <div className="space-y-2 pt-1">
+                {/* Branch assignment is selected only when creating a new service. */}
+                {!editingService && <div className="space-y-2 pt-1">
                   <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300">
                     Hizmetin Sunulacağı Şubeler
                   </label>
@@ -915,14 +1060,14 @@ export const AdminServicesPage: React.FC = () => {
                       );
                     })}
                   </div>
-                </div>
+                </div>}
 
                 <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-zinc-800">
-                  <Button variant="ghost" size="sm" onClick={() => setOpenModal(false)}>
+                  <Button variant="ghost" size="sm" onClick={() => { setOpenModal(false); setEditingService(null); }}>
                     İptal
                   </Button>
                   <Button type="submit" size="sm" isLoading={creating}>
-                    Hizmeti Kaydet
+                    {editingService ? 'Değişiklikleri kaydet' : 'Hizmeti kaydet'}
                   </Button>
                 </div>
               </form>
@@ -942,23 +1087,33 @@ export const AdminSubscriptionPage: React.FC = () => {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [upgradingPlanId, setUpgradingPlanId] = useState<string | null>(null);
+  const [plansError, setPlansError] = useState('');
 
   const fetchData = async () => {
     setLoading(true);
+    setPlansError('');
     try {
-      const [subRes, plansRes] = await Promise.all([
+      const [subResult, plansResult] = await Promise.allSettled([
         adminService.getMySubscription(),
         adminService.getSubscriptionPlans(),
       ]);
 
-      if (subRes.success && subRes.data) {
-        setSub(subRes.data);
+      if (subResult.status === 'fulfilled' && subResult.value.success && subResult.value.data) {
+        setSub(subResult.value.data);
+      } else {
+        // Aktif abonelik bulunmaması yeni hesaplarda normaldir; planları göstermeyi engellemez.
+        setSub(null);
       }
-      if (plansRes.success && plansRes.data) {
-        setPlans(plansRes.data);
+      if (plansResult.status === 'fulfilled' && plansResult.value.success && plansResult.value.data) {
+        setPlans(plansResult.value.data);
+      } else {
+        setPlans([]);
+        setPlansError(plansResult.status === 'rejected' ? getApiErrorMessage(plansResult.reason, 'Paket seçenekleri alınamadı.') : plansResult.value.message || 'Paket seçenekleri şu anda alınamıyor.');
       }
     } catch (err) {
-      toast.error(getApiErrorMessage(err, 'Abonelik bilgileri yüklenemedi.'));
+      const message = getApiErrorMessage(err, 'Paket seçenekleri alınamadı.');
+      setPlansError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -994,7 +1149,7 @@ export const AdminSubscriptionPage: React.FC = () => {
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-50">
-          SaaS Paket &amp; Kota Yönetimi
+          Paket ve Kullanım
         </h1>
         <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
           Aktif abonelik durumunuzu, şube/personel kotalarınızı ve plan yükseltme seçeneklerini inceleyin.
@@ -1079,9 +1234,7 @@ export const AdminSubscriptionPage: React.FC = () => {
                     {sub.maxMonthlyAppointments} Randevu/Ay
                   </span>
                 </div>
-                <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-zinc-800 overflow-hidden">
-                  <div className="h-full bg-emerald-500 rounded-full w-1/4" />
-                </div>
+                <p className="text-[11px] text-slate-500 dark:text-zinc-400">Aylık dönem için üst sınır.</p>
               </div>
             </div>
           </CardContent>
@@ -1094,7 +1247,7 @@ export const AdminSubscriptionPage: React.FC = () => {
           Mevcut Paket Seçenekleri
         </h3>
 
-        <div className="grid gap-6 md:grid-cols-2">
+        {loading ? <div className="grid gap-6 md:grid-cols-2">{[0, 1].map((item) => <Skeleton key={item} className="h-72 w-full rounded-2xl" />)}</div> : plansError ? <Card><CardContent className="flex flex-col items-start gap-3 p-6 sm:flex-row sm:items-center sm:justify-between"><div><h4 className="font-semibold text-slate-900 dark:text-zinc-100">Paketler yüklenemedi</h4><p className="mt-1 text-sm text-slate-500 dark:text-zinc-400">{plansError}</p></div><Button variant="outline" onClick={fetchData} className="gap-2"><RefreshCw className="h-4 w-4"/> Yeniden dene</Button></CardContent></Card> : plans.length === 0 ? <Card><CardContent className="p-8 text-center"><Crown className="mx-auto h-8 w-8 text-amber-500"/><h4 className="mt-3 font-semibold text-slate-900 dark:text-zinc-100">Henüz sunulan paket yok</h4><p className="mt-1 text-sm text-slate-500 dark:text-zinc-400">Paketler sisteme eklendiğinde burada görünecek.</p><Button variant="outline" onClick={fetchData} className="mt-4 gap-2"><RefreshCw className="h-4 w-4"/> Yenile</Button></CardContent></Card> : <div className="grid gap-6 md:grid-cols-2">
           {plans.map((p) => {
             const isCurrent = sub?.planId === p.id;
             return (
@@ -1148,7 +1301,7 @@ export const AdminSubscriptionPage: React.FC = () => {
               </Card>
             );
           })}
-        </div>
+        </div>}
       </div>
     </div>
   );
@@ -1245,10 +1398,10 @@ export const AdminReportsPage: React.FC = () => {
                 <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400">
                   Müşteri Memnuniyeti
                 </span>
-                <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
-                  4.9 / 5.0
+                <p className="text-2xl font-black text-emerald-700 dark:text-emerald-400">
+                  {data.averageRating > 0 ? `${data.averageRating.toFixed(1)} / 5.0` : '—'}
                 </p>
-                <span className="text-[10px] text-emerald-500">Doğrulanmış değerlendirmeler</span>
+                <span className="text-[10px] text-slate-500 dark:text-zinc-400">Müşteri değerlendirmeleri</span>
               </CardContent>
             </Card>
           </div>

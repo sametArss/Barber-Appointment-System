@@ -29,6 +29,7 @@ import {
 import { formatCurrency, formatDistance, getApiErrorMessage } from '@/lib/utils';
 import { bookingService } from '@/services/bookingService';
 import { reviewService } from '@/services/reviewService';
+import { searchService } from '@/services/searchService';
 import type {
   BranchSearchResponse,
   BranchServiceResponse,
@@ -45,7 +46,7 @@ export const BranchDetailPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const routeState = location.state as BranchDetailLocationState | null;
-  const branch = routeState?.branch;
+  const [branch, setBranch] = useState<BranchSearchResponse | undefined>(routeState?.branch);
 
   const [services, setServices] = useState<BranchServiceResponse[]>([]);
   const [staff, setStaff] = useState<StaffResponse[]>([]);
@@ -59,12 +60,14 @@ export const BranchDetailPage: React.FC = () => {
     setLoading(true);
 
     Promise.all([
+      searchService.getBranch(id),
       bookingService.getBranchServices(id),
       bookingService.getBranchStaff(id),
       reviewService.getBranchReviews(id),
     ])
-      .then(([srvRes, staffRes, revRes]) => {
+      .then(([branchRes, srvRes, staffRes, revRes]) => {
         if (cancelled) return;
+        if (branchRes.data) setBranch(branchRes.data);
         setServices((srvRes.data ?? []).filter((s) => s.isActive));
         setStaff((staffRes.data ?? []).filter((s) => s.isBookable));
         setReviews(revRes.data ?? []);
@@ -86,10 +89,9 @@ export const BranchDetailPage: React.FC = () => {
   if (!id) return null;
 
   // Calculate average rating
-  const avgRating =
-    reviews.length > 0
-      ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
-      : '5.0';
+  const avgRating = reviews.length > 0
+    ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
+    : null;
 
   const handleShare = () => {
     if (navigator.share) {
@@ -138,10 +140,10 @@ export const BranchDetailPage: React.FC = () => {
 
               <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 text-xs font-bold text-amber-600 dark:text-amber-400">
                 <Star className="h-3 w-3 fill-current text-amber-500" />
-                {avgRating} ({reviews.length > 0 ? `${reviews.length} Değerlendirme` : 'Yeni'})
+                {avgRating ? `${avgRating} · ${reviews.length} değerlendirme` : 'Henüz değerlendirme yok'}
               </span>
 
-              {branch && (
+              {branch && branch.distanceMeters > 0 && (
                 <Badge variant="outline">
                   <MapPin className="h-3 w-3 text-amber-500" />
                   {formatDistance(branch.distanceMeters)} uzaklıkta
@@ -150,13 +152,13 @@ export const BranchDetailPage: React.FC = () => {
             </div>
 
             <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-zinc-50">
-              {branch?.branchName ?? 'Moda Merkez Şubesi'}
+              {branch?.branchName ?? (loading ? 'Salon yükleniyor…' : 'Salon bilgisi alınamadı')}
             </h1>
 
             <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs font-medium text-slate-600 dark:text-zinc-400">
               <span className="flex items-center gap-1.5">
                 <MapPin className="h-4 w-4 text-amber-500 shrink-0" />
-                {branch?.address || 'Moda Cad. No:14'}, {branch?.district || 'Kadıköy'}/{branch?.city || 'İstanbul'}
+                {[branch?.address, branch?.district, branch?.city].filter(Boolean).join(', ') || 'Adres bilgisi bulunmuyor'}
               </span>
               <span className="flex items-center gap-1.5">
                 <Phone className="h-4 w-4 text-amber-500 shrink-0" />
@@ -164,19 +166,31 @@ export const BranchDetailPage: React.FC = () => {
               </span>
               <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold">
                 <ShieldCheck className="h-4 w-4 shrink-0" />
-                Doğrulanmış Salon
+                {branch ? 'Randevuya açık salon' : 'Salon bilgileri yükleniyor'}
               </span>
             </div>
           </div>
 
-          <Button
-            size="lg"
-            className="gap-2.5 shadow-lg shadow-amber-500/25 shrink-0 self-start sm:self-auto"
-            onClick={() => navigate(`/book/${id}`, { state: { branch } })}
-          >
-            <CalendarPlus className="h-5 w-5" />
-            Hemen Randevu Al
-          </Button>
+          <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            {branch && (
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${branch.latitude},${branch.longitude}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:border-amber-500/50 hover:text-amber-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+              >
+                <MapPin className="h-4 w-4 text-amber-600" /> Yol tarifi
+              </a>
+            )}
+            <Button
+              size="lg"
+              className="gap-2.5 shadow-sm"
+              onClick={() => navigate(`/book/${id}`, { state: { branch } })}
+            >
+              <CalendarPlus className="h-5 w-5" />
+              Randevu al
+            </Button>
+          </div>
         </div>
       </section>
 
@@ -318,7 +332,7 @@ export const BranchDetailPage: React.FC = () => {
               <div className="flex items-center gap-3 rounded-2xl border border-amber-500/30 bg-amber-50/50 p-2.5 px-4 dark:border-amber-500/20 dark:bg-amber-500/10">
                 <div className="flex items-center gap-1 text-lg font-black text-amber-600 dark:text-amber-400">
                   <Star className="h-5 w-5 fill-current text-amber-500" />
-                  {avgRating}
+                  {avgRating ?? '—'}
                 </div>
                 <div className="text-xs font-semibold text-slate-600 dark:text-zinc-400 border-l border-amber-500/30 pl-3">
                   {reviews.length} Gerçek Deneyim

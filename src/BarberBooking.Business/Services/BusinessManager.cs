@@ -129,6 +129,7 @@ namespace BarberBooking.Business.Services
                     Id = business.Id,
                     Name = business.Name,
                     Description = business.Description,
+                    PhoneNumber = business.PhoneNumber,
                     IsActive = business.IsActive,
                     Branches = new List<BranchResponseDto>
                     {
@@ -205,6 +206,72 @@ namespace BarberBooking.Business.Services
             return DataResult<BranchResponseDto>.Ok(response, "Yeni şube başarıyla eklendi.");
         }
 
+        public async Task<IDataResult<BranchResponseDto>> UpdateBranchAsync(UpdateBranchRequestDto request, CancellationToken cancellationToken = default)
+        {
+            var businessId = _tenantService.BusinessId;
+            if (!businessId.HasValue)
+                return DataResult<BranchResponseDto>.Fail("İşletme yetkiniz bulunamadı.", 403);
+            if (request.Latitude is < -90 or > 90 || request.Longitude is < -180 or > 180)
+                return DataResult<BranchResponseDto>.Fail("Konum koordinatları geçersiz.", 400);
+
+            var branch = await _unitOfWork.Repository<Branch>().FirstOrDefaultAsync(
+                b => b.Id == request.Id && b.BusinessId == businessId.Value, cancellationToken);
+            if (branch == null)
+                return DataResult<BranchResponseDto>.Fail("Şube bulunamadı.", 404);
+
+            branch.Name = request.Name.Trim();
+            branch.Address = request.Address.Trim();
+            branch.City = request.City.Trim();
+            branch.District = request.District.Trim();
+            branch.Location = new Point(request.Longitude, request.Latitude) { SRID = 4326 };
+            branch.IsActive = request.IsActive;
+            branch.UpdatedAt = DateTimeOffset.UtcNow;
+            _unitOfWork.Repository<Branch>().Update(branch);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            var business = await _unitOfWork.Repository<BusinessEntity>().GetByIdAsync(businessId.Value, cancellationToken);
+            return DataResult<BranchResponseDto>.Ok(new BranchResponseDto
+            {
+                Id = branch.Id,
+                BusinessId = branch.BusinessId,
+                Name = branch.Name,
+                Address = branch.Address,
+                City = branch.City,
+                District = branch.District,
+                PhoneNumber = business?.PhoneNumber ?? string.Empty,
+                Longitude = branch.Location.X,
+                Latitude = branch.Location.Y,
+                IsActive = branch.IsActive
+            }, "Şube bilgileri güncellendi.");
+        }
+
+        public async Task<IDataResult<BusinessResponseDto>> UpdateMyBusinessAsync(UpdateBusinessRequestDto request, CancellationToken cancellationToken = default)
+        {
+            var businessId = _tenantService.BusinessId;
+            if (!businessId.HasValue)
+                return DataResult<BusinessResponseDto>.Fail("İşletme yetkiniz bulunamadı.", 403);
+
+            var business = await _unitOfWork.Repository<BusinessEntity>().GetByIdAsync(businessId.Value, cancellationToken);
+            if (business == null)
+                return DataResult<BusinessResponseDto>.Fail("İşletme kaydı bulunamadı.", 404);
+
+            business.Name = request.Name.Trim();
+            business.Description = request.Description?.Trim();
+            business.PhoneNumber = request.PhoneNumber.Trim();
+            business.UpdatedAt = DateTimeOffset.UtcNow;
+            _unitOfWork.Repository<BusinessEntity>().Update(business);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return DataResult<BusinessResponseDto>.Ok(new BusinessResponseDto
+            {
+                Id = business.Id,
+                Name = business.Name,
+                Description = business.Description,
+                PhoneNumber = business.PhoneNumber,
+                IsActive = business.IsActive
+            }, "İşletme profili güncellendi.");
+        }
+
         public async Task<IDataResult<BusinessResponseDto>> GetMyBusinessAsync(CancellationToken cancellationToken = default)
         {
             var businessId = _tenantService.BusinessId;
@@ -227,6 +294,7 @@ namespace BarberBooking.Business.Services
                 Id = business.Id,
                 Name = business.Name,
                 Description = business.Description,
+                PhoneNumber = business.PhoneNumber,
                 IsActive = business.IsActive,
                 Branches = business.Branches.Select(br => new BranchResponseDto
                 {

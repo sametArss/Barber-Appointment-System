@@ -391,10 +391,10 @@ export const AdminCalendarPage: React.FC = () => {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {columns.map((col) => (
             <Card key={col.id} className="flex flex-col overflow-hidden">
-              <CardHeader className="border-b border-slate-800/80 bg-slate-950/40 py-4">
+              <CardHeader className="border-b border-slate-200 bg-slate-50 py-4 dark:border-zinc-800 dark:bg-zinc-950/40">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/15 text-sm font-bold text-amber-400">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/15 text-sm font-bold text-amber-700 dark:text-amber-400">
                       {col.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
@@ -408,7 +408,7 @@ export const AdminCalendarPage: React.FC = () => {
 
               <CardContent className="flex-1 space-y-2.5 p-4">
                 {col.appointments.length === 0 ? (
-                  <div className="flex h-36 flex-col items-center justify-center rounded-xl border border-dashed border-slate-800 text-xs text-slate-500">
+                  <div className="flex h-36 flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 text-xs text-slate-500 dark:border-zinc-800">
                     <CalendarDays className="mb-1.5 h-5 w-5 opacity-50" />
                     Bu aralıkta randevu yok
                   </div>
@@ -611,7 +611,7 @@ export const AdminCalendarPage: React.FC = () => {
               </div>
             </CardContent>
 
-            <CardFooter className="justify-end border-t border-slate-800/80 pt-3">
+            <CardFooter className="justify-end border-t border-slate-200 pt-3 dark:border-zinc-800/80">
               <Button variant="ghost" size="sm" onClick={() => setSelectedAppt(null)}>
                 Kapat
               </Button>

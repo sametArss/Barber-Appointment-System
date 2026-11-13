@@ -7,8 +7,6 @@ import {
   MapPin,
   Scissors,
   ShieldCheck,
-  Sparkles,
-  Star,
   Zap,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -23,9 +21,8 @@ export const HomePage: React.FC = () => {
   return (
     <div className="space-y-16 py-4 sm:py-8">
       {/* Hero Section */}
-      <section className="relative overflow-hidden rounded-3xl border border-slate-200/90 bg-gradient-to-b from-white via-slate-50 to-amber-50/20 p-8 sm:p-14 lg:p-20 shadow-sm dark:border-zinc-800/90 dark:bg-gradient-to-b dark:from-zinc-900/90 dark:via-zinc-950 dark:to-zinc-950 dark:shadow-2xl">
-        <div className="absolute -right-20 -top-20 h-80 w-80 rounded-full bg-amber-500/15 blur-3xl pointer-events-none dark:bg-amber-500/10" />
-        <div className="absolute -left-20 -bottom-20 h-72 w-72 rounded-full bg-amber-400/10 blur-3xl pointer-events-none" />
+      <section className="relative overflow-hidden rounded-[2rem] border border-[#e8e1d6] bg-[#eee9e1] p-7 shadow-sm dark:border-zinc-800 dark:bg-[#211f1b] sm:p-12 lg:p-16">
+        <div className="absolute -right-16 -top-24 h-80 w-80 rounded-full bg-[#c99561]/20 blur-3xl pointer-events-none" />
 
         <div className="relative max-w-3xl space-y-6">
           <motion.div
@@ -34,8 +31,8 @@ export const HomePage: React.FC = () => {
             transition={{ duration: 0.4 }}
           >
             <Badge variant="amber" className="gap-1.5 px-3 py-1 shadow-sm">
-              <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-              Şehrin En İyi Berber &amp; Salon Deneyimi
+              <Scissors className="h-3.5 w-3.5 text-amber-700" />
+              İyi bir tıraş, doğru ustayla başlar
             </Badge>
           </motion.div>
 
@@ -43,35 +40,34 @@ export const HomePage: React.FC = () => {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-zinc-50 leading-[1.12]"
+            className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-[-0.045em] text-[#27251f] dark:text-zinc-50 leading-[1.08]"
           >
-            Stiline En Uygun Salonu Keşfet,{' '}
-            <span className="text-amber-500 dark:text-amber-400">Saniyeler İçinde</span> Yerini Ayırt.
+            Bir sonraki{' '}
+            <span className="text-[#a56b36] dark:text-[#d5a16c]">iyi tıraşın</span> için yerini ayırt.
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-base sm:text-xl text-slate-600 dark:text-zinc-400 leading-relaxed font-normal max-w-2xl"
+            className="text-base sm:text-lg text-slate-600 dark:text-zinc-300 leading-relaxed font-normal max-w-xl"
           >
-            Sıra beklemeden, çevrendeki seçkin berber ve kuaförleri haritada incele.
-            Ustanı ve sana en uygun saati seçerek randevunu güvenle planla.
+            Yakınındaki berberleri incele, hizmet ve fiyatları karşılaştır. Sana uyan saati seç; randevun hazır.
           </motion.p>
 
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="flex flex-wrap items-center gap-3.5 pt-2"
+              className="flex flex-wrap items-center gap-3 pt-2"
           >
             <Button
               size="lg"
-              className="gap-2 shadow-lg shadow-amber-500/25"
+              className="gap-2 shadow-sm"
               onClick={() => navigate('/explore')}
             >
               <Compass className="h-5 w-5" />
-              Yakınımdaki Salonları Keşfet
+              Salonları keşfet
               <ArrowRight className="h-4 w-4" />
             </Button>
 
@@ -92,19 +88,18 @@ export const HomePage: React.FC = () => {
             )}
           </motion.div>
 
-          {/* Social Proof Stats */}
-          <div className="flex flex-wrap items-center gap-6 pt-6 border-t border-slate-200/80 dark:border-zinc-800/80 text-xs font-semibold text-slate-600 dark:text-zinc-400">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3 pt-6 text-xs font-medium text-slate-600 dark:text-zinc-300">
             <div className="flex items-center gap-1.5">
-              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-              <span>%100 Gerçek Müşteri Yorumları</span>
+              <CheckCircle2 className="h-4 w-4 text-[#78917a]" />
+              <span>Gerçek salon bilgileri</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <Zap className="h-4 w-4 text-amber-500" />
-              <span>Anında Onaylanan Randevular</span>
+              <Zap className="h-4 w-4 text-[#a56b36]" />
+              <span>Müsait saatleri kolayca gör</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-              <span>4.9 / 5.0 Salon Memnuniyeti</span>
+              <MapPin className="h-4 w-4 text-[#a56b36]" />
+              <span>Konuma veya şehre göre ara</span>
             </div>
           </div>
         </div>
@@ -173,22 +168,21 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* Featured Salon Showcase */}
-      <section className="rounded-3xl border border-slate-200/90 bg-white p-8 sm:p-10 dark:border-zinc-800/90 dark:bg-zinc-900/60 shadow-sm">
+      {/* Discovery callout */}
+      <section className="rounded-[2rem] border border-[#302c25] bg-[#292720] p-7 text-white shadow-sm sm:p-10">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500 text-slate-950 shadow-md">
-              <Scissors className="h-7 w-7" />
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#d5a16c] text-[#292720]">
+              <MapPin className="h-7 w-7" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-slate-900 dark:text-zinc-50">
-                  Moda Merkez Şubesi
+                <h3 className="text-lg font-semibold text-white">
+                  Sana uygun salonu bul
                 </h3>
-                <Badge variant="amber" className="text-[10px]">Öne Çıkan</Badge>
               </div>
-              <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
-                Kadıköy / Moda • Modern Saç Kesimi, Sakal Şekillendirme ve Sıcak Havlu Bakımı
+              <p className="mt-1 max-w-xl text-sm text-white/65">
+                Hizmetleri, fiyatları ve uygun saatleri karşılaştır; randevunu seçtiğin berberde oluştur.
               </p>
             </div>
           </div>
@@ -196,9 +190,9 @@ export const HomePage: React.FC = () => {
           <Button
             size="md"
             className="gap-2 shrink-0"
-            onClick={() => navigate('/branch/20000000-0000-0000-0000-000000000001')}
+            onClick={() => navigate('/explore')}
           >
-            Hizmetleri Gör &amp; Randevu Al
+            Keşfe başla
             <ArrowRight className="h-4 w-4" />
           </Button>
         </div>

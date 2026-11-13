@@ -1,15 +1,16 @@
 import React, { useEffect } from 'react';
 import L from 'leaflet';
-import { CalendarPlus, ChevronRight, MapPin, Scissors, Star } from 'lucide-react';
+import { CalendarPlus, ChevronRight, MapPin, Scissors } from 'lucide-react';
 import { Circle, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import { useNavigate } from 'react-router-dom';
-import { Badge, Button } from '@/components/ui';
+import { Button } from '@/components/ui';
 import { formatDistance } from '@/lib/utils';
 import type { BranchSearchResponse } from '@/types/booking';
 
 interface BranchMapProps {
   userLocation: { lat: number; lng: number };
   radiusKm: number;
+  areaSearch?: boolean;
   branches: BranchSearchResponse[];
   selectedBranchId: string | null;
   onSelectBranch: (branchId: string) => void;
@@ -53,12 +54,16 @@ const createBarberIcon = (isSelected: boolean) =>
     popupAnchor: [0, -22],
   });
 
-const MapViewportUpdater: React.FC<{ center: [number, number] }> = ({ center }) => {
+const MapViewportUpdater: React.FC<{ center: [number, number]; branches: BranchSearchResponse[]; areaSearch: boolean }> = ({ center, branches, areaSearch }) => {
   const map = useMap();
 
   useEffect(() => {
-    map.flyTo(center, map.getZoom(), { duration: 0.65 });
-  }, [center, map]);
+    if (areaSearch && branches.length > 1) {
+      map.fitBounds(branches.map((branch) => [branch.latitude, branch.longitude]), { padding: [32, 32], maxZoom: 13 });
+    } else {
+      map.flyTo(center, map.getZoom(), { duration: 0.65 });
+    }
+  }, [center, map, branches, areaSearch]);
 
   return null;
 };
@@ -66,6 +71,7 @@ const MapViewportUpdater: React.FC<{ center: [number, number] }> = ({ center }) 
 export const BranchMap: React.FC<BranchMapProps> = ({
   userLocation,
   radiusKm,
+  areaSearch = false,
   branches,
   selectedBranchId,
   onSelectBranch,
@@ -93,10 +99,10 @@ export const BranchMap: React.FC<BranchMapProps> = ({
           url={tileUrl}
         />
 
-        <MapViewportUpdater center={center} />
+        <MapViewportUpdater center={center} branches={branches} areaSearch={areaSearch} />
 
         {/* User location radius */}
-        <Circle
+        {!areaSearch && <Circle
           center={[userLocation.lat, userLocation.lng]}
           radius={radiusKm * 1000}
           pathOptions={{
@@ -106,14 +112,14 @@ export const BranchMap: React.FC<BranchMapProps> = ({
             fillColor: '#f59e0b',
             fillOpacity: 0.06,
           }}
-        />
-        <Marker position={[userLocation.lat, userLocation.lng]} icon={createUserIcon()}>
+        />}
+        {!areaSearch && <Marker position={[userLocation.lat, userLocation.lng]} icon={createUserIcon()}>
           <Popup>
             <div className="p-1 font-semibold text-xs text-slate-800">
               📍 Bulunduğunuz Konum
             </div>
           </Popup>
-        </Marker>
+        </Marker>}
 
         {/* Salon branch pins */}
         {branches.map((branch) => {
@@ -139,15 +145,11 @@ export const BranchMap: React.FC<BranchMapProps> = ({
                         {branch.branchName}
                       </h4>
                     </div>
-                    <Badge variant="amber" className="text-[10px] py-0 shrink-0">
-                      <Star className="h-2.5 w-2.5 fill-current" />
-                      5.0
-                    </Badge>
                   </div>
 
                   <p className="flex items-center gap-1 text-xs text-slate-600 font-medium">
                     <MapPin className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-                    <span>{formatDistance(branch.distanceMeters)} uzaklıkta</span>
+                    <span>{areaSearch ? `${branch.district}, ${branch.city}` : `${formatDistance(branch.distanceMeters)} uzaklıkta`}</span>
                   </p>
 
                   {branch.offeredServices.length > 0 && (

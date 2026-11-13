@@ -15,9 +15,20 @@ export interface CreateBranchRequest {
   address: string;
   city: string;
   district: string;
-  phoneNumber: string;
+  phoneNumber?: string;
   latitude: number;
   longitude: number;
+}
+
+export interface UpdateBranchRequest extends Omit<CreateBranchRequest, 'phoneNumber'> {
+  id: string;
+  isActive: boolean;
+}
+
+export interface UpdateBusinessRequest {
+  name: string;
+  description?: string;
+  phoneNumber: string;
 }
 
 export interface CreateStaffRequest {
@@ -37,6 +48,11 @@ export interface CreateServiceRequest {
   durationMinutes: number;
   basePrice: number;
   assignToBranchIds?: string[];
+}
+
+export interface UpdateServiceRequest extends CreateServiceRequest {
+  id: string;
+  isActive: boolean;
 }
 
 export interface BusinessServiceItem {

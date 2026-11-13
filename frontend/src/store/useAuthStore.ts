@@ -11,6 +11,8 @@ interface AuthState {
   isAuthenticated: boolean;
   setAuth: (auth: LoginResponse) => void;
   updateTokens: (auth: LoginResponse) => void;
+  updateFullName: (fullName: string) => void;
+  updatePhoneNumber: (phoneNumber: string) => void;
   logout: () => void;
   hasRole: (role: Role | Role[]) => boolean;
 }
@@ -19,6 +21,7 @@ const mapAuthToUser = (auth: LoginResponse): User => ({
   id: auth.userId,
   fullName: auth.fullName,
   email: auth.email,
+  phoneNumber: auth.phoneNumber ?? null,
   roles: auth.roles,
   businessId: auth.businessId,
 });
@@ -52,6 +55,9 @@ export const useAuthStore = create<AuthState>()(
           refreshTokenExpiresAt: auth.refreshTokenExpiresAt,
           isAuthenticated: true,
         }),
+
+      updateFullName: (fullName) => set((state) => ({ user: state.user ? { ...state.user, fullName } : null })),
+      updatePhoneNumber: (phoneNumber) => set((state) => ({ user: state.user ? { ...state.user, phoneNumber } : null })),
 
       logout: () =>
         set({

@@ -4,13 +4,13 @@
 
 @layer base {
   :root {
-    --bg-page: #F8FAFC;
+    --bg-page: #F7F6F3;
     --card-surface: #FFFFFF;
-    --card-border: #E2E8F0;
-    --text-primary: #0F172A;
-    --text-muted: #64748B;
-    --accent-gold: #D97706;
-    --accent-hover: #B45309;
+    --card-border: #E7E3DC;
+    --text-primary: #24231F;
+    --text-muted: #74716A;
+    --accent-gold: #A56B36;
+    --accent-hover: #87552A;
     color-scheme: light;
   }
 
@@ -28,8 +28,19 @@
   body {
     background-color: var(--bg-page);
     color: var(--text-primary);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-feature-settings: "ss01" on;
+    -webkit-font-smoothing: antialiased;
     transition: background-color 0.25s ease, color 0.25s ease;
+  }
+
+  ::selection { background: rgb(165 107 54 / 18%); }
+
+  button, a, input, select { -webkit-tap-highlight-color: transparent; }
+
+  :focus-visible {
+    outline: 2px solid #b47a45;
+    outline-offset: 3px;
   }
 
   /* Custom Smooth Scrollbar */
@@ -62,5 +73,15 @@
   /* OpenStreetMap Leaflet Dark Mode filter - 100% Free & Zero API Key */
   .dark .leaflet-tile-pane {
     filter: invert(100%) hue-rotate(180deg) brightness(92%) contrast(92%);
+  }
+
+  .dark {
+    --bg-page: #11110F;
+    --card-surface: #191916;
+    --card-border: #302F2A;
+    --text-primary: #F4F1EA;
+    --text-muted: #AAA69D;
+    --accent-gold: #D5A16C;
+    --accent-hover: #E1B17D;
   }
 }

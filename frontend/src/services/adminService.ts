@@ -5,6 +5,9 @@ import type {
   CreateBusinessRequest,
   CreateServiceRequest,
   CreateStaffRequest,
+  UpdateBranchRequest,
+  UpdateBusinessRequest,
+  UpdateServiceRequest,
   SetStaffWorkingHoursRequest,
   SubscribeRequest,
 } from '@/types/admin';
@@ -21,6 +24,7 @@ import type {
 } from '@/types/dashboard';
 import type {
   BranchResponse,
+  BusinessProfileResponse,
   BusinessSubscriptionDetails,
   CreatePenaltyRequest,
   SubscriptionPlan,
@@ -45,6 +49,21 @@ export const adminService = {
       '/api/businesses/branches',
       payload,
     );
+    return data;
+  },
+
+  async updateBranch(payload: UpdateBranchRequest): Promise<DataResult<BranchResponse>> {
+    const { data } = await apiClient.put<DataResult<BranchResponse>>('/api/businesses/branches', payload);
+    return data;
+  },
+
+  async getMyBusiness(): Promise<DataResult<BusinessProfileResponse>> {
+    const { data } = await apiClient.get<DataResult<BusinessProfileResponse>>('/api/businesses/me');
+    return data;
+  },
+
+  async updateMyBusiness(payload: UpdateBusinessRequest): Promise<DataResult<BusinessProfileResponse>> {
+    const { data } = await apiClient.put<DataResult<BusinessProfileResponse>>('/api/businesses/me', payload);
     return data;
   },
 
@@ -90,6 +109,11 @@ export const adminService = {
     return data;
   },
 
+  async updateStaffProfile(payload: { staffProfileId: string; biography?: string; profileImageUrl?: string; isBookable: boolean }): Promise<Result> {
+    const { data } = await apiClient.put<Result>('/api/staff/profile', payload);
+    return data;
+  },
+
   async setStaffWorkingHours(payload: SetStaffWorkingHoursRequest): Promise<Result> {
     const { data } = await apiClient.post<Result>(
       '/api/schedules/staff-working-hours',
@@ -111,6 +135,11 @@ export const adminService = {
       '/api/services',
       payload,
     );
+    return data;
+  },
+
+  async updateService(payload: UpdateServiceRequest): Promise<DataResult<BusinessServiceItem>> {
+    const { data } = await apiClient.put<DataResult<BusinessServiceItem>>('/api/services', payload);
     return data;
   },
 

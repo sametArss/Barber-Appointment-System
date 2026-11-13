@@ -4,6 +4,7 @@ import {
   ArrowRight,
   Building2,
   Lock,
+  LocateFixed,
   Mail,
   MapPin,
   Phone,
@@ -41,25 +42,32 @@ export const RegisterPage: React.FC = () => {
   // Salon Sahibi alanları
   const [businessName, setBusinessName] = useState('');
   const [branchName, setBranchName] = useState('');
-  const [city, setCity] = useState('İstanbul');
-  const [district, setDistrict] = useState('Kadıköy');
+  const [city, setCity] = useState('');
+  const [district, setDistrict] = useState('');
   const [address, setAddress] = useState('');
-  const [latitude, setLatitude] = useState(40.9856);
-  const [longitude, setLongitude] = useState(29.0268);
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
+  const [locating, setLocating] = useState(false);
 
-  const handleDistrictChange = (val: string) => {
-    setDistrict(val);
-    const norm = val.trim().toLowerCase();
-    if (norm.includes('beşiktaş') || norm.includes('besiktas')) {
-      setLatitude(41.0422);
-      setLongitude(29.0067);
-    } else if (norm.includes('ataşehir') || norm.includes('atasehir')) {
-      setLatitude(40.9923);
-      setLongitude(29.1244);
-    } else if (norm.includes('kadıköy') || norm.includes('kadikoy')) {
-      setLatitude(40.9856);
-      setLongitude(29.0268);
+  const captureLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Bu tarayıcı konum almayı desteklemiyor.');
+      return;
     }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        setLatitude(coords.latitude.toFixed(6));
+        setLongitude(coords.longitude.toFixed(6));
+        setLocating(false);
+        toast.success('Konum koordinatları dolduruldu.');
+      },
+      () => {
+        setLocating(false);
+        toast.error('Konum alınamadı. Tarayıcı iznini kontrol edip tekrar deneyin.');
+      },
+      { enableHighAccuracy: true, timeout: 12000 },
+    );
   };
 
   const [isLoading, setIsLoading] = useState(false);
@@ -105,16 +113,21 @@ export const RegisterPage: React.FC = () => {
         toast.loading('Salon profiliniz ve şubeniz oluşturuluyor...', { id: 'setup-biz' });
 
         try {
-          await adminService.createBusiness({
+          const businessRes = await adminService.createBusiness({
             name: businessName.trim() || `${firstName}'s Studio`,
             branchName: branchName.trim() || 'Merkez Şube',
             phoneNumber: phoneNumber.trim(),
-            city: city.trim() || 'İstanbul',
-            district: district.trim() || 'Kadıköy',
-            address: address.trim() || `${district}, ${city}`,
-            latitude,
-            longitude,
+            city: city.trim(),
+            district: district.trim(),
+            address: address.trim(),
+            latitude: Number(latitude),
+            longitude: Number(longitude),
           });
+          if (!businessRes.success || !businessRes.data) {
+            toast.error(businessRes.message || 'Salon oluşturulamadı. Hesabın açıldı; destekle iletişime geç.', { id: 'setup-biz' });
+            navigate('/explore', { replace: true });
+            return;
+          }
 
           // Rol ve BusinessId claim'lerinin yenilenmesi için tekrar login
           const refreshedLogin = await authService.login({
@@ -122,9 +135,12 @@ export const RegisterPage: React.FC = () => {
             password,
           });
 
-          if (refreshedLogin.success && refreshedLogin.data) {
-            setAuth(refreshedLogin.data);
+          if (!refreshedLogin.success || !refreshedLogin.data) {
+            toast.error('Salon kuruldu ancak yetkiler yenilenemedi. Tekrar giriş yaparak devam et.', { id: 'setup-biz' });
+            navigate('/login', { replace: true });
+            return;
           }
+          setAuth(refreshedLogin.data);
 
           toast.success('Salonunuz başarıyla kuruldu!', { id: 'setup-biz' });
           navigate('/admin/dashboard', { replace: true });
@@ -133,7 +149,7 @@ export const RegisterPage: React.FC = () => {
           toast.error(getApiErrorMessage(bizErr, 'İşletme kurulurken bir hata oluştu.'), {
             id: 'setup-biz',
           });
-          navigate('/admin/dashboard', { replace: true });
+          navigate('/explore', { replace: true });
           return;
         }
       }
@@ -325,7 +341,7 @@ export const RegisterPage: React.FC = () => {
                         label="İlçe"
                         placeholder="Kadıköy"
                         value={district}
-                        onChange={(e) => handleDistrictChange(e.target.value)}
+                        onChange={(e) => setDistrict(e.target.value)}
                         required={mode === 'owner'}
                       />
                     </div>
@@ -339,13 +355,25 @@ export const RegisterPage: React.FC = () => {
                       required={mode === 'owner'}
                     />
 
+                    <div className="flex flex-col gap-2 rounded-2xl border border-amber-500/20 bg-amber-50/70 p-3 dark:border-amber-500/20 dark:bg-amber-500/5 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex items-start gap-2.5">
+                        <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                        <div>
+                          <p className="text-sm font-semibold text-slate-800 dark:text-zinc-100">Salon konumu</p>
+                          <p className="text-xs text-slate-500 dark:text-zinc-400">Doğru adres için salonun içindeyken konumunu al.</p>
+                        </div>
+                      </div>
+                      <Button type="button" variant="outline" size="sm" onClick={captureLocation} isLoading={locating} className="shrink-0 gap-2">
+                        <LocateFixed className="h-4 w-4" /> Konumumu al
+                      </Button>
+                    </div>
                     <div className="grid grid-cols-2 gap-3">
                       <Input
                         label="Enlem (Lat)"
                         type="number"
                         step="0.0001"
                         value={latitude}
-                        onChange={(e) => setLatitude(parseFloat(e.target.value) || 0)}
+                        onChange={(e) => setLatitude(e.target.value)}
                         required={mode === 'owner'}
                       />
                       <Input
@@ -353,10 +381,11 @@ export const RegisterPage: React.FC = () => {
                         type="number"
                         step="0.0001"
                         value={longitude}
-                        onChange={(e) => setLongitude(parseFloat(e.target.value) || 0)}
+                        onChange={(e) => setLongitude(e.target.value)}
                         required={mode === 'owner'}
                       />
                     </div>
+                    <p className="-mt-2 text-[11px] text-slate-500 dark:text-zinc-400">Konum izni verilmezse koordinatları elle düzenleyebilirsin.</p>
                   </motion.div>
                 )}
               </AnimatePresence>

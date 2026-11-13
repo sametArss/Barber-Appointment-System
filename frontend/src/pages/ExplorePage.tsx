@@ -33,13 +33,14 @@ export const ExplorePage: React.FC = () => {
   const navigate = useNavigate();
 
   const [coords, setCoords] = useState<{ lat: number; lng: number }>(DEFAULT_COORDS);
-  const [locationSource, setLocationSource] = useState<'gps' | 'default'>('default');
+  const [locationSource, setLocationSource] = useState<'gps' | 'unavailable'>('unavailable');
   const [locating, setLocating] = useState(false);
 
   const [queryText, setQueryText] = useState('');
   const [city, setCity] = useState('');
   const [district, setDistrict] = useState('');
-  const [radiusKm, setRadiusKm] = useState<number>(15);
+  const [radiusKm, setRadiusKm] = useState<number>(25);
+  const areaSearch = Boolean(city.trim() || district.trim());
 
   const [branches, setBranches] = useState<BranchSearchResponse[]>([]);
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
@@ -88,10 +89,8 @@ export const ExplorePage: React.FC = () => {
   const requestUserLocation = useCallback(
     (showFeedback = false) => {
       if (!('geolocation' in navigator)) {
-        if (showFeedback) {
-          toast.info('Tarayıcınız konum servisini desteklemiyor. Varsayılan Kadıköy konumu kullanılıyor.');
-        }
-        fetchNearby(DEFAULT_COORDS.lat, DEFAULT_COORDS.lng);
+        setLocationSource('unavailable'); setLoading(false); setBranches([]);
+        if (showFeedback) toast.info('Konum desteği yok. Salonları bulmak için şehir veya ilçe ara.');
         return;
       }
 
@@ -111,13 +110,10 @@ export const ExplorePage: React.FC = () => {
           fetchNearby(nextCoords.lat, nextCoords.lng);
         },
         () => {
-          setCoords(DEFAULT_COORDS);
-          setLocationSource('default');
+          setLocationSource('unavailable');
           setLocating(false);
-          if (showFeedback) {
-            toast.info('Konum izni alınamadı, Kadıköy / Moda konumu gösteriliyor.');
-          }
-          fetchNearby(DEFAULT_COORDS.lat, DEFAULT_COORDS.lng);
+          setLoading(false); setBranches([]);
+          if (showFeedback) toast.info('Konum izni alınamadı. Şehir veya ilçe seçerek arama yapabilirsin.');
         },
         { enableHighAccuracy: true, timeout: 6000 },
       );
@@ -126,12 +122,16 @@ export const ExplorePage: React.FC = () => {
   );
 
   useEffect(() => {
-    fetchNearby(DEFAULT_COORDS.lat, DEFAULT_COORDS.lng, { radiusKm: 15 });
+    requestUserLocation(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (locationSource !== 'gps' && !areaSearch) {
+      toast.info('Yakınındaki salonlar için konum izni ver veya şehir/ilçe seç.');
+      return;
+    }
     fetchNearby(coords.lat, coords.lng, { queryText, city, district, radiusKm });
   };
 
@@ -148,14 +148,14 @@ export const ExplorePage: React.FC = () => {
             <Badge variant={locationSource === 'gps' ? 'success' : 'outline'}>
               {locationSource === 'gps'
                 ? 'Canlı Konum Aktif'
-                : 'Bölge: Kadıköy / Moda'}
+                : 'Şehir / ilçe seçerek ara'}
             </Badge>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-50 sm:text-3xl">
             Çevrendeki Berber &amp; Kuaförler
           </h1>
           <p className="mt-1 text-sm text-slate-500 dark:text-zinc-400">
-            Sana en yakın profesyonel salonları mesafesine göre keşfet, müsait saatleri gör.
+            Yakınındaki salonları bul veya şehir ve ilçe yazarak Türkiye’nin her yerinde ara.
           </p>
         </div>
 
@@ -210,7 +210,7 @@ export const ExplorePage: React.FC = () => {
                 htmlFor="radius-select"
                 className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300"
               >
-                Mesafe Çapı
+                {areaSearch ? 'Şehir / ilçe araması' : 'En fazla mesafe'}
               </label>
               <select
                 id="radius-select"
@@ -225,7 +225,8 @@ export const ExplorePage: React.FC = () => {
                     radiusKm: nextRadius,
                   });
                 }}
-                className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 shadow-sm"
+                disabled={areaSearch}
+                className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 shadow-sm"
               >
                 <option value={2}>2 km içinde</option>
                 <option value={5}>5 km içinde</option>
@@ -273,7 +274,7 @@ export const ExplorePage: React.FC = () => {
                   Seçili kriterlere uygun salon bulunamadı
                 </p>
                 <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">
-                  Arama yarıçapını genişletmeyi veya ilçe filtresini temizlemeyi deneyin.
+                  Şehir veya ilçe yazdıysanız yazımı kontrol edin; yakın aramada mesafeyi artırın.
                 </p>
                 <Button
                   variant="outline"
@@ -320,7 +321,7 @@ export const ExplorePage: React.FC = () => {
                       </div>
                       <Badge variant="amber" className="shrink-0 text-xs">
                         <MapPin className="h-3 w-3" />
-                        {formatDistance(branch.distanceMeters)}
+                        {areaSearch ? `${branch.district}, ${branch.city}` : formatDistance(branch.distanceMeters)}
                       </Badge>
                     </div>
 
@@ -379,6 +380,7 @@ export const ExplorePage: React.FC = () => {
           <BranchMap
             userLocation={coords}
             radiusKm={radiusKm}
+            areaSearch={areaSearch}
             branches={branches}
             selectedBranchId={selectedBranchId}
             onSelectBranch={setSelectedBranchId}

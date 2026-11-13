@@ -57,10 +57,12 @@ namespace BarberBooking.Business.Services
             try
             {
                 var user = await userRepo.FirstOrDefaultAsync(u => u.NormalizedEmail == emailNormalized, cancellationToken);
+                var accountAlreadyExisted = user != null;
+                string? temporaryPassword = null;
                 if (user == null)
                 {
-                    var defaultPassword = "Staff@" + Guid.NewGuid().ToString("N")[..6];
-                    var passwordHash = _passwordHasher.HashPassword(defaultPassword);
+                    temporaryPassword = "Staff@" + Guid.NewGuid().ToString("N")[..8];
+                    var passwordHash = _passwordHasher.HashPassword(temporaryPassword);
 
                     user = new User
                     {
@@ -188,6 +190,8 @@ namespace BarberBooking.Business.Services
                     FullName = $"{user.FirstName} {user.LastName}",
                     Email = user.Email,
                     PhoneNumber = user.PhoneNumber,
+                    TemporaryPassword = temporaryPassword,
+                    AccountAlreadyExisted = accountAlreadyExisted,
                     Biography = staffProfile.Biography,
                     ProfileImageUrl = staffProfile.ProfileImageUrl,
                     IsBookable = staffProfile.IsBookable,
@@ -251,6 +255,25 @@ namespace BarberBooking.Business.Services
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return Result.Ok("Şube atamaları başarıyla güncellendi.");
+        }
+
+        public async Task<IResult> UpdateStaffProfileAsync(UpdateStaffProfileRequestDto request, CancellationToken cancellationToken = default)
+        {
+            var businessId = _tenantService.BusinessId;
+            if (!businessId.HasValue) return Result.Fail("İşletme yetkiniz bulunamadı.", 403);
+
+            var staffRepo = _unitOfWork.Repository<StaffProfile>();
+            var staff = await staffRepo.Query().Include(sp => sp.BusinessMember)
+                .FirstOrDefaultAsync(sp => sp.Id == request.StaffProfileId && sp.BusinessMember.BusinessId == businessId.Value, cancellationToken);
+            if (staff == null) return Result.Fail("Personel kaydı bulunamadı.", 404);
+
+            staff.Biography = request.Biography?.Trim();
+            staff.ProfileImageUrl = request.ProfileImageUrl?.Trim();
+            staff.IsBookable = request.IsBookable;
+            staff.UpdatedAt = DateTimeOffset.UtcNow;
+            staffRepo.Update(staff);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            return Result.Ok("Personel profili güncellendi.");
         }
 
         public async Task<IDataResult<IReadOnlyList<StaffResponseDto>>> GetBusinessStaffAsync(CancellationToken cancellationToken = default)

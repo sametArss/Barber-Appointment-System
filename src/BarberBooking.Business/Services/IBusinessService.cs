@@ -7,6 +7,8 @@ namespace BarberBooking.Business.Services
     {
         Task<IDataResult<BusinessResponseDto>> CreateBusinessAsync(CreateBusinessRequestDto request, CancellationToken cancellationToken = default);
         Task<IDataResult<BranchResponseDto>> AddBranchAsync(CreateBranchRequestDto request, CancellationToken cancellationToken = default);
+        Task<IDataResult<BranchResponseDto>> UpdateBranchAsync(UpdateBranchRequestDto request, CancellationToken cancellationToken = default);
+        Task<IDataResult<BusinessResponseDto>> UpdateMyBusinessAsync(UpdateBusinessRequestDto request, CancellationToken cancellationToken = default);
         Task<IDataResult<BusinessResponseDto>> GetMyBusinessAsync(CancellationToken cancellationToken = default);
         Task<IDataResult<IReadOnlyList<BranchResponseDto>>> GetMyBranchesAsync(CancellationToken cancellationToken = default);
     }

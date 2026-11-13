@@ -18,6 +18,14 @@
         public List<Guid> BranchIds { get; set; } = new();
     }
 
+    public class UpdateStaffProfileRequestDto
+    {
+        public Guid StaffProfileId { get; set; }
+        public string? Biography { get; set; }
+        public string? ProfileImageUrl { get; set; }
+        public bool IsBookable { get; set; }
+    }
+
     public class StaffResponseDto
     {
         public Guid Id { get; set; }
@@ -27,6 +35,8 @@
         public string FullName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string PhoneNumber { get; set; } = string.Empty;
+        public string? TemporaryPassword { get; set; }
+        public bool AccountAlreadyExisted { get; set; }
         public string? Biography { get; set; }
         public string? ProfileImageUrl { get; set; }
         public bool IsBookable { get; set; }

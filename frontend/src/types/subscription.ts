@@ -52,6 +52,14 @@ export interface BusinessSubscriptionDetails {
   currentStaffCount: number;
 }
 
+export interface BusinessProfileResponse {
+  id: string;
+  name: string;
+  description: string | null;
+  phoneNumber: string;
+  isActive: boolean;
+}
+
 /**
  * POST /api/penalties istek modeli (CreatePenaltyRequestDto).
  * Reason: 1 = NoShow, 2 = LateCancellation, 3 = ManualByBusiness

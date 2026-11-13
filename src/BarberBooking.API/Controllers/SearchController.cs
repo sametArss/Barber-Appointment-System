@@ -28,5 +28,14 @@ namespace BarberBooking.API.Controllers
 
             return Ok(result);
         }
+
+        [HttpGet("branch/{branchId:guid}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetBranch([FromRoute] Guid branchId, CancellationToken cancellationToken)
+        {
+            var result = await _searchService.GetBranchAsync(branchId, cancellationToken);
+            if (!result.Success) return StatusCode(result.StatusCode, result);
+            return Ok(result);
+        }
     }
 }

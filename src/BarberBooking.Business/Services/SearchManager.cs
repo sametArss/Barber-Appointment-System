@@ -90,6 +90,7 @@ namespace BarberBooking.Business.Services
             }
 
             // Metre cinsinden Haversine / Geodesic mesafe hesabı ve filtreleme
+            var areaSearch = !string.IsNullOrWhiteSpace(query.City) || !string.IsNullOrWhiteSpace(query.District);
             var nearbyCandidates = filteredBranches
                 .Select(x => new
                 {
@@ -98,7 +99,8 @@ namespace BarberBooking.Business.Services
                     x.BusinessPhone,
                     DistanceMeters = CalculateDistanceMeters(query.Latitude, query.Longitude, x.Branch.Location!.Y, x.Branch.Location!.X)
                 })
-                .Where(x => x.DistanceMeters <= radiusMeters)
+                // Explicit city/district searches work independently of browser location.
+                .Where(x => areaSearch || x.DistanceMeters <= radiusMeters)
                 .OrderBy(x => x.DistanceMeters)
                 .Skip((query.PageNumber - 1) * query.PageSize)
                 .Take(query.PageSize)
@@ -126,6 +128,37 @@ namespace BarberBooking.Business.Services
             }).ToList();
 
             return DataResult<IReadOnlyList<NearbyBranchResponseDto>>.Ok(results);
+        }
+
+        public async Task<IDataResult<NearbyBranchResponseDto>> GetBranchAsync(Guid branchId, CancellationToken cancellationToken = default)
+        {
+            var branch = await _unitOfWork.Repository<Branch>().Query()
+                .Include(b => b.Business)
+                .FirstOrDefaultAsync(b => b.Id == branchId && b.IsActive && b.Business.IsActive && b.Location != null, cancellationToken);
+
+            if (branch == null)
+                return DataResult<NearbyBranchResponseDto>.Fail("Şube bulunamadı.", 404);
+
+            var services = await _unitOfWork.Repository<BranchService>().Query()
+                .Include(bs => bs.Service)
+                .Where(bs => bs.BranchId == branchId && bs.IsActive && bs.Service.IsActive && bs.Service.BusinessId == branch.BusinessId)
+                .Select(bs => bs.Service.Name)
+                .ToListAsync(cancellationToken);
+
+            return DataResult<NearbyBranchResponseDto>.Ok(new NearbyBranchResponseDto
+            {
+                BranchId = branch.Id,
+                BusinessId = branch.BusinessId,
+                BusinessName = branch.Business.Name,
+                BranchName = branch.Name,
+                Address = branch.Address,
+                City = branch.City,
+                District = branch.District,
+                PhoneNumber = branch.Business.PhoneNumber,
+                Longitude = branch.Location!.X,
+                Latitude = branch.Location!.Y,
+                OfferedServices = services
+            });
         }
 
         private static string NormalizeSearchText(string? input)

@@ -70,6 +70,8 @@ export interface StaffResponse {
   fullName: string;
   email: string;
   phoneNumber: string;
+  temporaryPassword?: string | null;
+  accountAlreadyExisted?: boolean;
   biography: string | null;
   profileImageUrl: string | null;
   isBookable: boolean;

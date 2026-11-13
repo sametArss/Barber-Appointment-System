@@ -3,6 +3,10 @@ import type { DataResult } from '@/types/api';
 import type { BranchSearchResponse, NearbyBranchesQuery } from '@/types/booking';
 
 export const searchService = {
+  async getBranch(branchId: string): Promise<DataResult<BranchSearchResponse>> {
+    const { data } = await apiClient.get<DataResult<BranchSearchResponse>>(`/api/search/branch/${branchId}`);
+    return data;
+  },
   async getNearbyBranches(query: NearbyBranchesQuery): Promise<DataResult<BranchSearchResponse[]>> {
     const { data } = await apiClient.get<DataResult<BranchSearchResponse[]>>('/api/search/nearby', {
       params: {

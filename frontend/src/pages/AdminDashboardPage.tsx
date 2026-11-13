@@ -14,6 +14,7 @@ import {
   Users,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import {
   Badge,
   Button,
@@ -89,6 +90,7 @@ const QuotaBar: React.FC<{
 };
 
 export const AdminDashboardPage: React.FC = () => {
+  const navigate = useNavigate();
   const [branches, setBranches] = useState<BranchResponse[]>([]);
   const [selectedBranchId, setSelectedBranchId] = useState<string>('');
   const [datePreset, setDatePreset] = useState<DatePreset>('all');
@@ -96,6 +98,7 @@ export const AdminDashboardPage: React.FC = () => {
   const [dashboard, setDashboard] = useState<DashboardSummaryResponse | null>(null);
   const [subscription, setSubscription] = useState<BusinessSubscriptionDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [branchesLoaded, setBranchesLoaded] = useState(false);
 
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
@@ -111,27 +114,35 @@ export const AdminDashboardPage: React.FC = () => {
         startDate = d.toISOString();
       }
 
-      const [branchesRes, dashRes, subRes] = await Promise.allSettled([
+      const [branchesRes, subRes] = await Promise.allSettled([
         adminService.getMyBranches(),
-        adminService.getDashboardSummary({
-          branchId: selectedBranchId || undefined,
-          startDate,
-        }),
         adminService.getMySubscription(),
       ]);
 
-      if (branchesRes.status === 'fulfilled' && branchesRes.value.data) {
-        setBranches(branchesRes.value.data);
-      }
-
-      if (dashRes.status === 'fulfilled' && dashRes.value.success && dashRes.value.data) {
-        setDashboard(dashRes.value.data);
-      } else if (dashRes.status === 'rejected') {
-        toast.error(getApiErrorMessage(dashRes.reason, 'Dashboard verileri alınamadı.'));
+      if (branchesRes.status === 'fulfilled' && branchesRes.value.success && branchesRes.value.data) {
+        setBranches(branchesRes.value.data); setBranchesLoaded(true);
+      } else {
+        setBranchesLoaded(false);
+        toast.error(branchesRes.status === 'rejected' ? getApiErrorMessage(branchesRes.reason, 'Şubeler alınamadı.') : branchesRes.value.message || 'Şubeler alınamadı.');
+        setDashboard(null);
+        return;
       }
 
       if (subRes.status === 'fulfilled' && subRes.value.success && subRes.value.data) {
         setSubscription(subRes.value.data);
+      }
+
+      if ((branchesRes.value.data?.length ?? 0) === 0) {
+        setDashboard(null);
+        return;
+      }
+
+      try {
+        const dashRes = await adminService.getDashboardSummary({ branchId: selectedBranchId || undefined, startDate });
+        if (dashRes.success && dashRes.data) setDashboard(dashRes.data);
+        else toast.error(dashRes.message || 'Genel bakış verileri alınamadı.');
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Genel bakış verileri alınamadı.'));
       }
     } finally {
       setLoading(false);
@@ -157,10 +168,10 @@ export const AdminDashboardPage: React.FC = () => {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-50 sm:text-3xl">
-            Finansal Dashboard &amp; Analitik
+            Genel Bakış
           </h1>
           <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">
-            Ciro performansı, hizmet popülerliği, personel verimliliği ve SaaS kota durumu.
+            Randevularını, salon performansını ve işletme ayarlarını tek yerden takip et.
           </p>
         </div>
 
@@ -211,28 +222,52 @@ export const AdminDashboardPage: React.FC = () => {
       </div>
 
       {/* KPI Metric Cards */}
-      {loading && !dashboard ? (
+      {branchesLoaded && branches.length === 0 && !loading ? (
+        <Card className="overflow-hidden border-[#e8e1d6] bg-[#eee9e1] dark:border-zinc-800 dark:bg-[#211f1b]">
+          <CardContent className="flex flex-col gap-6 p-6 sm:p-9 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-2xl">
+              <Badge variant="amber" className="mb-3">Kuruluma başlayalım</Badge>
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-zinc-50">Salonun için ilk adımlar</h2>
+              <p className="mt-2 text-sm text-slate-600 dark:text-zinc-300">Önce şube adresini ekle. Ardından hizmetlerini ve ekibini tanımlayarak randevu almaya hazır hale gel.</p>
+              <div className="mt-5 grid gap-2 sm:grid-cols-3">
+                {['Şube bilgilerini ekle', 'Hizmet ve fiyatlarını tanımla', 'Ekibini ve çalışma saatlerini ayarla'].map((step, index) => <div key={step} className="rounded-xl border border-white/70 bg-white/65 p-3 text-xs font-medium text-slate-700 dark:border-white/10 dark:bg-black/15 dark:text-zinc-200"><span className="mr-2 font-bold text-amber-700 dark:text-amber-400">0{index + 1}</span>{step}</div>)}
+              </div>
+            </div>
+            <Button size="lg" className="gap-2" onClick={() => navigate('/admin/branches')}><Scissors className="h-4 w-4"/> İlk şubeyi ekle</Button>
+          </CardContent>
+        </Card>
+      ) : !branchesLoaded && !loading ? (
+        <Card className="border-rose-200 bg-rose-50 dark:border-rose-900/50 dark:bg-rose-950/20">
+          <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="font-semibold text-slate-900 dark:text-zinc-100">Salon bilgileri yüklenemedi</h2>
+              <p className="mt-1 text-sm text-slate-600 dark:text-zinc-400">Bağlantını kontrol edip tekrar deneyebilirsin.</p>
+            </div>
+            <Button variant="outline" onClick={fetchDashboardData} className="gap-2"><RefreshCw className="h-4 w-4" /> Tekrar dene</Button>
+          </CardContent>
+        </Card>
+      ) : loading && (!dashboard || !branchesLoaded) ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-32 w-full" />
           ))}
         </div>
-      ) : (
+      ) : dashboard ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Card accent>
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                <span className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-zinc-400">
                   Toplam Ciro
                 </span>
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/15 text-amber-400">
                   <TrendingUp className="h-4.5 w-4.5" />
                 </div>
               </div>
-              <p className="mt-3 text-2xl font-extrabold text-amber-400">
+              <p className="mt-3 text-2xl font-bold text-amber-700 dark:text-amber-400">
                 {formatCurrency(dashboard?.totalRevenue ?? 0)}
               </p>
-              <p className="mt-1 text-xs text-slate-400">
+              <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">
                 Tamamlanan randevular toplamı
               </p>
             </CardContent>
@@ -241,17 +276,17 @@ export const AdminDashboardPage: React.FC = () => {
           <Card>
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                <span className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-zinc-400">
                   Tamamlanan Randevu
                 </span>
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-400">
                   <CalendarCheck2 className="h-4.5 w-4.5" />
                 </div>
               </div>
-              <p className="mt-3 text-2xl font-extrabold text-slate-50">
+              <p className="mt-3 text-2xl font-bold text-slate-900 dark:text-zinc-100">
                 {dashboard?.completedAppointments ?? 0}
               </p>
-              <p className="mt-1 text-xs text-slate-400">
+              <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">
                 Toplam {dashboard?.totalAppointments ?? 0} randevu içerisinden
               </p>
             </CardContent>
@@ -260,17 +295,17 @@ export const AdminDashboardPage: React.FC = () => {
           <Card>
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                <span className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-zinc-400">
                   İptal / No-Show Oranı
                 </span>
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/15 text-rose-400">
                   <Percent className="h-4.5 w-4.5" />
                 </div>
               </div>
-              <p className="mt-3 text-2xl font-extrabold text-slate-50">
+              <p className="mt-3 text-2xl font-bold text-slate-900 dark:text-zinc-100">
                 %{dashboard?.cancellationRate ?? 0}
               </p>
-              <p className="mt-1 text-xs text-slate-400">
+              <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">
                 {dashboard?.cancelledAppointments ?? 0} iptal •{' '}
                 {dashboard?.noShowAppointments ?? 0} no-show
               </p>
@@ -280,23 +315,24 @@ export const AdminDashboardPage: React.FC = () => {
           <Card>
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                <span className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-zinc-400">
                   Ortalama Puan
                 </span>
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/15 text-amber-400">
                   <Star className="h-4.5 w-4.5 fill-amber-400" />
                 </div>
               </div>
-              <p className="mt-3 text-2xl font-extrabold text-slate-50">
-                {(dashboard?.averageRating ?? 0).toFixed(1)}{' '}
-                <span className="text-sm font-normal text-slate-400">/ 5.0</span>
+              <p className="mt-3 text-2xl font-bold text-slate-900 dark:text-zinc-100">
+                {(dashboard?.averageRating ?? 0) > 0 ? dashboard!.averageRating.toFixed(1) : '—'}{' '}
+                {(dashboard?.averageRating ?? 0) > 0 && <span className="text-sm font-normal text-slate-500 dark:text-zinc-400">/ 5.0</span>}
               </p>
-              <p className="mt-1 text-xs text-slate-400">Doğrulanmış müşteri puanları</p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">Müşteri değerlendirmeleri</p>
             </CardContent>
           </Card>
         </div>
-      )}
+      ) : null}
 
+      {branches.length > 0 && dashboard && <>
       {/* Popular Services + Staff Performance + SaaS Quota */}
       <div className="grid gap-6 lg:grid-cols-12">
         {/* Top Services */}
@@ -390,7 +426,7 @@ export const AdminDashboardPage: React.FC = () => {
                         </p>
                         <span className="inline-flex items-center gap-1 text-[11px] text-slate-600 dark:text-zinc-300">
                           <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                          {staff.averageRating.toFixed(1)}
+                          {staff.averageRating > 0 ? staff.averageRating.toFixed(1) : '—'}
                         </span>
                       </div>
                     </div>
@@ -447,7 +483,7 @@ export const AdminDashboardPage: React.FC = () => {
                 <QuotaBar
                   label="Personel Kotası"
                   current={subscription.currentStaffCount}
-                  max={subscription.maxStaffPerBranch}
+                  max={subscription.maxStaffPerBranch * subscription.maxBranchCount}
                   unit="Personel"
                 />
 
@@ -486,6 +522,7 @@ export const AdminDashboardPage: React.FC = () => {
           hesaplanır.
         </span>
       </div>
+      </>}
     </div>
   );
 };

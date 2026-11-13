@@ -7,6 +7,7 @@ import { AdminCalendarPage } from '@/pages/AdminCalendarPage';
 import { AdminDashboardPage } from '@/pages/AdminDashboardPage';
 import {
   AdminBranchesPage,
+  AdminBusinessProfilePage,
   AdminReportsPage,
   AdminServicesPage,
   AdminStaffPage,
@@ -41,6 +42,8 @@ export function App() {
             <Route element={<RoleGuard allowedRoles={['Customer']} />}>
               <Route path="/book/:branchId" element={<BookingPage />} />
               <Route path="/my-appointments" element={<MyAppointmentsPage />} />
+            </Route>
+            <Route element={<RoleGuard allowedRoles={['Customer', 'BusinessOwner', 'BusinessManager', 'Employee']} />}>
               <Route path="/profile" element={<CustomerProfilePage />} />
             </Route>
           </Route>
@@ -58,6 +61,8 @@ export function App() {
               <Route path="dashboard" element={<AdminDashboardPage />} />
               <Route path="calendar" element={<AdminCalendarPage />} />
               <Route path="branches" element={<AdminBranchesPage />} />
+              <Route path="business" element={<AdminBusinessProfilePage />} />
+              <Route path="profile" element={<CustomerProfilePage />} />
               <Route path="staff" element={<AdminStaffPage />} />
               <Route path="services" element={<AdminServicesPage />} />
               <Route path="subscription" element={<AdminSubscriptionPage />} />

@@ -34,6 +34,7 @@ export const CustomerLayout: React.FC = () => {
   const location = useLocation();
 
   const isStaffOrOwner = hasRole(['BusinessOwner', 'BusinessManager', 'Employee']);
+  const canUseCustomerBookings = hasRole('Customer');
 
   const handleLogout = () => {
     logout();
@@ -41,7 +42,7 @@ export const CustomerLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-[#09090B] dark:text-zinc-100 pb-20 md:pb-0 transition-colors duration-250">
+    <div className="min-h-screen bg-[#F7F6F3] text-slate-900 dark:bg-[#11110F] dark:text-zinc-100 pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:pb-0 transition-colors duration-250">
       {/* Translucent Premium Top Navbar */}
       <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/80 backdrop-blur-xl dark:border-zinc-800/80 dark:bg-[#09090B]/80">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -56,7 +57,7 @@ export const CustomerLayout: React.FC = () => {
 
           {/* Desktop Navigation with Animated Indicator */}
           <nav className="hidden md:flex items-center gap-1">
-            {desktopLinks.map((item) => {
+            {desktopLinks.filter((item) => canUseCustomerBookings || item.to !== '/my-appointments').map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.to;
               return (
@@ -141,10 +142,10 @@ export const CustomerLayout: React.FC = () => {
       {/* Mobile Bottom Navigation Bar */}
       <nav
         aria-label="Mobil Gezinme"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/90 bg-white/95 dark:border-zinc-800/90 dark:bg-[#09090B]/95 backdrop-blur-xl md:hidden shadow-lg"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/90 bg-white/95 pb-[env(safe-area-inset-bottom)] dark:border-zinc-800/90 dark:bg-[#11110F]/95 backdrop-blur-xl md:hidden shadow-[0_-8px_28px_rgba(32,28,22,0.08)]"
       >
-        <div className="grid grid-cols-4 gap-1 px-2 py-1.5">
-          {mobileLinks.map((item) => {
+        <div className={cn('grid gap-1 px-2 py-1.5', canUseCustomerBookings ? 'grid-cols-4' : 'grid-cols-3')}>
+          {mobileLinks.filter((item) => canUseCustomerBookings || item.to !== '/my-appointments').map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.to;
             return (

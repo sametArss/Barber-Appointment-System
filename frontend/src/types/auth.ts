@@ -15,6 +15,7 @@ export interface User {
   id: string;
   fullName: string;
   email: string;
+  phoneNumber?: string | null;
   roles: Role[];
   businessId: string | null;
 }
@@ -56,7 +57,20 @@ export interface LoginResponse {
   userId: string;
   fullName: string;
   email: string;
+  phoneNumber?: string | null;
   roles: Role[];
   businessId: string | null;
+}
+
+export interface CustomerProfileResponse {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  totalAppointments: number;
+  completedAppointments: number;
+  activePenalties: number;
+  isRestricted: boolean;
 }
 

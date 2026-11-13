@@ -68,6 +68,7 @@ namespace BarberBooking.Business.Security
                 UserId = user.Id,
                 FullName = $"{user.FirstName} {user.LastName}",
                 Email = user.Email,
+                PhoneNumber = user.PhoneNumber ?? string.Empty,
                 Roles = roles.ToList(),
                 BusinessId = businessId
             };

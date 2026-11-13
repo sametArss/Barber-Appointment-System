@@ -11,16 +11,54 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from '@/components/ui';
 import { adminService } from '@/services/adminService';
+import { customerService } from '@/services/customerService';
 import { useAuthStore } from '@/store/useAuthStore';
 import type { CustomerPenaltyStatus } from '@/types/booking';
 
 export const CustomerProfilePage: React.FC = () => {
-  const { user, logout } = useAuthStore();
+  const { user, logout, updateFullName, updatePhoneNumber } = useAuthStore();
+  const isCustomer = user?.roles.includes('Customer') ?? false;
   const navigate = useNavigate();
 
   const [penaltyStatus, setPenaltyStatus] = useState<CustomerPenaltyStatus | null>(null);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber ?? '');
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [penaltyLoading, setPenaltyLoading] = useState(true);
+
+  useEffect(() => {
+    customerService.getMyProfile().then((res) => {
+      if (res.success && res.data) {
+        setFirstName(res.data.firstName ?? ''); setLastName(res.data.lastName ?? '');
+        setPhoneNumber(res.data.phoneNumber?.trim() || user?.phoneNumber?.trim() || '');
+        updateFullName(`${res.data.firstName} ${res.data.lastName}`.trim());
+      } else if (user?.fullName) {
+        const [savedFirstName, ...savedLastName] = user.fullName.trim().split(/\s+/);
+        setFirstName(savedFirstName ?? ''); setLastName(savedLastName.join(' '));
+        setPhoneNumber(user.phoneNumber?.trim() ?? '');
+      }
+    }).catch(() => {
+      if (user?.fullName) { const [savedFirstName, ...savedLastName] = user.fullName.trim().split(/\s+/); setFirstName(savedFirstName ?? ''); setLastName(savedLastName.join(' ')); }
+      setPhoneNumber(user?.phoneNumber?.trim() ?? '');
+      toast.error('Profil bilgileri yüklenemedi.');
+    }).finally(() => setProfileLoading(false));
+  }, []);
+
+  const saveProfile = async (event: React.FormEvent) => {
+    event.preventDefault(); setSavingProfile(true);
+    try {
+      const res = await customerService.updateMyProfile({ firstName: firstName.trim(), lastName: lastName.trim(), phoneNumber: phoneNumber.trim() });
+      if (!res.success) { toast.error(res.message || 'Profil güncellenemedi.'); return; }
+      updateFullName(`${firstName.trim()} ${lastName.trim()}`.trim());
+      updatePhoneNumber(phoneNumber.trim());
+      toast.success('Profil bilgileri güncellendi.');
+    } catch { toast.error('Profil güncellenemedi. Lütfen tekrar dene.'); }
+    finally { setSavingProfile(false); }
+  };
 
   useEffect(() => {
     // Query all active penalties across all businesses (Guid.Empty)
@@ -35,7 +73,7 @@ export const CustomerProfilePage: React.FC = () => {
       })
       .catch(() => {
         // Müşterinin henüz ceza kaydı yoksa veya salon seçilmemişse sessiz geçilir
-      });
+      }).finally(() => setPenaltyLoading(false));
   }, []);
 
   const activeStrikes = penaltyStatus?.activePenaltyCount ?? 0;
@@ -45,10 +83,10 @@ export const CustomerProfilePage: React.FC = () => {
     <div className="mx-auto max-w-3xl space-y-8 py-4">
       <div>
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-zinc-50">
-          Profilim &amp; Güvenilirlik Durumum
+          {isCustomer ? 'Profilim & Güvenilirlik Durumum' : 'Hesabım'}
         </h1>
         <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">
-          Hesap bilgileriniz, randevu itibarınız ve güvenlik ayarlarınız.
+          {isCustomer ? 'Hesap bilgilerin ve randevu güvenilirlik durumun.' : 'Kişisel bilgilerini buradan güncelleyebilirsin.'}
         </p>
       </div>
 
@@ -71,14 +109,14 @@ export const CustomerProfilePage: React.FC = () => {
                   </span>
                   <span className="flex items-center gap-1">
                     <Phone className="h-3.5 w-3.5 text-amber-500" />
-                    0555 123 45 67
+                    {phoneNumber.trim() || user?.phoneNumber?.trim() || 'Telefon bilgisi eklenmemiş'}
                   </span>
                 </div>
               </div>
             </div>
 
             <Badge variant="amber" className="self-start sm:self-center">
-              {user?.roles?.[0] === 'BusinessOwner' ? 'İşletme Sahibi' : 'Doğrulanmış Müşteri'}
+              {user?.roles?.includes('BusinessOwner') ? 'Salon Sahibi' : user?.roles?.includes('BusinessManager') ? 'Salon Yöneticisi' : user?.roles?.includes('Employee') ? 'Çalışan' : 'Müşteri'}
             </Badge>
           </div>
         </CardHeader>
@@ -92,16 +130,22 @@ export const CustomerProfilePage: React.FC = () => {
             <div className="flex gap-1.5">
               {user?.roles.map((r) => (
                 <Badge key={r} variant="default" className="text-xs">
-                  {r === 'BusinessOwner' ? 'Salon Sahibi' : 'Müşteri'}
+                  {{ BusinessOwner: 'Salon Sahibi', BusinessManager: 'Salon Yöneticisi', Employee: 'Çalışan', Customer: 'Müşteri', SystemAdmin: 'Yönetici' }[r]}
                 </Badge>
               ))}
             </div>
           </div>
+          <form onSubmit={saveProfile} className="grid gap-3 sm:grid-cols-2">
+            <Input label="Ad" value={firstName} onChange={(e) => setFirstName(e.target.value)} required autoComplete="given-name" disabled={profileLoading}/>
+            <Input label="Soyad" value={lastName} onChange={(e) => setLastName(e.target.value)} required autoComplete="family-name" disabled={profileLoading}/>
+            <Input className="sm:col-span-2" label="Telefon" type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} required autoComplete="tel" disabled={profileLoading}/>
+            <div className="sm:col-span-2 flex justify-end"><Button type="submit" size="sm" isLoading={savingProfile} disabled={profileLoading}>Bilgileri kaydet</Button></div>
+          </form>
         </CardContent>
       </Card>
 
       {/* Customer Reliability & Strike Status Card */}
-      <Card>
+      {isCustomer && <Card>
         <CardHeader>
           <CardTitle className="text-lg font-bold flex items-center gap-2">
             <ShieldCheck className="h-5 w-5 text-amber-500" />
@@ -119,8 +163,8 @@ export const CustomerProfilePage: React.FC = () => {
               <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300">
                 Gelmeme / No-Show İhlal Sayacı
               </span>
-              <Badge variant={activeStrikes === 0 ? 'success' : activeStrikes < 3 ? 'warning' : 'danger'}>
-                {activeStrikes === 0
+              <Badge variant={penaltyLoading ? 'outline' : activeStrikes === 0 ? 'success' : activeStrikes < 3 ? 'warning' : 'danger'}>
+                {penaltyLoading ? 'Durum yükleniyor' : activeStrikes === 0
                   ? '0/3 İhlal • Kusursuz İtibar'
                   : `${activeStrikes}/3 İhlal • Dikkat`}
               </Badge>
@@ -146,7 +190,9 @@ export const CustomerProfilePage: React.FC = () => {
             </div>
 
             <p className="text-xs text-slate-500 dark:text-zinc-400 pt-1">
-              {activeStrikes === 0 ? (
+              {penaltyLoading ? (
+                <span className="text-slate-500 dark:text-zinc-400">Randevu güvenilirlik bilgisi yükleniyor…</span>
+              ) : activeStrikes === 0 ? (
                 <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
                   <CheckCircle2 className="h-4 w-4" />
                   Harika! Tüm randevularınıza zamanında katıldınız. Hiçbir kısıtlamanız bulunmuyor.
@@ -177,7 +223,7 @@ export const CustomerProfilePage: React.FC = () => {
             </div>
           </div>
         </CardContent>
-      </Card>
+      </Card>}
 
       {/* Account Actions */}
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2">

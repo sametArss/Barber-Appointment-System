@@ -43,6 +43,15 @@ namespace BarberBooking.API.Controllers
             return Ok(result);
         }
 
+        [HttpPut("profile")]
+        [Authorize(Roles = "BusinessOwner,BusinessManager")]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateStaffProfileRequestDto request, CancellationToken cancellationToken)
+        {
+            var result = await _staffService.UpdateStaffProfileAsync(request, cancellationToken);
+            if (!result.Success) return StatusCode(result.StatusCode, result);
+            return Ok(result);
+        }
+
         [HttpGet]
         [Authorize(Roles = "BusinessOwner,BusinessManager")]
         public async Task<IActionResult> GetBusinessStaff(CancellationToken cancellationToken)
