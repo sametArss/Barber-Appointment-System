@@ -62,11 +62,12 @@ namespace BarberBooking.Business.Services
                 {
                     Id = Guid.NewGuid(),
                     BusinessId = businessId,
-                    UserId = userId.Value
+                    UserId = userId.Value,
+                    Role = BusinessRole.Owner
                 };
                 await memberRepo.AddAsync(member, cancellationToken);
 
-                // Kullanıcıya BusinessOwner Rolü Atama
+                // Kullanıcıya BusinessOwner Rolü Atama (varsa başlangıçtaki Customer rolünü kaldır)
                 var roleRepo = _unitOfWork.Repository<Role>();
                 var ownerRole = await roleRepo.FirstOrDefaultAsync(r => r.Name == "BusinessOwner", cancellationToken);
                 if (ownerRole == null)
@@ -76,6 +77,18 @@ namespace BarberBooking.Business.Services
                 }
 
                 var userRoleRepo = _unitOfWork.Repository<UserRole>();
+                var customerRole = await roleRepo.FirstOrDefaultAsync(r => r.Name == "Customer", cancellationToken);
+                if (customerRole != null)
+                {
+                    var existingCustomerRole = await userRoleRepo.FirstOrDefaultAsync(
+                        ur => ur.UserId == userId.Value && ur.RoleId == customerRole.Id,
+                        cancellationToken);
+                    if (existingCustomerRole != null)
+                    {
+                        userRoleRepo.Remove(existingCustomerRole);
+                    }
+                }
+
                 var hasRole = await userRoleRepo.AnyAsync(ur => ur.UserId == userId.Value && ur.RoleId == ownerRole.Id, cancellationToken);
                 if (!hasRole)
                 {

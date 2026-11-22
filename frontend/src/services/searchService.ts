@@ -12,7 +12,7 @@ export const searchService = {
       params: {
         latitude: query.latitude,
         longitude: query.longitude,
-        radiusKm: query.radiusKm ?? 10,
+        ...(query.radiusKm && query.radiusKm > 0 ? { radiusKm: query.radiusKm } : {}),
         ...(query.queryText?.trim() ? { queryText: query.queryText.trim() } : {}),
         ...(query.city?.trim() ? { city: query.city.trim() } : {}),
         ...(query.district?.trim() ? { district: query.district.trim() } : {}),

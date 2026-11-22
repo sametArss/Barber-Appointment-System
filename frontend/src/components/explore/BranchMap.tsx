@@ -9,7 +9,7 @@ import type { BranchSearchResponse } from '@/types/booking';
 
 interface BranchMapProps {
   userLocation: { lat: number; lng: number };
-  radiusKm: number;
+  radiusKm?: number | null;
   areaSearch?: boolean;
   branches: BranchSearchResponse[];
   selectedBranchId: string | null;
@@ -87,7 +87,7 @@ export const BranchMap: React.FC<BranchMapProps> = ({
   const tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
   return (
-    <div className="relative h-[420px] w-full overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-zinc-900 lg:h-[650px] transition-all">
+    <div className="relative h-[440px] w-full overflow-hidden rounded-[20px] border border-slate-200/90 bg-white shadow-[0_20px_50px_-15px_rgba(15,23,42,0.12)] transition-all dark:border-amber-500/25 dark:bg-[#0F172A] dark:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.75),0_0_30px_-10px_rgba(245,158,11,0.2)] lg:h-[calc(100vh-200px)] lg:min-h-[540px]">
       <MapContainer
         center={center}
         zoom={14}
@@ -102,7 +102,7 @@ export const BranchMap: React.FC<BranchMapProps> = ({
         <MapViewportUpdater center={center} branches={branches} areaSearch={areaSearch} />
 
         {/* User location radius */}
-        {!areaSearch && <Circle
+        {!areaSearch && radiusKm && radiusKm > 0 && <Circle
           center={[userLocation.lat, userLocation.lng]}
           radius={radiusKm * 1000}
           pathOptions={{

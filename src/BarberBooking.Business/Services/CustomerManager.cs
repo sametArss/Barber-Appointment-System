@@ -34,13 +34,13 @@ namespace BarberBooking.Business.Services
             var userId = _tenantService.UserId;
             if (!userId.HasValue)
             {
-                return DataResult<CustomerProfileResponseDto>.Fail("Oturum açmanýz gerekmektedir.", 401);
+                return DataResult<CustomerProfileResponseDto>.Fail("Oturum aÃ§manÄ±z gerekmektedir.", 401);
             }
 
             var user = await _unitOfWork.Repository<User>().GetByIdAsync(userId.Value, cancellationToken);
             if (user == null)
             {
-                return DataResult<CustomerProfileResponseDto>.Fail("Kullanýcý bulunamadý.", 404);
+                return DataResult<CustomerProfileResponseDto>.Fail("KullanÄ±cÄ± bulunamadÄ±.", 404);
             }
 
             var appointments = await _unitOfWork.Repository<Appointment>().GetAsync(
@@ -48,9 +48,11 @@ namespace BarberBooking.Business.Services
                 cancellationToken);
 
             var now = DateTimeOffset.UtcNow;
-            var activePenalties = await _unitOfWork.Repository<CustomerPenalty>().CountAsync(
-                p => p.CustomerUserId == userId.Value && p.IsActive && p.ExpiresAt > now,
-                cancellationToken);
+            var activePenalties = await _unitOfWork.Repository<CustomerPenalty>().Query()
+                .IgnoreQueryFilters()
+                .CountAsync(
+                    p => p.CustomerUserId == userId.Value && p.IsActive && p.ExpiresAt > now,
+                    cancellationToken);
 
             var response = new CustomerProfileResponseDto
             {
@@ -73,14 +75,14 @@ namespace BarberBooking.Business.Services
             var userId = _tenantService.UserId;
             if (!userId.HasValue)
             {
-                return Result.Fail("Oturum açmanýz gerekmektedir.", 401);
+                return Result.Fail("Oturum aÃ§manÄ±z gerekmektedir.", 401);
             }
 
             var userRepo = _unitOfWork.Repository<User>();
             var user = await userRepo.GetByIdAsync(userId.Value, cancellationToken);
             if (user == null)
             {
-                return Result.Fail("Kullanýcý bulunamadý.", 404);
+                return Result.Fail("KullanÄ±cÄ± bulunamadÄ±.", 404);
             }
 
             user.FirstName = request.FirstName.Trim();
@@ -90,7 +92,7 @@ namespace BarberBooking.Business.Services
             userRepo.Update(user);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return Result.Ok("Profil bilgileriniz baþarýyla güncellendi.");
+            return Result.Ok("Profil bilgileriniz baÅŸarÄ±yla gÃ¼ncellendi.");
         }
 
         public async Task<IResult> ChangePasswordAsync(ChangePasswordRequestDto request, CancellationToken cancellationToken = default)
@@ -98,31 +100,31 @@ namespace BarberBooking.Business.Services
             var userId = _tenantService.UserId;
             if (!userId.HasValue)
             {
-                return Result.Fail("Oturum açmanýz gerekmektedir.", 401);
+                return Result.Fail("Oturum aÃ§manÄ±z gerekmektedir.", 401);
             }
 
             if (string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < 6)
             {
-                return Result.Fail("Yeni þifre en az 6 karakter olmalýdýr.", 400);
+                return Result.Fail("Yeni ÅŸifre en az 6 karakter olmalÄ±dÄ±r.", 400);
             }
 
             var userRepo = _unitOfWork.Repository<User>();
             var user = await userRepo.GetByIdAsync(userId.Value, cancellationToken);
             if (user == null)
             {
-                return Result.Fail("Kullanýcý bulunamadý.", 404);
+                return Result.Fail("KullanÄ±cÄ± bulunamadÄ±.", 404);
             }
 
             if (!_passwordHasher.VerifyPassword(request.CurrentPassword, user.PasswordHash))
             {
-                return Result.Fail("Mevcut þifreniz hatalý.", 400);
+                return Result.Fail("Mevcut ÅŸifreniz hatalÄ±.", 400);
             }
 
             user.PasswordHash = _passwordHasher.HashPassword(request.NewPassword);
             userRepo.Update(user);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return Result.Ok("Þifreniz baþarýyla deðiþtirildi.");
+            return Result.Ok("Åžifreniz baÅŸarÄ±yla deÄŸiÅŸtirildi.");
         }
 
         public async Task<IResult> ToggleFavoriteAsync(Guid businessId, CancellationToken cancellationToken = default)
@@ -130,7 +132,7 @@ namespace BarberBooking.Business.Services
             var userId = _tenantService.UserId;
             if (!userId.HasValue)
             {
-                return Result.Fail("Oturum açmanýz gerekmektedir.", 401);
+                return Result.Fail("Oturum aÃ§manÄ±z gerekmektedir.", 401);
             }
 
             var businessExists = await _unitOfWork.Repository<BusinessEntity>().AnyAsync(
@@ -139,7 +141,7 @@ namespace BarberBooking.Business.Services
 
             if (!businessExists)
             {
-                return Result.Fail("Ýþletme bulunamadý.", 404);
+                return Result.Fail("Ä°ÅŸletme bulunamadÄ±.", 404);
             }
 
             var favoriteRepo = _unitOfWork.Repository<Favorite>();
@@ -151,7 +153,7 @@ namespace BarberBooking.Business.Services
             {
                 favoriteRepo.Remove(existingFavorite);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
-                return Result.Ok("Ýþletme favorilerden çýkarýldý.");
+                return Result.Ok("Ä°ÅŸletme favorilerden Ã§Ä±karÄ±ldÄ±.");
             }
 
             var favorite = new Favorite
@@ -164,7 +166,7 @@ namespace BarberBooking.Business.Services
             await favoriteRepo.AddAsync(favorite, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return Result.Ok("Ýþletme favorilere eklendi.");
+            return Result.Ok("Ä°ÅŸletme favorilere eklendi.");
         }
 
         public async Task<IDataResult<IReadOnlyList<FavoriteBusinessResponseDto>>> GetMyFavoritesAsync(CancellationToken cancellationToken = default)
@@ -172,7 +174,7 @@ namespace BarberBooking.Business.Services
             var userId = _tenantService.UserId;
             if (!userId.HasValue)
             {
-                return DataResult<IReadOnlyList<FavoriteBusinessResponseDto>>.Fail("Oturum açmanýz gerekmektedir.", 401);
+                return DataResult<IReadOnlyList<FavoriteBusinessResponseDto>>.Fail("Oturum aÃ§manÄ±z gerekmektedir.", 401);
             }
 
             var favorites = await _unitOfWork.Repository<Favorite>().Query()

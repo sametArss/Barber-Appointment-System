@@ -20,6 +20,7 @@ namespace BarberBooking.DataAccess.Context
         private readonly ICurrentTenantService? _tenantService;
 
         public Guid? CurrentTenantId => _tenantService?.BusinessId;
+        public Guid EffectiveTenantId => _tenantService?.BusinessId ?? Guid.Empty;
         public bool IsSuperAdmin => _tenantService?.IsSuperAdmin ?? false;
         public bool HasTenantService => _tenantService != null;
 
@@ -110,14 +111,11 @@ namespace BarberBooking.DataAccess.Context
                         var dbContextExpr = Expression.Constant(this);
                         var hasTenantServiceExpr = Expression.Property(dbContextExpr, nameof(HasTenantService));
                         var isSuperAdminExpr = Expression.Property(dbContextExpr, nameof(IsSuperAdmin));
-                        var currentTenantIdExpr = Expression.Property(dbContextExpr, nameof(CurrentTenantId));
+                        var effectiveTenantIdExpr = Expression.Property(dbContextExpr, nameof(EffectiveTenantId));
 
                         var tenantNullCheck = Expression.IsFalse(hasTenantServiceExpr);
                         var superAdminCheck = Expression.IsTrue(isSuperAdminExpr);
-                        var tenantIdEquals = Expression.Equal(
-                            businessIdProp,
-                            Expression.Coalesce(currentTenantIdExpr, Expression.Constant(Guid.Empty))
-                        );
+                        var tenantIdEquals = Expression.Equal(businessIdProp, effectiveTenantIdExpr);
 
                         var tenantFilter = Expression.OrElse(tenantNullCheck, Expression.OrElse(superAdminCheck, tenantIdEquals));
 

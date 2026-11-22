@@ -24,12 +24,10 @@ namespace BarberBooking.Business.Services
                 return DataResult<IReadOnlyList<NearbyBranchResponseDto>>.Fail("Geçersiz koordinat değerleri.", 400);
             }
 
-            if (query.RadiusKm <= 0)
-            {
-                query.RadiusKm = 10.0;
-            }
-
-            var radiusMeters = query.RadiusKm * 1000.0;
+            var pageNumber = query.PageNumber < 1 ? 1 : query.PageNumber;
+            var pageSize = query.PageSize is < 1 or > 50 ? 20 : query.PageSize;
+            var hasRadiusLimit = query.RadiusKm.HasValue && query.RadiusKm.Value > 0;
+            var radiusMeters = hasRadiusLimit ? query.RadiusKm!.Value * 1000.0 : double.MaxValue;
 
             var branches = await _unitOfWork.Repository<Branch>().Query()
                 .Include(b => b.Business)
@@ -99,11 +97,11 @@ namespace BarberBooking.Business.Services
                     x.BusinessPhone,
                     DistanceMeters = CalculateDistanceMeters(query.Latitude, query.Longitude, x.Branch.Location!.Y, x.Branch.Location!.X)
                 })
-                // Explicit city/district searches work independently of browser location.
-                .Where(x => areaSearch || x.DistanceMeters <= radiusMeters)
+                // Explicit city/district searches or "Seçilmedi" (no radius limit) return nearest paginated results.
+                .Where(x => areaSearch || !hasRadiusLimit || x.DistanceMeters <= radiusMeters)
                 .OrderBy(x => x.DistanceMeters)
-                .Skip((query.PageNumber - 1) * query.PageSize)
-                .Take(query.PageSize)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .ToList();
 
             if (nearbyCandidates.Count == 0)

@@ -4,7 +4,7 @@ namespace BarberBooking.Shared.DTOs.Search
     {
         public double Latitude { get; set; }
         public double Longitude { get; set; }
-        public double RadiusKm { get; set; } = 10.0;
+        public double? RadiusKm { get; set; }
         public string? QueryText { get; set; }
         public string? City { get; set; }
         public string? District { get; set; }

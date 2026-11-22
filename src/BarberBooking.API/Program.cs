@@ -105,9 +105,8 @@ app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseExceptionHandler();
 
 // Authentication her zaman Authorization'dan önce gelmeli
-
-app.UseAuthorization();
 app.UseAuthentication();
+app.UseAuthorization();
 
 
 // Health Check Endpoint'i
