@@ -105,8 +105,10 @@ app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseExceptionHandler();
 
 // Authentication her zaman Authorization'dan önce gelmeli
-app.UseAuthentication();
+
 app.UseAuthorization();
+app.UseAuthentication();
+
 
 // Health Check Endpoint'i
 app.MapHealthChecks("/health", new HealthCheckOptions
