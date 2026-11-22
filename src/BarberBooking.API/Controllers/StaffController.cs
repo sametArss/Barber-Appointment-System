@@ -1,4 +1,4 @@
-﻿using BarberBooking.Business.Services;
+using BarberBooking.Business.Services;
 using BarberBooking.Shared.DTOs.Staff;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -48,6 +48,15 @@ namespace BarberBooking.API.Controllers
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateStaffProfileRequestDto request, CancellationToken cancellationToken)
         {
             var result = await _staffService.UpdateStaffProfileAsync(request, cancellationToken);
+            if (!result.Success) return StatusCode(result.StatusCode, result);
+            return Ok(result);
+        }
+
+        [HttpPut("me/biography")]
+        [Authorize(Roles = "Employee,BusinessOwner,BusinessManager")]
+        public async Task<IActionResult> UpdateMyBiography([FromBody] UpdateMyStaffBiographyRequestDto request, CancellationToken cancellationToken)
+        {
+            var result = await _staffService.UpdateMyBiographyAsync(request, cancellationToken);
             if (!result.Success) return StatusCode(result.StatusCode, result);
             return Ok(result);
         }

@@ -57,26 +57,16 @@ namespace BarberBooking.Business.Services
             try
             {
                 var user = await userRepo.FirstOrDefaultAsync(u => u.NormalizedEmail == emailNormalized, cancellationToken);
-                var accountAlreadyExisted = user != null;
-                string? temporaryPassword = null;
                 if (user == null)
                 {
-                    temporaryPassword = "Staff@" + Guid.NewGuid().ToString("N")[..8];
-                    var passwordHash = _passwordHasher.HashPassword(temporaryPassword);
-
-                    user = new User
-                    {
-                        Id = Guid.NewGuid(),
-                        FirstName = request.FirstName.Trim(),
-                        LastName = request.LastName.Trim(),
-                        Email = emailTrimmed,
-                        NormalizedEmail = emailNormalized,
-                        PhoneNumber = request.PhoneNumber.Trim(),
-                        PasswordHash = passwordHash,
-                        IsActive = true
-                    };
-                    await userRepo.AddAsync(user, cancellationToken);
+                    await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+                    return DataResult<StaffResponseDto>.Fail(
+                        "Bu e-posta ile kayıtlı bir kullanıcı bulunamadı. Personelin önce sisteme üye olması gerekmektedir.",
+                        404);
                 }
+
+                var accountAlreadyExisted = true;
+                string? temporaryPassword = null;
 
                 // Employee Rolü
                 var roleRepo = _unitOfWork.Repository<Role>();
@@ -106,7 +96,8 @@ namespace BarberBooking.Business.Services
                     {
                         Id = Guid.NewGuid(),
                         BusinessId = businessId.Value,
-                        UserId = user.Id
+                        UserId = user.Id,
+                        Role = BusinessRole.Staff
                     };
                     await memberRepo.AddAsync(member, cancellationToken);
                 }
@@ -119,6 +110,7 @@ namespace BarberBooking.Business.Services
 
                 if (existingProfile != null)
                 {
+                    await _unitOfWork.RollbackTransactionAsync(cancellationToken);
                     return DataResult<StaffResponseDto>.Fail("Bu çalışan için zaten bir profil oluşturulmuş.", 400);
                 }
 
@@ -126,7 +118,7 @@ namespace BarberBooking.Business.Services
                 {
                     Id = Guid.NewGuid(),
                     BusinessMemberId = member.Id,
-                    Biography = request.Biography?.Trim(),
+                    Biography = string.IsNullOrWhiteSpace(request.Biography) ? null : request.Biography.Trim(),
                     ProfileImageUrl = request.ProfileImageUrl?.Trim(),
                     IsBookable = request.IsBookable
                 };
@@ -267,13 +259,44 @@ namespace BarberBooking.Business.Services
                 .FirstOrDefaultAsync(sp => sp.Id == request.StaffProfileId && sp.BusinessMember.BusinessId == businessId.Value, cancellationToken);
             if (staff == null) return Result.Fail("Personel kaydı bulunamadı.", 404);
 
-            staff.Biography = request.Biography?.Trim();
+            staff.Biography = string.IsNullOrWhiteSpace(request.Biography) ? null : request.Biography.Trim();
             staff.ProfileImageUrl = request.ProfileImageUrl?.Trim();
             staff.IsBookable = request.IsBookable;
             staff.UpdatedAt = DateTimeOffset.UtcNow;
             staffRepo.Update(staff);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return Result.Ok("Personel profili güncellendi.");
+        }
+
+        public async Task<IResult> UpdateMyBiographyAsync(UpdateMyStaffBiographyRequestDto request, CancellationToken cancellationToken = default)
+        {
+            var userId = _tenantService.UserId;
+            if (!userId.HasValue)
+            {
+                return Result.Fail("Oturum açmanız gerekmektedir.", 401);
+            }
+
+            var staffRepo = _unitOfWork.Repository<StaffProfile>();
+            var profiles = await staffRepo.Query()
+                .Include(sp => sp.BusinessMember)
+                .Where(sp => sp.BusinessMember.UserId == userId.Value && sp.BusinessMember.IsActive)
+                .ToListAsync(cancellationToken);
+
+            if (profiles.Count == 0)
+            {
+                return Result.Fail("Çalışan profili bulunamadı.", 404);
+            }
+
+            var normalizedBio = string.IsNullOrWhiteSpace(request.Biography) ? null : request.Biography.Trim();
+            foreach (var profile in profiles)
+            {
+                profile.Biography = normalizedBio;
+                profile.UpdatedAt = DateTimeOffset.UtcNow;
+                staffRepo.Update(profile);
+            }
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            return Result.Ok("Uzmanlık alanınız güncellendi.");
         }
 
         public async Task<IDataResult<IReadOnlyList<StaffResponseDto>>> GetBusinessStaffAsync(CancellationToken cancellationToken = default)

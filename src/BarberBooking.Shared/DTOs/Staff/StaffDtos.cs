@@ -1,15 +1,20 @@
-﻿namespace BarberBooking.Shared.DTOs.Staff
+namespace BarberBooking.Shared.DTOs.Staff
 {
     public class CreateStaffRequestDto
     {
-        public string FirstName { get; set; } = string.Empty;
-        public string LastName { get; set; } = string.Empty;
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
         public string Email { get; set; } = string.Empty;
-        public string PhoneNumber { get; set; } = string.Empty;
+        public string? PhoneNumber { get; set; }
         public string? Biography { get; set; }
         public string? ProfileImageUrl { get; set; }
         public bool IsBookable { get; set; } = true;
         public List<Guid> BranchIds { get; set; } = new();
+    }
+
+    public class UpdateMyStaffBiographyRequestDto
+    {
+        public string? Biography { get; set; }
     }
 
     public class AssignStaffBranchesRequestDto

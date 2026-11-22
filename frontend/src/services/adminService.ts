@@ -114,6 +114,11 @@ export const adminService = {
     return data;
   },
 
+  async assignStaffBranches(payload: { staffProfileId: string; branchIds: string[] }): Promise<Result> {
+    const { data } = await apiClient.post<Result>('/api/staff/assign-branches', payload);
+    return data;
+  },
+
   async setStaffWorkingHours(payload: SetStaffWorkingHoursRequest): Promise<Result> {
     const { data } = await apiClient.post<Result>(
       '/api/schedules/staff-working-hours',

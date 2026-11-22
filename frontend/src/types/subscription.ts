@@ -58,6 +58,7 @@ export interface BusinessProfileResponse {
   description: string | null;
   phoneNumber: string;
   isActive: boolean;
+  branches?: BranchResponse[];
 }
 
 /**

@@ -32,11 +32,11 @@ export interface UpdateBusinessRequest {
 }
 
 export interface CreateStaffRequest {
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
-  phoneNumber: string;
-  biography?: string;
+  phoneNumber?: string;
+  biography?: string | null;
   profileImageUrl?: string;
   isBookable: boolean;
   branchIds: string[];

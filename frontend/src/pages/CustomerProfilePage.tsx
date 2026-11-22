@@ -19,6 +19,7 @@ import { Button } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { adminService } from '@/services/adminService';
 import { customerService } from '@/services/customerService';
+import { employeeService } from '@/services/employeeService';
 import { useAuthStore } from '@/store/useAuthStore';
 import type { CustomerPenaltyStatus } from '@/types/booking';
 
@@ -50,9 +51,12 @@ export const CustomerProfilePage: React.FC = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber ?? '');
+  const [biography, setBiography] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
   const [penaltyLoading, setPenaltyLoading] = useState(true);
+
+  const isEmployee = hasRole('Employee');
 
   useEffect(() => {
     customerService
@@ -82,6 +86,20 @@ export const CustomerProfilePage: React.FC = () => {
       .finally(() => setProfileLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!isEmployee) return;
+    employeeService
+      .getMyWorkplaces()
+      .then((res) => {
+        if (res.success && res.data && res.data.length > 0) {
+          setBiography(res.data[0].biography ?? '');
+        }
+      })
+      .catch(() => {
+        // Çalışan biyografisi opsiyonel
+      });
+  }, [isEmployee]);
 
   useEffect(() => {
     if (!isCustomer) {
@@ -119,6 +137,14 @@ export const CustomerProfilePage: React.FC = () => {
       if (!res.success) {
         toast.error(res.message || 'Profil güncellenemedi.');
         return;
+      }
+      if (isEmployee) {
+        const bioRes = await employeeService.updateMyBiography(
+          biography.trim() ? biography.trim() : null,
+        );
+        if (!bioRes.success) {
+          toast.warning(bioRes.message || 'Uzmanlık alanı güncellenemedi.');
+        }
       }
       updateFullName(`${firstName.trim()} ${lastName.trim()}`.trim());
       updatePhoneNumber(phoneNumber.trim());
@@ -291,6 +317,27 @@ export const CustomerProfilePage: React.FC = () => {
               />
             </div>
           </div>
+
+          {isEmployee && (
+            <div className="space-y-1.5">
+              <label
+                htmlFor="profile-biography"
+                className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+              >
+                Uzmanlık Alanı / Biyografi
+              </label>
+              <input
+                id="profile-biography"
+                type="text"
+                maxLength={400}
+                value={biography}
+                onChange={(e) => setBiography(e.target.value)}
+                disabled={profileLoading}
+                placeholder="Örn: Modern Saç Kesimi, Fade & Sakal Tasarımı"
+                className="h-12 w-full rounded-[16px] border border-slate-200/90 bg-slate-50/75 px-4 text-sm text-slate-900 placeholder:text-slate-400 transition-all focus:border-[#D97706] focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 disabled:opacity-60 dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-amber-400 dark:focus:bg-slate-950"
+              />
+            </div>
+          )}
 
           <div className="flex justify-end pt-2">
             <Button

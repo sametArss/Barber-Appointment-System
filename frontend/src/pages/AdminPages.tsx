@@ -29,7 +29,7 @@ import {
   Input,
   Skeleton,
 } from '@/components/ui';
-import { formatCurrency, getApiErrorMessage } from '@/lib/utils';
+import { cn, formatCurrency, getApiErrorMessage } from '@/lib/utils';
 import { adminService } from '@/services/adminService';
 import { bookingService } from '@/services/bookingService';
 import type { BusinessServiceItem } from '@/types/admin';
@@ -43,6 +43,7 @@ import type {
 } from '@/types/subscription';
 
 export const AdminBusinessProfilePage: React.FC = () => {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<BusinessProfileResponse | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -51,40 +52,278 @@ export const AdminBusinessProfilePage: React.FC = () => {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    adminService.getMyBusiness().then((res) => {
-      if (res.success && res.data) {
-        setProfile(res.data); setName(res.data.name); setDescription(res.data.description ?? ''); setPhoneNumber(res.data.phoneNumber);
-      } else toast.error(res.message || 'İşletme bilgileri alınamadı.');
-    }).catch((error) => toast.error(getApiErrorMessage(error, 'İşletme bilgileri alınamadı.')))
+    adminService
+      .getMyBusiness()
+      .then((res) => {
+        if (res.success && res.data) {
+          setProfile(res.data);
+          setName(res.data.name);
+          setDescription(res.data.description ?? '');
+          setPhoneNumber(res.data.phoneNumber);
+        } else {
+          toast.error(res.message || 'İşletme bilgileri alınamadı.');
+        }
+      })
+      .catch((error) => toast.error(getApiErrorMessage(error, 'İşletme bilgileri alınamadı.')))
       .finally(() => setLoading(false));
   }, []);
 
+  const hasChanges =
+    profile !== null &&
+    (name.trim() !== profile.name ||
+      description.trim() !== (profile.description ?? '') ||
+      phoneNumber.trim() !== profile.phoneNumber);
+
   const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault(); setSaving(true);
+    event.preventDefault();
+    if (!name.trim()) {
+      toast.warning('İşletme adı boş bırakılamaz.');
+      return;
+    }
+    setSaving(true);
     try {
-      const res = await adminService.updateMyBusiness({ name: name.trim(), description: description.trim(), phoneNumber: phoneNumber.trim() });
-      if (!res.success || !res.data) { toast.error(res.message || 'Değişiklikler kaydedilemedi.'); return; }
-      setProfile(res.data); toast.success('İşletme profili güncellendi.');
-    } catch (error) { toast.error(getApiErrorMessage(error, 'Değişiklikler kaydedilemedi.')); }
-    finally { setSaving(false); }
+      const res = await adminService.updateMyBusiness({
+        name: name.trim(),
+        description: description.trim(),
+        phoneNumber: phoneNumber.trim(),
+      });
+      if (!res.success || !res.data) {
+        toast.error(res.message || 'Değişiklikler kaydedilemedi.');
+        return;
+      }
+      setProfile((prev) => ({
+        ...res.data!,
+        branches: res.data!.branches?.length ? res.data!.branches : (prev?.branches ?? []),
+      }));
+      toast.success('İşletme profili güncellendi.');
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Değişiklikler kaydedilemedi.'));
+    } finally {
+      setSaving(false);
+    }
   };
 
+  const branches = profile?.branches ?? [];
+  const activeBranchCount = branches.filter((b) => b.isActive).length;
+  const brandInitial = (name.trim() || profile?.name || 'S').charAt(0).toUpperCase();
+
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-700 dark:text-amber-400">İşletme ayarları</p><h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 dark:text-zinc-50">İşletme profili</h1><p className="mt-1 text-sm text-slate-500 dark:text-zinc-400">Müşterilerin göreceği işletme adını, açıklamayı ve iletişim telefonunu düzenle.</p></div>
-      <Card>
-        <CardHeader><CardTitle>Genel bilgiler</CardTitle><CardDescription>Telefon numarası tüm şubelerde ortak iletişim numarası olarak gösterilir.</CardDescription></CardHeader>
-        <CardContent>
-          {loading ? <div className="space-y-3"><Skeleton className="h-12"/><Skeleton className="h-24"/><Skeleton className="h-12"/></div> : !profile ? <p className="text-sm text-slate-500">İşletme profili yüklenemedi. Sayfayı yenileyip tekrar dene.</p> : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <Input label="İşletme adı" value={name} onChange={(e) => setName(e.target.value)} required maxLength={120}/>
-              <label className="block space-y-1.5"><span className="text-xs font-semibold text-slate-700 dark:text-zinc-300">Kısa tanıtım</span><textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} maxLength={600} placeholder="Salonunuzu ve sunduğunuz deneyimi kısaca anlatın." className="w-full resize-y rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100"/><span className="block text-right text-[11px] text-slate-400">{description.length}/600</span></label>
-              <Input label="İletişim telefonu" type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} required autoComplete="tel"/>
-              <div className="flex justify-end border-t border-slate-100 pt-4 dark:border-zinc-800"><Button type="submit" isLoading={saving}>Değişiklikleri kaydet</Button></div>
+    <div className="mx-auto max-w-5xl space-y-7 py-2">
+      {/* Editorial Header */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#D97706] dark:text-amber-400">
+            İşletme Ayarları
+          </p>
+          <h1 className="mt-1 font-serif text-3xl font-semibold tracking-tight text-slate-900 dark:text-[#FAF8F5] sm:text-4xl">
+            İşletme Profili
+          </h1>
+          <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">
+            Müşterilerin keşfet ekranında göreceği marka adını, tanıtımını ve ortak iletişim
+            numarasını düzenle.
+          </p>
+        </div>
+
+        {profile && (
+          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            <span>{profile.isActive ? 'Aktif İşletme' : 'Pasif İşletme'}</span>
+            <span className="text-emerald-600/50 dark:text-emerald-400/50">•</span>
+            <span>{activeBranchCount} Aktif Şube</span>
+          </div>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
+          <Skeleton className="h-[420px] rounded-[24px]" />
+          <Skeleton className="h-[420px] rounded-[24px]" />
+        </div>
+      ) : !profile ? (
+        <div className="rounded-[24px] border border-slate-200/80 bg-white/85 p-10 text-center shadow-sm backdrop-blur-xl dark:border-amber-500/20 dark:bg-slate-900/65">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            İşletme profili yüklenemedi. Sayfayı yenileyip tekrar deneyin.
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr] lg:items-start">
+          {/* Left Column: Glassmorphic Edit Form */}
+          <section className="rounded-[24px] border border-slate-200/80 bg-white/85 p-6 shadow-[0_24px_65px_-28px_rgba(15,23,42,0.12)] backdrop-blur-2xl dark:border-amber-500/20 dark:bg-slate-900/65 dark:shadow-[0_28px_75px_-25px_rgba(0,0,0,0.8),0_0_32px_-14px_rgba(245,158,11,0.16)] sm:p-8">
+            <div className="flex items-center gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-100 via-amber-50 to-orange-100 font-serif text-2xl font-bold text-[#D97706] shadow-sm dark:border-amber-400/35 dark:from-amber-500/25 dark:to-slate-900 dark:text-amber-300">
+                {brandInitial}
+              </div>
+              <div className="min-w-0">
+                <h2 className="truncate font-serif text-xl font-bold text-slate-900 dark:text-white">
+                  Genel Marka Bilgileri
+                </h2>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                  İletişim telefonu tüm şubelerde ortak numara olarak gösterilir.
+                </p>
+              </div>
+            </div>
+
+            <div className="my-6 h-px bg-slate-100 dark:bg-white/10" />
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* İşletme Adı */}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="biz-name"
+                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                >
+                  İşletme Adı
+                </label>
+                <div className="relative">
+                  <Building2 className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                  <input
+                    id="biz-name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    maxLength={120}
+                    placeholder="Örn: Makas Sanat Berber & Salon"
+                    className="h-12 w-full rounded-[16px] border border-slate-200/90 bg-slate-50/75 pl-11 pr-4 text-sm text-slate-900 placeholder:text-slate-400 transition-all focus:border-[#D97706] focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-100 dark:focus:border-amber-400 dark:focus:bg-slate-950"
+                  />
+                </div>
+              </div>
+
+              {/* İletişim Telefonu */}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="biz-phone"
+                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                >
+                  İletişim Telefonu
+                </label>
+                <div className="relative">
+                  <Phone className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                  <input
+                    id="biz-phone"
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    required
+                    autoComplete="tel"
+                    placeholder="0212 333 44 55"
+                    className="h-12 w-full rounded-[16px] border border-slate-200/90 bg-slate-50/75 pl-11 pr-4 text-sm text-slate-900 placeholder:text-slate-400 transition-all focus:border-[#D97706] focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-100 dark:focus:border-amber-400 dark:focus:bg-slate-950"
+                  />
+                </div>
+              </div>
+
+              {/* Kısa Tanıtım */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label
+                    htmlFor="biz-description"
+                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  >
+                    Kısa Tanıtım &amp; Marka Hikayesi
+                  </label>
+                  <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500">
+                    {description.length}/600
+                  </span>
+                </div>
+                <textarea
+                  id="biz-description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={4}
+                  maxLength={600}
+                  placeholder="Salonunuzun atmosferini, uzmanlıklarınızı ve müşterilere sunduğunuz deneyimi kısaca anlatın."
+                  className="w-full resize-y rounded-[16px] border border-slate-200/90 bg-slate-50/75 p-4 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 transition-all focus:border-[#D97706] focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-amber-400 dark:focus:bg-slate-950"
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-5 dark:border-white/10">
+                <span className="text-xs text-slate-400 dark:text-slate-500">
+                  {hasChanges ? 'Kaydedilmemiş değişiklikleriniz var.' : 'Tüm bilgiler güncel.'}
+                </span>
+                <Button
+                  type="submit"
+                  isLoading={saving}
+                  className="h-11 rounded-[16px] bg-[#D97706] px-6 text-sm font-semibold text-white shadow-md shadow-amber-600/25 transition-all hover:bg-[#B45309] dark:bg-amber-500 dark:text-slate-950 dark:shadow-[0_0_20px_rgba(245,158,11,0.35)] dark:hover:bg-amber-400"
+                >
+                  Değişiklikleri Kaydet
+                </Button>
+              </div>
             </form>
-          )}
-        </CardContent>
-      </Card>
+          </section>
+
+          {/* Right Column: Live Customer Vitrin Preview */}
+          <aside className="space-y-5 lg:sticky lg:top-24">
+            <div className="overflow-hidden rounded-[24px] border border-slate-200/80 bg-white/85 shadow-[0_24px_65px_-28px_rgba(15,23,42,0.12)] backdrop-blur-2xl dark:border-amber-500/20 dark:bg-slate-900/65 dark:shadow-[0_28px_75px_-25px_rgba(0,0,0,0.8)]">
+              {/* Warm Editorial Top Banner */}
+              <div className="relative h-24 bg-gradient-to-br from-amber-500/25 via-orange-400/15 to-transparent p-5 dark:from-amber-500/25 dark:via-amber-600/10 dark:to-slate-900">
+                <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-white/80 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#B45309] backdrop-blur-md dark:border-amber-400/30 dark:bg-slate-950/70 dark:text-amber-300">
+                  <Sparkles className="h-3 w-3" />
+                  Müşteri Önizlemesi
+                </span>
+              </div>
+
+              <div className="-mt-8 px-6 pb-6">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl border-4 border-white bg-gradient-to-br from-[#D97706] to-amber-500 font-serif text-2xl font-bold text-white shadow-lg dark:border-slate-900">
+                  {brandInitial}
+                </div>
+
+                <h3 className="mt-3 font-serif text-xl font-bold text-slate-900 dark:text-white">
+                  {name.trim() || 'İşletme Adı'}
+                </h3>
+
+                <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                  {description.trim() ||
+                    'Kısa tanıtım metniniz burada müşterilere zarif bir şekilde gösterilir.'}
+                </p>
+
+                <div className="mt-4 flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/80 px-3.5 py-2.5 text-xs font-semibold text-slate-700 dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-200">
+                  <Phone className="h-3.5 w-3.5 text-[#D97706] dark:text-amber-400" />
+                  <span>{phoneNumber.trim() || 'Telefon belirtilmedi'}</span>
+                </div>
+
+                {/* Connected Branches Mini-List */}
+                <div className="mt-5 border-t border-slate-100 pt-4 dark:border-white/10">
+                  <div className="mb-2.5 flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      Bağlı Şubeler ({branches.length})
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/admin/branches')}
+                      className="cursor-pointer text-[11px] font-semibold text-[#D97706] hover:underline dark:text-amber-400"
+                    >
+                      Şubeleri Yönet →
+                    </button>
+                  </div>
+
+                  {branches.length === 0 ? (
+                    <p className="text-xs text-slate-400 dark:text-slate-500">
+                      Henüz tanımlı şube yok.
+                    </p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {branches.slice(0, 4).map((b) => (
+                        <li
+                          key={b.id}
+                          className="flex items-center justify-between gap-2 rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2 text-xs dark:border-white/5 dark:bg-slate-950/50"
+                        >
+                          <span className="flex min-w-0 items-center gap-2 font-medium text-slate-800 dark:text-slate-200">
+                            <MapPin className="h-3.5 w-3.5 shrink-0 text-[#D97706] dark:text-amber-400" />
+                            <span className="truncate">{b.name}</span>
+                          </span>
+                          <span className="shrink-0 text-[10px] text-slate-400">
+                            {b.district}/{b.city}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      )}
     </div>
   );
 };
@@ -352,18 +591,15 @@ export const AdminStaffPage: React.FC = () => {
   // Modals
   const [openAddModal, setOpenAddModal] = useState(false);
   const [openHoursModal, setOpenHoursModal] = useState(false);
-  const [createdStaffLogin, setCreatedStaffLogin] = useState<{ fullName: string; email: string; temporaryPassword: string | null; accountAlreadyExisted: boolean } | null>(null);
   const [selectedStaff, setSelectedStaff] = useState<StaffResponse | null>(null);
   const [editingStaff, setEditingStaff] = useState<StaffResponse | null>(null);
   const [editingBiography, setEditingBiography] = useState('');
   const [editingBookable, setEditingBookable] = useState(true);
+  const [editingBranchIds, setEditingBranchIds] = useState<string[]>([]);
   const [savingStaffProfile, setSavingStaffProfile] = useState(false);
 
   // Form states
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
   const [biography, setBiography] = useState('');
   const [selectedBranchId, setSelectedBranchId] = useState('');
   const [selectedStaffBranchIds, setSelectedStaffBranchIds] = useState<string[]>([]);
@@ -413,11 +649,8 @@ export const AdminStaffPage: React.FC = () => {
 
     try {
       const res = await adminService.createStaff({
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
         email: email.trim(),
-        phoneNumber: phoneNumber.trim(),
-        biography: biography.trim() || 'Uzman Berber',
+        biography: biography.trim() ? biography.trim() : null,
         isBookable: true,
         branchIds: selectedStaffBranchIds,
       });
@@ -427,13 +660,9 @@ export const AdminStaffPage: React.FC = () => {
         return;
       }
 
-      toast.success('Yeni berber kadroya eklendi!');
-      setCreatedStaffLogin({ fullName: res.data?.fullName ?? `${firstName.trim()} ${lastName.trim()}`.trim(), email: res.data?.email ?? email.trim(), temporaryPassword: res.data?.temporaryPassword ?? null, accountAlreadyExisted: res.data?.accountAlreadyExisted ?? false });
+      toast.success(`${res.data?.fullName ?? 'Personel'} kadroya eklendi!`);
       setOpenAddModal(false);
-      setFirstName('');
-      setLastName('');
       setEmail('');
-      setPhoneNumber('');
       setBiography('');
       setSelectedStaffBranchIds(branches[0]?.id ? [branches[0].id] : []);
       await fetchData();
@@ -477,12 +706,48 @@ export const AdminStaffPage: React.FC = () => {
     if (!editingStaff) return;
     setSavingStaffProfile(true);
     try {
-      const res = await adminService.updateStaffProfile({ staffProfileId: editingStaff.id, biography: editingBiography.trim(), isBookable: editingBookable });
-      if (!res.success) { toast.error(res.message || 'Personel profili güncellenemedi.'); return; }
-      setStaffList((current) => current.map((staff) => staff.id === editingStaff.id ? { ...staff, biography: editingBiography.trim(), isBookable: editingBookable } : staff));
-      setEditingStaff(null); toast.success('Personel profili güncellendi.');
-    } catch (error) { toast.error(getApiErrorMessage(error, 'Personel profili güncellenemedi.')); }
-    finally { setSavingStaffProfile(false); }
+      const [profileRes, branchRes] = await Promise.all([
+        adminService.updateStaffProfile({
+          staffProfileId: editingStaff.id,
+          biography: editingBiography.trim(),
+          isBookable: editingBookable,
+        }),
+        adminService.assignStaffBranches({
+          staffProfileId: editingStaff.id,
+          branchIds: editingBranchIds,
+        }),
+      ]);
+      if (!profileRes.success) {
+        toast.error(profileRes.message || 'Personel profili güncellenemedi.');
+        return;
+      }
+      if (!branchRes.success) {
+        toast.error(branchRes.message || 'Şube atamaları güncellenemedi.');
+        return;
+      }
+      setStaffList((current) =>
+        current.map((staff) =>
+          staff.id === editingStaff.id
+            ? {
+                ...staff,
+                biography: editingBiography.trim() || null,
+                isBookable: editingBookable,
+                assignedBranchIds: editingBranchIds,
+              }
+            : staff,
+        ),
+      );
+      setEditingStaff(null);
+      toast.success(
+        editingBookable
+          ? 'Personel profili ve şube atamaları güncellendi.'
+          : 'Personel pasife alındı ve değişiklikler kaydedildi.',
+      );
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Personel profili güncellenemedi.'));
+    } finally {
+      setSavingStaffProfile(false);
+    }
   };
 
   const handleSaveWorkingHours = async (e: React.FormEvent) => {
@@ -585,8 +850,40 @@ export const AdminStaffPage: React.FC = () => {
                   </p>
                 </div>
 
+                {/* Çalıştığı Şubeler Rozetleri */}
+                <div className="flex flex-wrap gap-1.5">
+                  {s.assignedBranchIds.length > 0 ? (
+                    s.assignedBranchIds.map((bId) => {
+                      const br = branches.find((b) => b.id === bId);
+                      return (
+                        <span
+                          key={bId}
+                          className="inline-flex items-center gap-1 rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-amber-800 dark:text-amber-300"
+                        >
+                          <Building2 className="h-2.5 w-2.5" />
+                          {br?.name ?? 'Şube'}
+                        </span>
+                      );
+                    })
+                  ) : (
+                    <span className="text-[11px] italic text-slate-400">Şube atanmamış</span>
+                  )}
+                </div>
+
                 <div className="grid grid-cols-2 gap-2 border-t border-slate-100 pt-2 dark:border-zinc-800">
-                  <Button size="sm" variant="outline" className="text-xs" onClick={() => { setEditingStaff(s); setEditingBiography(s.biography ?? ''); setEditingBookable(s.isBookable); }}><Pencil className="h-3.5 w-3.5"/> Profili düzenle</Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs"
+                    onClick={() => {
+                      setEditingStaff(s);
+                      setEditingBiography(s.biography ?? '');
+                      setEditingBookable(s.isBookable);
+                      setEditingBranchIds(s.assignedBranchIds ?? []);
+                    }}
+                  >
+                    <Pencil className="h-3.5 w-3.5" /> Profili düzenle
+                  </Button>
                   <Button
                     size="sm"
                     variant="outline"
@@ -603,12 +900,126 @@ export const AdminStaffPage: React.FC = () => {
         </div>
       )}
 
-      {editingStaff && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-        <Card className="max-h-[90vh] w-full max-w-lg overflow-y-auto">
-          <CardHeader className="relative"><button type="button" onClick={() => setEditingStaff(null)} className="absolute right-5 top-5 text-slate-400" aria-label="Kapat"><X className="h-5 w-5"/></button><CardTitle>{editingStaff.fullName} · Profil</CardTitle><CardDescription>Tanıtım metnini ve müşterilerin bu personelden randevu alıp alamayacağını düzenle.</CardDescription></CardHeader>
-          <CardContent><form onSubmit={saveStaffProfile} className="space-y-4"><Input label="Uzmanlık / Biyografi" value={editingBiography} onChange={(e) => setEditingBiography(e.target.value)} maxLength={400} placeholder="Uzmanlık alanı ve deneyim"/><label className="flex items-center gap-2 rounded-xl border border-slate-200 p-3 text-sm font-medium text-slate-700 dark:border-zinc-800 dark:text-zinc-200"><input type="checkbox" checked={editingBookable} onChange={(e) => setEditingBookable(e.target.checked)} className="h-4 w-4 accent-amber-600"/> Müşteriler randevu alabilsin</label><div className="flex justify-end gap-2 border-t border-slate-100 pt-4 dark:border-zinc-800"><Button type="button" variant="ghost" onClick={() => setEditingStaff(null)}>İptal</Button><Button type="submit" isLoading={savingStaffProfile}>Değişiklikleri kaydet</Button></div></form></CardContent>
-        </Card>
-      </div>}
+      {editingStaff && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <Card className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-[24px]">
+            <CardHeader className="relative">
+              <button
+                type="button"
+                onClick={() => setEditingStaff(null)}
+                className="absolute right-5 top-5 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200"
+                aria-label="Kapat"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              <CardTitle className="font-serif text-xl">{editingStaff.fullName} · Profil &amp; Şubeler</CardTitle>
+              <CardDescription>
+                Personelin aktif/pasif durumunu, uzmanlık alanını ve işletmenizde çalıştığı şubeleri yönetin.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={saveStaffProfile} className="space-y-4">
+                {/* Aktif / Pasif Durumu (Silme yerine güvenli pasife alma) */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300">
+                    Çalışma Durumu
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditingBookable(true)}
+                      className={cn(
+                        'cursor-pointer rounded-xl border px-3 py-2.5 text-xs font-semibold transition-all',
+                        editingBookable
+                          ? 'border-emerald-500 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                          : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400',
+                      )}
+                    >
+                      Aktif (Randevuya Açık)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingBookable(false)}
+                      className={cn(
+                        'cursor-pointer rounded-xl border px-3 py-2.5 text-xs font-semibold transition-all',
+                        !editingBookable
+                          ? 'border-rose-500 bg-rose-500/15 text-rose-700 dark:text-rose-300'
+                          : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400',
+                      )}
+                    >
+                      Pasife Al (Randevuya Kapalı)
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-zinc-400">
+                    Geçmiş randevu kayıtlarını korumak için personel silinmez; pasife alındığında yeni randevu almaz.
+                  </p>
+                </div>
+
+                {/* İşletme İçinde Çalıştığı Şubeler */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300">
+                    Çalıştığı Şubeler (Dükkanlarınız)
+                  </label>
+                  <div className="space-y-1.5 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-zinc-800 dark:bg-zinc-900/60">
+                    {branches.length === 0 ? (
+                      <p className="text-xs text-slate-500">Kayıtlı şubeniz bulunmuyor.</p>
+                    ) : (
+                      branches.map((branch) => {
+                        const checked = editingBranchIds.includes(branch.id);
+                        return (
+                          <label
+                            key={branch.id}
+                            className="flex cursor-pointer items-center justify-between gap-2.5 rounded-lg px-2 py-1.5 text-xs font-medium text-slate-800 hover:bg-white/70 dark:text-zinc-200 dark:hover:bg-zinc-800/60"
+                          >
+                            <span className="flex items-center gap-2.5">
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() =>
+                                  setEditingBranchIds((current) =>
+                                    current.includes(branch.id)
+                                      ? current.filter((id) => id !== branch.id)
+                                      : [...current, branch.id],
+                                  )
+                                }
+                                className="h-4 w-4 accent-amber-600"
+                              />
+                              <span>{branch.name}</span>
+                              <span className="text-slate-400">({branch.district})</span>
+                            </span>
+                            {checked && (
+                              <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-300">
+                                Atandı
+                              </span>
+                            )}
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                <Input
+                  label="Uzmanlık / Biyografi (Opsiyonel)"
+                  value={editingBiography}
+                  onChange={(e) => setEditingBiography(e.target.value)}
+                  maxLength={400}
+                  placeholder="Uzmanlık alanı ve deneyim"
+                />
+
+                <div className="flex justify-end gap-2 border-t border-slate-100 pt-4 dark:border-zinc-800">
+                  <Button type="button" variant="ghost" onClick={() => setEditingStaff(null)}>
+                    İptal
+                  </Button>
+                  <Button type="submit" isLoading={savingStaffProfile}>
+                    Değişiklikleri Kaydet
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Add Staff Modal */}
       {openAddModal && (
@@ -628,45 +1039,26 @@ export const AdminStaffPage: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleCreateStaff} className="space-y-3.5">
-                <div className="grid grid-cols-2 gap-3">
-                  <Input
-                    label="Ad"
-                    placeholder="Samet"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    required
-                  />
-                  <Input
-                    label="Soyad"
-                    placeholder="Demir"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    required
-                  />
-                </div>
+              <form onSubmit={handleCreateStaff} className="space-y-4">
                 <Input
-                  label="E-posta"
+                  label="Kayıtlı Personel E-postası"
                   type="email"
-                  placeholder="samet@makas.com"
+                  placeholder="ornek@mail.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
                 <Input
-                  label="Telefon"
-                  placeholder="0555 123 4567"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  required
-                />
-                <Input
-                  label="Uzmanlık / Biyografi"
-                  placeholder="Saç & Sakal Tasarım Uzmanı"
+                  label="Uzmanlık Alanı / Biyografi (Opsiyonel)"
+                  placeholder="Örn: Saç & Sakal Tasarım Uzmanı (boş bırakılabilir)"
                   value={biography}
                   onChange={(e) => setBiography(e.target.value)}
                 />
-                <p className="rounded-xl bg-amber-50 p-3 text-xs leading-relaxed text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">Bu e-posta zaten kayıtlıysa mevcut hesap kullanılır; çalışanın adı ve parolası değişmez. Yeni hesap için giriş parolası kayıt sonrasında yalnızca bir kez gösterilir.</p>
+                <p className="rounded-xl border border-amber-500/20 bg-amber-50/80 p-3 text-xs leading-relaxed text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+                  Personelin sisteme kayıtlı e-posta adresini girin. Ad, soyad ve telefon bilgileri
+                  hesabından otomatik alınır; uzmanlık alanını çalışan kendi profilinden de
+                  dilediği zaman düzenleyebilir.
+                </p>
 
                 <div className="space-y-2">
                   <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300">Çalışacağı şubeler</label>
@@ -680,7 +1072,7 @@ export const AdminStaffPage: React.FC = () => {
                     İptal
                   </Button>
                   <Button type="submit" size="sm" isLoading={saving}>
-                    Personeli Kaydet
+                    Personeli Kadroya Ekle
                   </Button>
                 </div>
               </form>
@@ -688,16 +1080,6 @@ export const AdminStaffPage: React.FC = () => {
           </Card>
         </div>
       )}
-
-      {createdStaffLogin && <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-        <Card className="w-full max-w-md shadow-2xl"><CardHeader><CardTitle>Çalışan hesabı hazır</CardTitle><CardDescription>{createdStaffLogin.fullName} · {createdStaffLogin.email}</CardDescription></CardHeader>
-          <CardContent className="space-y-4">
-            {createdStaffLogin.temporaryPassword ? <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30"><p className="text-xs font-semibold text-amber-900 dark:text-amber-200">İlk giriş parolası · çalışana güvenli şekilde ilet</p><code className="mt-2 block select-all text-lg font-bold tracking-wider text-slate-900 dark:text-zinc-100">{createdStaffLogin.temporaryPassword}</code></div> : <p className="rounded-xl bg-slate-100 p-4 text-sm text-slate-700 dark:bg-zinc-800 dark:text-zinc-200">Bu e-posta mevcut bir hesaba ait. Çalışan kendi mevcut parolasıyla giriş yapabilir; hesabına çalışan erişimi eklendi.</p>}
-            <p className="text-xs text-slate-500 dark:text-zinc-400">Giriş yaptıktan sonra çalışan, kendisine atanan salon paneline yönlendirilir.</p>
-            <div className="flex justify-end"><Button onClick={() => setCreatedStaffLogin(null)}>Tamam</Button></div>
-          </CardContent>
-        </Card>
-      </div>}
 
       {/* Set Working Hours Modal */}
       {openHoursModal && selectedStaff && (
