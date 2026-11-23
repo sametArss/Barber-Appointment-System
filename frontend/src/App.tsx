@@ -5,7 +5,7 @@ import { AdminLayout } from '@/layouts/AdminLayout';
 import { CustomerLayout } from '@/layouts/CustomerLayout';
 import { AdminCalendarPage } from '@/pages/AdminCalendarPage';
 import { AdminDashboardPage } from '@/pages/AdminDashboardPage';
-import { EmployeeAppointmentsPage, EmployeeDashboardPage, EmployeeWorkplacesPage } from '@/pages/EmployeePortalPages';
+import { EmployeeAppointmentsPage, EmployeeDashboardPage, EmployeeWorkplacesPage } from '@/pages/employee';
 import {
   AdminBranchesPage,
   AdminBusinessProfilePage,
@@ -13,7 +13,7 @@ import {
   AdminServicesPage,
   AdminStaffPage,
   AdminSubscriptionPage,
-} from '@/pages/AdminPages';
+} from '@/pages/admin';
 import { BookingPage } from '@/pages/BookingPage';
 import { BranchDetailPage } from '@/pages/BranchDetailPage';
 import { CustomerProfilePage } from '@/pages/CustomerProfilePage';
