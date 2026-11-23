@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { NoShowConfirmModal } from '@/components/appointments/NoShowConfirmModal';
 import {
   Badge,
   Button,
@@ -110,6 +111,7 @@ export const AdminCalendarPage: React.FC = () => {
 
   // Selected appointment quick action modal
   const [selectedAppt, setSelectedAppt] = useState<AppointmentResponse | null>(null);
+  const [confirmNoShowModal, setConfirmNoShowModal] = useState(false);
   const [actionNote, setActionNote] = useState('');
   const [updatingStatus, setUpdatingStatus] = useState<AppointmentStatus | null>(null);
 
@@ -264,6 +266,7 @@ export const AdminCalendarPage: React.FC = () => {
         );
       }
 
+      setConfirmNoShowModal(false);
       setSelectedAppt(null);
       setActionNote('');
       await fetchCalendarData();
@@ -557,58 +560,93 @@ export const AdminCalendarPage: React.FC = () => {
                 />
               </div>
 
-              {canIssuePenalty && (
-                <div className="flex items-start gap-2.5 rounded-xl border border-orange-500/30 bg-orange-500/10 p-3 text-xs text-orange-200">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-orange-400" />
-                  <span>
-                    <strong>Gelmedi / No-Show</strong> seçildiğinde randevu durumu
-                    güncellenir ve müşterinin hesabına otomatik olarak 1 ceza (grev)
-                    kaydı işlenir.
-                  </span>
-                </div>
-              )}
+              {(() => {
+                const startMs = new Date(selectedAppt.startAt).getTime();
+                const nowMs = Date.now();
+                const isBeforeStart = nowMs < startMs;
+                const hasStarted = nowMs >= startMs;
+                const isPending = selectedAppt.status === AppointmentStatus.Pending;
+                const isConfirmed = selectedAppt.status === AppointmentStatus.Confirmed;
+                const isFinal =
+                  selectedAppt.status === AppointmentStatus.Completed ||
+                  selectedAppt.status === AppointmentStatus.Cancelled ||
+                  selectedAppt.status === AppointmentStatus.NoShow;
 
-              {/* Quick Action Buttons */}
-              <div className="grid gap-2.5 sm:grid-cols-3">
-                <Button
-                  variant="secondary"
-                  disabled={
-                    selectedAppt.status === AppointmentStatus.Confirmed ||
-                    updatingStatus !== null
-                  }
-                  isLoading={updatingStatus === AppointmentStatus.Confirmed}
-                  onClick={() => handleQuickStatusUpdate(AppointmentStatus.Confirmed)}
-                >
-                  <UserCheck className="h-4 w-4 text-emerald-400" />
-                  Onayla
-                </Button>
+                if (isFinal) {
+                  return (
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-xs text-slate-600 dark:border-zinc-800 dark:bg-zinc-950/60 dark:text-zinc-300">
+                      Bu randevu sonuçlandırıldığı için durumu artık değiştirilemez.
+                    </div>
+                  );
+                }
 
-                <Button
-                  variant="primary"
-                  disabled={
-                    selectedAppt.status === AppointmentStatus.Completed ||
-                    updatingStatus !== null
-                  }
-                  isLoading={updatingStatus === AppointmentStatus.Completed}
-                  onClick={() => handleQuickStatusUpdate(AppointmentStatus.Completed)}
-                >
-                  <CheckCircle2 className="h-4 w-4" />
-                  Tamamlandı
-                </Button>
+                return (
+                  <div className="space-y-3">
+                    {isPending && !isBeforeStart && (
+                      <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-50/90 p-3 text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
+                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500 dark:text-amber-400" />
+                        <span>
+                          Randevu saati geçtiği için artık onaylanamaz. İsterseniz iptal
+                          edebilirsiniz.
+                        </span>
+                      </div>
+                    )}
 
-                <Button
-                  variant="danger"
-                  disabled={
-                    selectedAppt.status === AppointmentStatus.NoShow ||
-                    updatingStatus !== null
-                  }
-                  isLoading={updatingStatus === AppointmentStatus.NoShow}
-                  onClick={() => handleQuickStatusUpdate(AppointmentStatus.NoShow)}
-                >
-                  <ShieldAlert className="h-4 w-4" />
-                  No-Show
-                </Button>
-              </div>
+                    {isConfirmed && !hasStarted && (
+                      <div className="flex items-start gap-2.5 rounded-xl border border-sky-500/30 bg-sky-50/90 p-3 text-xs text-sky-900 dark:bg-sky-500/10 dark:text-sky-200">
+                        <Clock className="mt-0.5 h-4 w-4 shrink-0 text-sky-600 dark:text-sky-400" />
+                        <span>
+                          <strong>Tamamlandı</strong> veya <strong>Gelmedi (No-Show)</strong>{' '}
+                          seçenekleri randevu saati geldikten sonra aktif olur.
+                        </span>
+                      </div>
+                    )}
+
+                    {isConfirmed && hasStarted && canIssuePenalty && (
+                      <div className="flex items-start gap-2.5 rounded-xl border border-orange-500/30 bg-orange-50/90 p-3 text-xs text-orange-900 dark:bg-orange-500/10 dark:text-orange-200">
+                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-orange-500 dark:text-orange-400" />
+                        <span>
+                          <strong>Gelmedi / No-Show</strong> seçildiğinde onay penceresi açılır ve
+                          onaylandığında müşterinin hesabına otomatik 1 ceza puanı işlenir.
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Quick Action Buttons */}
+                    <div className="grid gap-2.5 sm:grid-cols-3">
+                      <Button
+                        variant="secondary"
+                        disabled={!isPending || !isBeforeStart || updatingStatus !== null}
+                        isLoading={updatingStatus === AppointmentStatus.Confirmed}
+                        onClick={() => handleQuickStatusUpdate(AppointmentStatus.Confirmed)}
+                      >
+                        <UserCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
+                        Onayla
+                      </Button>
+
+                      <Button
+                        variant="primary"
+                        disabled={!isConfirmed || !hasStarted || updatingStatus !== null}
+                        isLoading={updatingStatus === AppointmentStatus.Completed}
+                        onClick={() => handleQuickStatusUpdate(AppointmentStatus.Completed)}
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                        Tamamlandı
+                      </Button>
+
+                      <Button
+                        variant="danger"
+                        disabled={!isConfirmed || !hasStarted || updatingStatus !== null}
+                        isLoading={updatingStatus === AppointmentStatus.NoShow}
+                        onClick={() => setConfirmNoShowModal(true)}
+                      >
+                        <ShieldAlert className="h-4 w-4" />
+                        Gelmedi
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })()}
             </CardContent>
 
             <CardFooter className="justify-end border-t border-slate-200 pt-3 dark:border-zinc-800/80">
@@ -619,6 +657,13 @@ export const AdminCalendarPage: React.FC = () => {
           </Card>
         </div>
       )}
+
+      <NoShowConfirmModal
+        appointment={confirmNoShowModal ? selectedAppt : null}
+        loading={updatingStatus === AppointmentStatus.NoShow}
+        onCancel={() => setConfirmNoShowModal(false)}
+        onConfirm={() => void handleQuickStatusUpdate(AppointmentStatus.NoShow)}
+      />
     </div>
   );
 };

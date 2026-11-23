@@ -19,6 +19,7 @@ namespace BarberBooking.Shared.DTOs.Services
         public int DurationMinutes { get; set; }
         public string? ImageUrl { get; set; }
         public bool IsActive { get; set; }
+        public List<Guid>? AssignToBranchIds { get; set; }
     }
 
     public class AssignBranchServiceRequestDto

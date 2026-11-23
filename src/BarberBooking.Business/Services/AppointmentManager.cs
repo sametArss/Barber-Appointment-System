@@ -387,25 +387,79 @@ namespace BarberBooking.Business.Services
                 return Result.Fail("Randevu bulunamadı.", 404);
             }
 
-            var newStatusEnum = (AppointmentStatus)request.NewStatus;
+            return await ApplyStatusTransitionAsync(
+                appointment,
+                (AppointmentStatus)request.NewStatus,
+                userId,
+                request.Note,
+                "İşletme tarafından iptal edildi.",
+                cancellationToken);
+        }
+
+        private async Task<IResult> ApplyStatusTransitionAsync(
+            Appointment appointment,
+            AppointmentStatus newStatus,
+            Guid? changedByUserId,
+            string? note,
+            string defaultCancelReason,
+            CancellationToken cancellationToken)
+        {
+            var now = DateTimeOffset.UtcNow;
             var oldStatus = appointment.Status;
 
-            appointment.Status = newStatusEnum;
-            appointmentRepo.Update(appointment);
+            if (oldStatus is AppointmentStatus.Completed or AppointmentStatus.Cancelled or AppointmentStatus.NoShow)
+            {
+                return Result.Fail("Tamamlanmış, iptal edilmiş veya gelmedi olarak işaretlenmiş randevuların durumu değiştirilemez.", 400);
+            }
+
+            if (oldStatus == AppointmentStatus.Pending)
+            {
+                if (newStatus is not (AppointmentStatus.Confirmed or AppointmentStatus.Cancelled))
+                {
+                    return Result.Fail("Onaylanmamış bir randevu tamamlandı veya gelmedi olarak işaretlenemez.", 400);
+                }
+
+                if (newStatus == AppointmentStatus.Confirmed && now >= appointment.StartAt)
+                {
+                    return Result.Fail("Randevu saati geçtiği için artık onaylanamaz.", 400);
+                }
+            }
+            else if (oldStatus == AppointmentStatus.Confirmed)
+            {
+                if (newStatus is not (AppointmentStatus.Completed or AppointmentStatus.NoShow or AppointmentStatus.Cancelled))
+                {
+                    return Result.Fail("Onaylanmış bir randevu yalnızca tamamlandı, gelmedi veya iptal durumuna geçirilebilir.", 400);
+                }
+
+                if (newStatus is AppointmentStatus.Completed or AppointmentStatus.NoShow && now < appointment.StartAt)
+                {
+                    return Result.Fail("Randevu saati gelmeden tamamlandı veya gelmedi olarak işaretlenemez.", 400);
+                }
+            }
+
+            appointment.Status = newStatus;
+            if (newStatus == AppointmentStatus.Cancelled)
+            {
+                appointment.CancelledAt = now;
+                appointment.CancelledByUserId = changedByUserId;
+                appointment.CancellationReason = string.IsNullOrWhiteSpace(note) ? defaultCancelReason : note.Trim();
+            }
+
+            _unitOfWork.Repository<Appointment>().Update(appointment);
 
             var history = new AppointmentStatusHistory
             {
                 Id = Guid.NewGuid(),
                 AppointmentId = appointment.Id,
                 OldStatus = oldStatus,
-                NewStatus = newStatusEnum,
-                ChangedByUserId = userId,
-                Note = request.Note?.Trim()
+                NewStatus = newStatus,
+                ChangedByUserId = changedByUserId,
+                Note = note?.Trim()
             };
 
             await _unitOfWork.Repository<AppointmentStatusHistory>().AddAsync(history, cancellationToken);
 
-            if (newStatusEnum == AppointmentStatus.NoShow)
+            if (newStatus == AppointmentStatus.NoShow)
             {
                 var hasPenalty = await _unitOfWork.Repository<CustomerPenalty>().Query()
                     .IgnoreQueryFilters()
@@ -420,11 +474,11 @@ namespace BarberBooking.Business.Services
                         CustomerUserId = appointment.CustomerUserId,
                         AppointmentId = appointment.Id,
                         Reason = PenaltyReason.NoShow,
-                        Note = string.IsNullOrWhiteSpace(request.Note)
+                        Note = string.IsNullOrWhiteSpace(note)
                             ? "Randevuya gelmedi (Otomatik No-Show cezası)."
-                            : request.Note.Trim(),
+                            : note.Trim(),
                         IsActive = true,
-                        ExpiresAt = DateTimeOffset.UtcNow.AddDays(30)
+                        ExpiresAt = now.AddDays(30)
                     };
 
                     await _unitOfWork.Repository<CustomerPenalty>().AddAsync(autoPenalty, cancellationToken);
@@ -529,34 +583,13 @@ namespace BarberBooking.Business.Services
                 .FirstOrDefaultAsync(a => a.Id == request.AppointmentId && a.StaffProfile.BusinessMember.UserId == userId.Value, cancellationToken);
             if (appointment == null) return Result.Fail("Bu randevu çalışan hesabınızda bulunamadı.", 404);
 
-            var newStatus = (AppointmentStatus)request.NewStatus;
-            var allowedTransition = appointment.Status == AppointmentStatus.Pending
-                ? newStatus is AppointmentStatus.Confirmed or AppointmentStatus.Cancelled
-                : appointment.Status == AppointmentStatus.Confirmed
-                    && newStatus is AppointmentStatus.Completed or AppointmentStatus.Cancelled;
-            if (!allowedTransition)
-                return Result.Fail("Bu randevu için seçilen durum değişikliğine izin verilmiyor.", 400);
-
-            var oldStatus = appointment.Status;
-            appointment.Status = newStatus;
-            if (newStatus == AppointmentStatus.Cancelled)
-            {
-                appointment.CancelledAt = DateTimeOffset.UtcNow;
-                appointment.CancelledByUserId = userId.Value;
-                appointment.CancellationReason = string.IsNullOrWhiteSpace(request.Note) ? "Çalışan tarafından iptal edildi." : request.Note.Trim();
-            }
-            appointmentRepo.Update(appointment);
-            await _unitOfWork.Repository<AppointmentStatusHistory>().AddAsync(new AppointmentStatusHistory
-            {
-                Id = Guid.NewGuid(),
-                AppointmentId = appointment.Id,
-                OldStatus = oldStatus,
-                NewStatus = newStatus,
-                ChangedByUserId = userId.Value,
-                Note = request.Note?.Trim()
-            }, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-            return Result.Ok("Randevu durumu güncellendi.");
+            return await ApplyStatusTransitionAsync(
+                appointment,
+                (AppointmentStatus)request.NewStatus,
+                userId.Value,
+                request.Note,
+                "Çalışan tarafından iptal edildi.",
+                cancellationToken);
         }
 
         public async Task<IDataResult<IReadOnlyList<AppointmentResponseDto>>> GetBranchAppointmentsAsync(Guid branchId, DateOnly? date = null, CancellationToken cancellationToken = default)

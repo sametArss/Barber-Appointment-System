@@ -104,6 +104,16 @@ namespace BarberBooking.Business.Services
                 return DataResult<ServiceResponseDto>.Fail("İşletme yetkiniz bulunamadı.", 403);
             }
 
+            if (request.DurationMinutes <= 0)
+            {
+                return DataResult<ServiceResponseDto>.Fail("Hizmet süresi 0'dan büyük olmalıdır.", 400);
+            }
+
+            if (request.BasePrice < 0)
+            {
+                return DataResult<ServiceResponseDto>.Fail("Taban fiyat negatif olamaz.", 400);
+            }
+
             var serviceRepo = _unitOfWork.Repository<Service>();
             var service = await serviceRepo.FirstOrDefaultAsync(
                 s => s.Id == request.Id && s.BusinessId == businessId.Value,
@@ -122,6 +132,69 @@ namespace BarberBooking.Business.Services
             service.IsActive = request.IsActive;
 
             serviceRepo.Update(service);
+
+            var branchServiceRepo = _unitOfWork.Repository<BranchService>();
+            var existingBranchServices = await branchServiceRepo.Query()
+                .Include(bs => bs.Branch)
+                .Where(bs => bs.ServiceId == service.Id)
+                .ToListAsync(cancellationToken);
+
+            var assignedBranchIds = new List<Guid>();
+            var assignedBranchNames = new List<string>();
+
+            if (request.AssignToBranchIds != null)
+            {
+                var requestedIds = request.AssignToBranchIds.Distinct().ToHashSet();
+                var businessBranches = await _unitOfWork.Repository<Branch>().Query()
+                    .Where(b => b.BusinessId == businessId.Value)
+                    .Select(b => new { b.Id, b.Name })
+                    .ToListAsync(cancellationToken);
+
+                var validBranchMap = businessBranches
+                    .Where(b => requestedIds.Contains(b.Id))
+                    .ToDictionary(b => b.Id, b => b.Name);
+
+                var existingMap = existingBranchServices.ToDictionary(bs => bs.BranchId);
+
+                foreach (var existing in existingBranchServices)
+                {
+                    var shouldBeActive = validBranchMap.ContainsKey(existing.BranchId);
+                    if (existing.IsActive != shouldBeActive)
+                    {
+                        existing.IsActive = shouldBeActive;
+                        branchServiceRepo.Update(existing);
+                    }
+                }
+
+                foreach (var kvp in validBranchMap)
+                {
+                    if (!existingMap.ContainsKey(kvp.Key))
+                    {
+                        await branchServiceRepo.AddAsync(new BranchService
+                        {
+                            Id = Guid.NewGuid(),
+                            BranchId = kvp.Key,
+                            ServiceId = service.Id,
+                            IsActive = true
+                        }, cancellationToken);
+                    }
+
+                    assignedBranchIds.Add(kvp.Key);
+                    assignedBranchNames.Add(kvp.Value);
+                }
+            }
+            else
+            {
+                assignedBranchIds = existingBranchServices
+                    .Where(bs => bs.IsActive)
+                    .Select(bs => bs.BranchId)
+                    .ToList();
+                assignedBranchNames = existingBranchServices
+                    .Where(bs => bs.IsActive && bs.Branch != null)
+                    .Select(bs => bs.Branch.Name)
+                    .ToList();
+            }
+
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             var response = new ServiceResponseDto
@@ -133,7 +206,9 @@ namespace BarberBooking.Business.Services
                 BasePrice = service.BasePrice,
                 DurationMinutes = service.DurationMinutes,
                 ImageUrl = service.ImageUrl,
-                IsActive = service.IsActive
+                IsActive = service.IsActive,
+                AssignedBranchIds = assignedBranchIds,
+                AssignedBranchNames = assignedBranchNames
             };
 
             return DataResult<ServiceResponseDto>.Ok(response, "Hizmet başarıyla güncellendi.");

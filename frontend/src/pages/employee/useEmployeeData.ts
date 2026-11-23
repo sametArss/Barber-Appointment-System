@@ -67,13 +67,19 @@ export const useEmployeeData = () => {
           item.id === appointment.id ? { ...item, status: nextStatus } : item,
         ),
       );
-      toast.success(
-        newStatus === AppointmentStatus.Confirmed
-          ? 'Randevu onaylandı.'
-          : newStatus === AppointmentStatus.Completed
-            ? 'Randevu tamamlandı olarak işaretlendi.'
-            : 'Randevu iptal edildi.',
-      );
+      if (newStatus === AppointmentStatus.NoShow) {
+        toast.warning(
+          'Randevu gelmedi (No-Show) olarak işaretlendi ve müşteriye otomatik ceza puanı işlendi.',
+        );
+      } else {
+        toast.success(
+          newStatus === AppointmentStatus.Confirmed
+            ? 'Randevu onaylandı.'
+            : newStatus === AppointmentStatus.Completed
+              ? 'Randevu tamamlandı olarak işaretlendi.'
+              : 'Randevu iptal edildi.',
+        );
+      }
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Randevu güncellenemedi.'));
     } finally {

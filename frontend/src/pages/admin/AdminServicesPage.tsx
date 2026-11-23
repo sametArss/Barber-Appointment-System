@@ -115,7 +115,9 @@ export const AdminServicesPage: React.FC = () => {
       }
 
       toast.success(
-        editingService ? 'Hizmet bilgileri güncellendi.' : 'Hizmet eklendi ve seçili şubelere atandı.',
+        editingService
+          ? 'Hizmet bilgileri ve şube atamaları güncellendi.'
+          : 'Hizmet eklendi ve seçili şubelere atandı.',
       );
       setOpenModal(false);
       setEditingService(null);
@@ -174,6 +176,7 @@ export const AdminServicesPage: React.FC = () => {
             setDescription('');
             setBasePrice(350);
             setDurationMinutes(45);
+            setSelectedBranchIds(branches.length > 0 ? [branches[0].id] : []);
             setOpenModal(true);
           }}
           className="gap-2 shadow-sm"
@@ -307,6 +310,7 @@ export const AdminServicesPage: React.FC = () => {
                           setDescription(srv.description ?? '');
                           setBasePrice(srv.basePrice);
                           setDurationMinutes(srv.durationMinutes);
+                          setSelectedBranchIds(srv.assignedBranchIds ?? []);
                           setOpenModal(true);
                         }}
                       >
@@ -379,34 +383,73 @@ export const AdminServicesPage: React.FC = () => {
                   />
                 </div>
 
-                {!editingService && (
-                  <div className="space-y-2 pt-1">
+                <div className="space-y-2 pt-1">
+                  <div className="flex items-center justify-between gap-2">
                     <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300">
-                      Hizmetin Sunulacağı Şubeler
+                      Hizmetin Sunulacağı Şubeler ({selectedBranchIds.length}/{branches.length})
                     </label>
-                    <div className="space-y-1.5 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-zinc-800 dark:bg-zinc-900/60">
-                      {branches.map((b) => {
+                    {branches.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSelectedBranchIds(
+                            selectedBranchIds.length === branches.length
+                              ? []
+                              : branches.map((b) => b.id),
+                          )
+                        }
+                        className="text-[11px] font-semibold text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
+                      >
+                        {selectedBranchIds.length === branches.length
+                          ? 'Tümünü Kaldır'
+                          : 'Tüm Şubeleri Seç'}
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-1.5 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-zinc-800 dark:bg-zinc-900/60">
+                    {branches.length === 0 ? (
+                      <p className="text-xs text-slate-500 dark:text-zinc-400">
+                        Henüz kayıtlı şube bulunmuyor.
+                      </p>
+                    ) : (
+                      branches.map((b) => {
                         const checked = selectedBranchIds.includes(b.id);
                         return (
                           <label
                             key={b.id}
-                            className="flex items-center gap-2.5 text-xs font-medium text-slate-800 dark:text-zinc-200 cursor-pointer py-1"
+                            className="flex items-center justify-between gap-2.5 text-xs font-medium text-slate-800 dark:text-zinc-200 cursor-pointer py-1"
                           >
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() => toggleBranchSelection(b.id)}
-                              className="h-4 w-4 rounded border-slate-300 text-amber-500 focus:ring-amber-500"
-                            />
-                            <span>
-                              {b.name} <span className="text-slate-400">({b.district})</span>
+                            <span className="flex items-center gap-2.5">
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => toggleBranchSelection(b.id)}
+                                className="h-4 w-4 rounded border-slate-300 text-amber-500 focus:ring-amber-500"
+                              />
+                              <span>
+                                {b.name} <span className="text-slate-400">({b.district})</span>
+                              </span>
+                            </span>
+                            <span
+                              className={
+                                checked
+                                  ? 'text-[10px] font-semibold text-emerald-600 dark:text-emerald-400'
+                                  : 'text-[10px] text-slate-400'
+                              }
+                            >
+                              {checked ? 'Atalı' : 'Atalı değil'}
                             </span>
                           </label>
                         );
-                      })}
-                    </div>
+                      })
+                    )}
                   </div>
-                )}
+                  {editingService && selectedBranchIds.length === 0 && (
+                    <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                      Hiç şube seçilmezse bu hizmet hiçbir şubede müşterilere listelenmez.
+                    </p>
+                  )}
+                </div>
 
                 <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-zinc-800">
                   <Button
