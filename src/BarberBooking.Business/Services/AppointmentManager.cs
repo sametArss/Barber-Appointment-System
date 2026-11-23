@@ -52,6 +52,17 @@ namespace BarberBooking.Business.Services
                 return DataResult<IReadOnlyList<AvailableSlotResponseDto>>.Fail("Hizmet bu şubede aktif değil.", 404);
             }
 
+            var staffProvidesService = await _unitOfWork.Repository<StaffService>().AnyAsync(
+                ss => ss.StaffProfileId == query.StaffProfileId && ss.ServiceId == query.ServiceId,
+                cancellationToken);
+
+            if (!staffProvidesService)
+            {
+                return DataResult<IReadOnlyList<AvailableSlotResponseDto>>.Ok(
+                    new List<AvailableSlotResponseDto>(),
+                    "Seçilen personel bu hizmeti vermemektedir.");
+            }
+
             int durationMinutes = branchService.DurationOverride ?? branchService.Service.DurationMinutes;
             if (durationMinutes <= 0) durationMinutes = 30;
 
@@ -193,6 +204,15 @@ namespace BarberBooking.Business.Services
             if (branchService == null || !branchService.Service.IsActive)
             {
                 return DataResult<AppointmentResponseDto>.Fail("Hizmet bulunamadı veya şubede sunulmuyor.", 404);
+            }
+
+            var staffProvidesService = await _unitOfWork.Repository<StaffService>().AnyAsync(
+                ss => ss.StaffProfileId == request.StaffProfileId && ss.ServiceId == request.ServiceId,
+                cancellationToken);
+
+            if (!staffProvidesService)
+            {
+                return DataResult<AppointmentResponseDto>.Fail("Seçilen personel bu hizmeti vermemektedir.", 400);
             }
 
             var priceSnapshot = branchService.PriceOverride ?? branchService.Service.BasePrice;

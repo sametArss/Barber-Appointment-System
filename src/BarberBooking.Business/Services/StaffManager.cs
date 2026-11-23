@@ -4,6 +4,7 @@ using BarberBooking.Entities.Businesses;
 using BarberBooking.Entities.Common;
 using BarberBooking.Entities.Identity;
 using BarberBooking.Entities.Scheduling;
+using BarberBooking.Entities.Services;
 using BarberBooking.Shared.DTOs.Staff;
 using BarberBooking.Shared.Results;
 using Microsoft.EntityFrameworkCore;
@@ -314,19 +315,33 @@ namespace BarberBooking.Business.Services
                 .Where(sp => sp.BusinessMember.BusinessId == businessId.Value)
                 .ToListAsync(cancellationToken);
 
-            var response = staffList.Select(sp => new StaffResponseDto
+            var staffIds = staffList.Select(sp => sp.Id).ToList();
+            var staffServicesLookup = (await _unitOfWork.Repository<StaffService>().Query()
+                .Include(ss => ss.Service)
+                .Where(ss => staffIds.Contains(ss.StaffProfileId) && ss.Service.IsActive)
+                .ToListAsync(cancellationToken))
+                .GroupBy(ss => ss.StaffProfileId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            var response = staffList.Select(sp =>
             {
-                Id = sp.Id,
-                BusinessMemberId = sp.BusinessMemberId,
-                UserId = sp.BusinessMember.UserId,
-                BusinessId = sp.BusinessMember.BusinessId,
-                FullName = $"{sp.BusinessMember.User.FirstName} {sp.BusinessMember.User.LastName}",
-                Email = sp.BusinessMember.User.Email,
-                PhoneNumber = sp.BusinessMember.User.PhoneNumber,
-                Biography = sp.Biography,
-                ProfileImageUrl = sp.ProfileImageUrl,
-                IsBookable = sp.IsBookable,
-                AssignedBranchIds = sp.BranchAssignments.Select(ba => ba.BranchId).ToList()
+                staffServicesLookup.TryGetValue(sp.Id, out var assignedServices);
+                return new StaffResponseDto
+                {
+                    Id = sp.Id,
+                    BusinessMemberId = sp.BusinessMemberId,
+                    UserId = sp.BusinessMember.UserId,
+                    BusinessId = sp.BusinessMember.BusinessId,
+                    FullName = $"{sp.BusinessMember.User.FirstName} {sp.BusinessMember.User.LastName}",
+                    Email = sp.BusinessMember.User.Email,
+                    PhoneNumber = sp.BusinessMember.User.PhoneNumber,
+                    Biography = sp.Biography,
+                    ProfileImageUrl = sp.ProfileImageUrl,
+                    IsBookable = sp.IsBookable,
+                    AssignedBranchIds = sp.BranchAssignments.Select(ba => ba.BranchId).ToList(),
+                    AssignedServiceIds = assignedServices?.Select(ss => ss.ServiceId).ToList() ?? new List<Guid>(),
+                    AssignedServiceNames = assignedServices?.Select(ss => ss.Service.Name).ToList() ?? new List<string>()
+                };
             }).ToList();
 
             return DataResult<IReadOnlyList<StaffResponseDto>>.Ok(response);
@@ -341,19 +356,33 @@ namespace BarberBooking.Business.Services
                 .Where(a => a.BranchId == branchId && a.StaffProfile.IsBookable)
                 .ToListAsync(cancellationToken);
 
-            var response = assignments.Select(a => new StaffResponseDto
+            var staffIds = assignments.Select(a => a.StaffProfileId).Distinct().ToList();
+            var staffServicesLookup = (await _unitOfWork.Repository<StaffService>().Query()
+                .Include(ss => ss.Service)
+                .Where(ss => staffIds.Contains(ss.StaffProfileId) && ss.Service.IsActive)
+                .ToListAsync(cancellationToken))
+                .GroupBy(ss => ss.StaffProfileId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            var response = assignments.Select(a =>
             {
-                Id = a.StaffProfile.Id,
-                BusinessMemberId = a.StaffProfile.BusinessMemberId,
-                UserId = a.StaffProfile.BusinessMember.UserId,
-                BusinessId = a.StaffProfile.BusinessMember.BusinessId,
-                FullName = $"{a.StaffProfile.BusinessMember.User.FirstName} {a.StaffProfile.BusinessMember.User.LastName}",
-                Email = a.StaffProfile.BusinessMember.User.Email,
-                PhoneNumber = a.StaffProfile.BusinessMember.User.PhoneNumber,
-                Biography = a.StaffProfile.Biography,
-                ProfileImageUrl = a.StaffProfile.ProfileImageUrl,
-                IsBookable = a.StaffProfile.IsBookable,
-                AssignedBranchIds = new List<Guid> { a.BranchId }
+                staffServicesLookup.TryGetValue(a.StaffProfile.Id, out var assignedServices);
+                return new StaffResponseDto
+                {
+                    Id = a.StaffProfile.Id,
+                    BusinessMemberId = a.StaffProfile.BusinessMemberId,
+                    UserId = a.StaffProfile.BusinessMember.UserId,
+                    BusinessId = a.StaffProfile.BusinessMember.BusinessId,
+                    FullName = $"{a.StaffProfile.BusinessMember.User.FirstName} {a.StaffProfile.BusinessMember.User.LastName}",
+                    Email = a.StaffProfile.BusinessMember.User.Email,
+                    PhoneNumber = a.StaffProfile.BusinessMember.User.PhoneNumber,
+                    Biography = a.StaffProfile.Biography,
+                    ProfileImageUrl = a.StaffProfile.ProfileImageUrl,
+                    IsBookable = a.StaffProfile.IsBookable,
+                    AssignedBranchIds = new List<Guid> { a.BranchId },
+                    AssignedServiceIds = assignedServices?.Select(ss => ss.ServiceId).ToList() ?? new List<Guid>(),
+                    AssignedServiceNames = assignedServices?.Select(ss => ss.Service.Name).ToList() ?? new List<string>()
+                };
             }).ToList();
 
             return DataResult<IReadOnlyList<StaffResponseDto>>.Ok(response);

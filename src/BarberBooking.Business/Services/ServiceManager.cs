@@ -327,6 +327,81 @@ namespace BarberBooking.Business.Services
             return Result.Ok("Çalışan hizmet yetkinlikleri başarıyla güncellendi.");
         }
 
+        public async Task<IResult> AssignMyServicesAsync(AssignStaffServicesRequestDto request, CancellationToken cancellationToken = default)
+        {
+            var userId = _tenantService.UserId;
+            if (!userId.HasValue)
+            {
+                return Result.Fail("Oturum açmanız gerekmektedir.", 401);
+            }
+
+            var staffQuery = _unitOfWork.Repository<StaffProfile>().Query()
+                .Include(sp => sp.BusinessMember)
+                .Where(sp => sp.BusinessMember.UserId == userId.Value && sp.BusinessMember.IsActive);
+
+            var staff = request.StaffProfileId != Guid.Empty
+                ? await staffQuery.FirstOrDefaultAsync(sp => sp.Id == request.StaffProfileId, cancellationToken)
+                : await staffQuery.FirstOrDefaultAsync(cancellationToken);
+
+            if (staff == null)
+            {
+                return Result.Fail("Seçilen salona ait aktif bir çalışan profiliniz bulunamadı.", 404);
+            }
+
+            var businessId = staff.BusinessMember.BusinessId;
+            var staffServiceRepo = _unitOfWork.Repository<StaffService>();
+            var existingStaffServices = await staffServiceRepo.GetAsync(
+                ss => ss.StaffProfileId == staff.Id,
+                cancellationToken);
+
+            staffServiceRepo.RemoveRange(existingStaffServices);
+
+            var distinctIds = (request.ServiceIds ?? new List<Guid>()).Distinct().ToList();
+            if (distinctIds.Count > 0)
+            {
+                var validServiceIds = await _unitOfWork.Repository<Service>().Query()
+                    .Where(s => s.BusinessId == businessId && s.IsActive && distinctIds.Contains(s.Id))
+                    .Select(s => s.Id)
+                    .ToListAsync(cancellationToken);
+
+                foreach (var serviceId in validServiceIds)
+                {
+                    await staffServiceRepo.AddAsync(new StaffService
+                    {
+                        StaffProfileId = staff.Id,
+                        ServiceId = serviceId
+                    }, cancellationToken);
+                }
+            }
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            return Result.Ok("Seçili salon için verdiğiniz hizmetler güncellendi.");
+        }
+
+        public async Task<IDataResult<IReadOnlyList<ServiceResponseDto>>> GetMyAssignedServicesAsync(Guid? staffProfileId = null, CancellationToken cancellationToken = default)
+        {
+            var userId = _tenantService.UserId;
+            if (!userId.HasValue)
+            {
+                return DataResult<IReadOnlyList<ServiceResponseDto>>.Fail("Oturum açmanız gerekmektedir.", 401);
+            }
+
+            var staffQuery = _unitOfWork.Repository<StaffProfile>().Query()
+                .Include(sp => sp.BusinessMember)
+                .Where(sp => sp.BusinessMember.UserId == userId.Value && sp.BusinessMember.IsActive);
+
+            var staff = staffProfileId.HasValue && staffProfileId.Value != Guid.Empty
+                ? await staffQuery.FirstOrDefaultAsync(sp => sp.Id == staffProfileId.Value, cancellationToken)
+                : await staffQuery.FirstOrDefaultAsync(cancellationToken);
+
+            if (staff == null)
+            {
+                return DataResult<IReadOnlyList<ServiceResponseDto>>.Ok(new List<ServiceResponseDto>());
+            }
+
+            return await GetStaffServicesAsync(staff.Id, cancellationToken);
+        }
+
         public async Task<IDataResult<IReadOnlyList<ServiceResponseDto>>> GetStaffServicesAsync(Guid staffProfileId, CancellationToken cancellationToken = default)
         {
             var staffServices = await _unitOfWork.Repository<StaffService>().Query()

@@ -288,6 +288,13 @@ export const BookingPage: React.FC = () => {
     };
   }, [step, businessId]);
 
+  const eligibleStaffList = useMemo(() => {
+    if (!selectedService) return staffList;
+    return staffList.filter((member) =>
+      (member.assignedServiceIds ?? []).includes(selectedService.serviceId),
+    );
+  }, [staffList, selectedService]);
+
   const slotGrid = useMemo(() => {
     if (!selectedService) return { isClosedDay: false, items: [] as GridSlotItem[] };
     return buildSlotGrid(
@@ -493,6 +500,12 @@ export const BookingPage: React.FC = () => {
                           onClick={() => {
                             setSelectedService(srv);
                             setSelectedSlot(null);
+                            if (
+                              selectedStaff &&
+                              !(selectedStaff.assignedServiceIds ?? []).includes(srv.serviceId)
+                            ) {
+                              setSelectedStaff(null);
+                            }
                           }}
                           className={cn(
                             'group flex cursor-pointer flex-col justify-between rounded-[18px] border p-5 text-left transition-all duration-200',
@@ -568,13 +581,19 @@ export const BookingPage: React.FC = () => {
                   </p>
                 </div>
 
-                {staffList.length === 0 ? (
-                  <p className="py-10 text-center text-sm text-slate-500 dark:text-slate-400">
-                    Bu şubede randevuya uygun personel bulunamadı.
-                  </p>
+                {eligibleStaffList.length === 0 ? (
+                  <div className="rounded-[18px] border border-amber-500/25 bg-amber-50/70 p-8 text-center dark:border-amber-400/20 dark:bg-amber-500/5">
+                    <p className="font-serif text-base font-semibold text-slate-900 dark:text-white">
+                      Bu hizmet için henüz atanmış bir uzman bulunmuyor
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                      Seçtiğiniz hizmeti verebilen bir berber atanmadığı için farklı bir hizmet
+                      seçebilirsiniz.
+                    </p>
+                  </div>
                 ) : (
                   <div className="grid gap-3.5 sm:grid-cols-2">
-                    {staffList.map((member) => {
+                    {eligibleStaffList.map((member) => {
                       const isSelected = selectedStaff?.id === member.id;
                       const initials = member.fullName
                         .split(' ')

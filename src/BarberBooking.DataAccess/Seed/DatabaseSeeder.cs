@@ -33,8 +33,25 @@ namespace BarberBooking.DataAccess.Seed
             // Şifre: 123456 (PasswordHasher formatı: SaltBase64.HashBase64 - PBKDF2 SHA512 100.000 iterasyon)
             const string defaultPasswordHash = "u9c4vYqT3f8L1xXz0wKmJQ==.R2DCgtTdKQYdsd0/y0xH/v+aWi+Mo7Ic8h5P/ZZdm58=";
 
-            // Eğer zaten kullanıcı varsa devam etme
-            if (await context.Users.AnyAsync()) return;
+            // Eğer zaten kullanıcı varsa devam etme (ancak seed personelinin hizmet atamalarını kontrol et)
+            if (await context.Users.AnyAsync())
+            {
+                var seededStaffId = Guid.Parse("40000000-0000-0000-0000-000000000001");
+                var seededHairId = Guid.Parse("30000000-0000-0000-0000-000000000001");
+                var seededBeardId = Guid.Parse("30000000-0000-0000-0000-000000000002");
+
+                var hasSeededStaff = await context.StaffProfiles.AnyAsync(sp => sp.Id == seededStaffId);
+                var hasAnyStaffServices = await context.StaffServices.AnyAsync(ss => ss.StaffProfileId == seededStaffId);
+                if (hasSeededStaff && !hasAnyStaffServices)
+                {
+                    if (await context.Services.AnyAsync(s => s.Id == seededHairId))
+                        await context.StaffServices.AddAsync(new StaffService { StaffProfileId = seededStaffId, ServiceId = seededHairId });
+                    if (await context.Services.AnyAsync(s => s.Id == seededBeardId))
+                        await context.StaffServices.AddAsync(new StaffService { StaffProfileId = seededStaffId, ServiceId = seededBeardId });
+                    await context.SaveChangesAsync();
+                }
+                return;
+            }
 
             // 2. Kullanıcılar
             var ownerUser = new User
@@ -175,6 +192,12 @@ namespace BarberBooking.DataAccess.Seed
                 StaffProfileId = staffProfile.Id,
                 BranchId = branch.Id
             });
+
+            // Seed Personelin Verebildiği Hizmetler
+            await context.StaffServices.AddRangeAsync(
+                new StaffService { StaffProfileId = staffProfile.Id, ServiceId = serviceHair.Id },
+                new StaffService { StaffProfileId = staffProfile.Id, ServiceId = serviceBeard.Id }
+            );
 
             // Personel Çalışma Saatleri ve Molalar
             var workingDays = new[]

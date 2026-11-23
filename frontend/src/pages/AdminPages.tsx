@@ -586,6 +586,7 @@ export const AdminBranchesPage: React.FC = () => {
 export const AdminStaffPage: React.FC = () => {
   const [staffList, setStaffList] = useState<StaffResponse[]>([]);
   const [branches, setBranches] = useState<BranchResponse[]>([]);
+  const [businessServices, setBusinessServices] = useState<BusinessServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modals
@@ -596,6 +597,7 @@ export const AdminStaffPage: React.FC = () => {
   const [editingBiography, setEditingBiography] = useState('');
   const [editingBookable, setEditingBookable] = useState(true);
   const [editingBranchIds, setEditingBranchIds] = useState<string[]>([]);
+  const [editingServiceIds, setEditingServiceIds] = useState<string[]>([]);
   const [savingStaffProfile, setSavingStaffProfile] = useState(false);
 
   // Form states
@@ -613,9 +615,10 @@ export const AdminStaffPage: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [staffRes, branchRes] = await Promise.all([
+      const [staffRes, branchRes, servicesRes] = await Promise.all([
         adminService.getBusinessStaff(),
         adminService.getMyBranches(),
+        adminService.getBusinessServices(),
       ]);
 
       if (staffRes.success && staffRes.data) {
@@ -627,6 +630,9 @@ export const AdminStaffPage: React.FC = () => {
           setSelectedBranchId(branchRes.data[0].id);
           setSelectedStaffBranchIds((current) => current.length ? current : [branchRes.data![0].id]);
         }
+      }
+      if (servicesRes.success && servicesRes.data) {
+        setBusinessServices(servicesRes.data.filter((s) => s.isActive));
       }
     } catch (err) {
       toast.error(getApiErrorMessage(err, 'Personel verileri yüklenemedi.'));
@@ -706,7 +712,7 @@ export const AdminStaffPage: React.FC = () => {
     if (!editingStaff) return;
     setSavingStaffProfile(true);
     try {
-      const [profileRes, branchRes] = await Promise.all([
+      const [profileRes, branchRes, serviceRes] = await Promise.all([
         adminService.updateStaffProfile({
           staffProfileId: editingStaff.id,
           biography: editingBiography.trim(),
@@ -715,6 +721,10 @@ export const AdminStaffPage: React.FC = () => {
         adminService.assignStaffBranches({
           staffProfileId: editingStaff.id,
           branchIds: editingBranchIds,
+        }),
+        adminService.assignServicesToStaff({
+          staffProfileId: editingStaff.id,
+          serviceIds: editingServiceIds,
         }),
       ]);
       if (!profileRes.success) {
@@ -725,6 +735,13 @@ export const AdminStaffPage: React.FC = () => {
         toast.error(branchRes.message || 'Şube atamaları güncellenemedi.');
         return;
       }
+      if (!serviceRes.success) {
+        toast.error(serviceRes.message || 'Hizmet atamaları güncellenemedi.');
+        return;
+      }
+      const nextServiceNames = businessServices
+        .filter((srv) => editingServiceIds.includes(srv.id))
+        .map((srv) => srv.name);
       setStaffList((current) =>
         current.map((staff) =>
           staff.id === editingStaff.id
@@ -733,6 +750,8 @@ export const AdminStaffPage: React.FC = () => {
                 biography: editingBiography.trim() || null,
                 isBookable: editingBookable,
                 assignedBranchIds: editingBranchIds,
+                assignedServiceIds: editingServiceIds,
+                assignedServiceNames: nextServiceNames,
               }
             : staff,
         ),
@@ -740,7 +759,7 @@ export const AdminStaffPage: React.FC = () => {
       setEditingStaff(null);
       toast.success(
         editingBookable
-          ? 'Personel profili ve şube atamaları güncellendi.'
+          ? 'Personel profili, şubeleri ve verdiği hizmetler güncellendi.'
           : 'Personel pasife alındı ve değişiklikler kaydedildi.',
       );
     } catch (error) {
@@ -870,6 +889,25 @@ export const AdminStaffPage: React.FC = () => {
                   )}
                 </div>
 
+                {/* Verdiği Hizmetler Rozetleri */}
+                <div className="flex flex-wrap gap-1.5">
+                  {(s.assignedServiceNames ?? []).length > 0 ? (
+                    (s.assignedServiceNames ?? []).map((srvName) => (
+                      <span
+                        key={srvName}
+                        className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[10px] font-semibold text-slate-700 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-200"
+                      >
+                        <Sparkles className="h-2.5 w-2.5 text-amber-500" />
+                        {srvName}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-[11px] italic text-amber-600/80 dark:text-amber-400/80">
+                      Henüz hizmet atanmamış
+                    </span>
+                  )}
+                </div>
+
                 <div className="grid grid-cols-2 gap-2 border-t border-slate-100 pt-2 dark:border-zinc-800">
                   <Button
                     size="sm"
@@ -880,6 +918,7 @@ export const AdminStaffPage: React.FC = () => {
                       setEditingBiography(s.biography ?? '');
                       setEditingBookable(s.isBookable);
                       setEditingBranchIds(s.assignedBranchIds ?? []);
+                      setEditingServiceIds(s.assignedServiceIds ?? []);
                     }}
                   >
                     <Pencil className="h-3.5 w-3.5" /> Profili düzenle
@@ -997,6 +1036,72 @@ export const AdminStaffPage: React.FC = () => {
                       })
                     )}
                   </div>
+                </div>
+
+                {/* Verdiği Hizmetler (Çoklu Atama) */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300">
+                      Verdiği Hizmetler ({editingServiceIds.length}/{businessServices.length})
+                    </label>
+                    {businessServices.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setEditingServiceIds(
+                            editingServiceIds.length === businessServices.length
+                              ? []
+                              : businessServices.map((srv) => srv.id),
+                          )
+                        }
+                        className="cursor-pointer text-[11px] font-semibold text-amber-700 hover:underline dark:text-amber-400"
+                      >
+                        {editingServiceIds.length === businessServices.length
+                          ? 'Tümünü Temizle'
+                          : 'Tümünü Seç'}
+                      </button>
+                    )}
+                  </div>
+                  <div className="max-h-44 space-y-1.5 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-zinc-800 dark:bg-zinc-900/60">
+                    {businessServices.length === 0 ? (
+                      <p className="text-xs text-slate-500">
+                        Henüz işletmeye eklenmiş aktif hizmet yok.
+                      </p>
+                    ) : (
+                      businessServices.map((srv) => {
+                        const checked = editingServiceIds.includes(srv.id);
+                        return (
+                          <label
+                            key={srv.id}
+                            className="flex cursor-pointer items-center justify-between gap-2.5 rounded-lg px-2 py-1.5 text-xs font-medium text-slate-800 hover:bg-white/70 dark:text-zinc-200 dark:hover:bg-zinc-800/60"
+                          >
+                            <span className="flex min-w-0 items-center gap-2.5">
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() =>
+                                  setEditingServiceIds((current) =>
+                                    current.includes(srv.id)
+                                      ? current.filter((id) => id !== srv.id)
+                                      : [...current, srv.id],
+                                  )
+                                }
+                                className="h-4 w-4 shrink-0 accent-amber-600"
+                              />
+                              <span className="truncate">{srv.name}</span>
+                            </span>
+                            <span className="shrink-0 text-[11px] text-slate-400">
+                              {srv.durationMinutes} dk · {formatCurrency(srv.basePrice)}
+                            </span>
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-zinc-400">
+                    Müşteriler randevu alırken bu personeli yalnızca burada seçili olan hizmetlerde
+                    görür.
+                  </p>
                 </div>
 
                 <Input

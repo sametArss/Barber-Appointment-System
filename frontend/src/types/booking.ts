@@ -76,6 +76,8 @@ export interface StaffResponse {
   profileImageUrl: string | null;
   isBookable: boolean;
   assignedBranchIds: string[];
+  assignedServiceIds?: string[];
+  assignedServiceNames?: string[];
 }
 
 export interface EmployeeWorkplace {

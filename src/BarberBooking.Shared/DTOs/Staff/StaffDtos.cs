@@ -46,6 +46,8 @@ namespace BarberBooking.Shared.DTOs.Staff
         public string? ProfileImageUrl { get; set; }
         public bool IsBookable { get; set; }
         public List<Guid> AssignedBranchIds { get; set; } = new();
+        public List<Guid> AssignedServiceIds { get; set; } = new();
+        public List<string> AssignedServiceNames { get; set; } = new();
     }
 
     public class EmployeeWorkplaceResponseDto

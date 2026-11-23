@@ -12,6 +12,8 @@ namespace BarberBooking.Business.Services
         Task<IResult> AssignServiceToBranchAsync(AssignBranchServiceRequestDto request, CancellationToken cancellationToken = default);
         Task<IDataResult<IReadOnlyList<BranchServiceResponseDto>>> GetBranchServicesAsync(Guid branchId, CancellationToken cancellationToken = default);
         Task<IResult> AssignServicesToStaffAsync(AssignStaffServicesRequestDto request, CancellationToken cancellationToken = default);
+        Task<IResult> AssignMyServicesAsync(AssignStaffServicesRequestDto request, CancellationToken cancellationToken = default);
+        Task<IDataResult<IReadOnlyList<ServiceResponseDto>>> GetMyAssignedServicesAsync(Guid? staffProfileId = null, CancellationToken cancellationToken = default);
         Task<IDataResult<IReadOnlyList<ServiceResponseDto>>> GetStaffServicesAsync(Guid staffProfileId, CancellationToken cancellationToken = default);
     }
 }

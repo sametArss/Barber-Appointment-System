@@ -108,6 +108,24 @@ namespace BarberBooking.API.Controllers
             return Ok(result);
         }
 
+        [HttpGet("me/staff-services")]
+        [Authorize(Roles = "Employee,BusinessOwner,BusinessManager")]
+        public async Task<IActionResult> GetMyAssignedServices([FromQuery] Guid? staffProfileId, CancellationToken cancellationToken)
+        {
+            var result = await _serviceManagementService.GetMyAssignedServicesAsync(staffProfileId, cancellationToken);
+            if (!result.Success) return StatusCode(result.StatusCode, result);
+            return Ok(result);
+        }
+
+        [HttpPut("me/staff-services")]
+        [Authorize(Roles = "Employee,BusinessOwner,BusinessManager")]
+        public async Task<IActionResult> AssignMyServices([FromBody] AssignStaffServicesRequestDto request, CancellationToken cancellationToken)
+        {
+            var result = await _serviceManagementService.AssignMyServicesAsync(request, cancellationToken);
+            if (!result.Success) return StatusCode(result.StatusCode, result);
+            return Ok(result);
+        }
+
         [HttpGet("staff/{staffProfileId:guid}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetStaffServices([FromRoute] Guid staffProfileId, CancellationToken cancellationToken)
