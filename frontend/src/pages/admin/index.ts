@@ -1,6 +1,7 @@
-export { AdminBusinessProfilePage } from './AdminBusinessProfilePage';
 export { AdminBranchesPage } from './AdminBranchesPage';
-export { AdminStaffPage } from './AdminStaffPage';
-export { AdminServicesPage } from './AdminServicesPage';
-export { AdminSubscriptionPage } from './AdminSubscriptionPage';
+export { AdminBusinessProfilePage } from './AdminBusinessProfilePage';
+export { AdminPenaltiesPage } from './AdminPenaltiesPage';
 export { AdminReportsPage } from './AdminReportsPage';
+export { AdminServicesPage } from './AdminServicesPage';
+export { AdminStaffPage } from './AdminStaffPage';
+export { AdminSubscriptionPage } from './AdminSubscriptionPage';

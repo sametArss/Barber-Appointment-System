@@ -42,6 +42,19 @@ namespace BarberBooking.API.Controllers
             return Ok(result);
         }
 
+        [HttpGet("my-business")]
+        [Authorize(Roles = "BusinessOwner,BusinessManager")]
+        public async Task<IActionResult> GetBusinessPenalties(CancellationToken cancellationToken)
+        {
+            var result = await _penaltyService.GetBusinessPenaltiesAsync(cancellationToken);
+            if (!result.Success)
+            {
+                return StatusCode(result.StatusCode, result);
+            }
+
+            return Ok(result);
+        }
+
         [HttpPost("forgive/{penaltyId:guid}")]
         [Authorize(Roles = "BusinessOwner,BusinessManager")]
         public async Task<IActionResult> ForgivePenalty([FromRoute] Guid penaltyId, CancellationToken cancellationToken)

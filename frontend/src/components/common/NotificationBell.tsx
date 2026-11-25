@@ -1,18 +1,93 @@
-import { useEffect, useRef, useState } from 'react';
-import { Bell, CheckCheck, Clock } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  Bell,
+  CalendarCheck2,
+  CalendarPlus,
+  CalendarX2,
+  CheckCheck,
+  Clock,
+  ShieldAlert,
+  Sparkles,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { notificationService } from '@/services/notificationService';
 import { useAuthStore } from '@/store/useAuthStore';
 import type { NotificationResponse } from '@/types/notification';
 
+const getNotificationIcon = (item: NotificationResponse) => {
+  const titleLower = item.title.toLocaleLowerCase('tr');
+  if (titleLower.includes('no-show') || titleLower.includes('ceza')) {
+    return {
+      icon: ShieldAlert,
+      boxClass: 'border-orange-500/30 bg-orange-500/12 text-orange-600 dark:text-orange-400',
+    };
+  }
+  switch (item.type) {
+    case 2: // AppointmentCreated
+      return {
+        icon: CalendarPlus,
+        boxClass: 'border-amber-500/30 bg-amber-500/12 text-[#D97706] dark:text-amber-400',
+      };
+    case 3: // AppointmentConfirmed
+      return {
+        icon: CalendarCheck2,
+        boxClass: 'border-emerald-500/30 bg-emerald-500/12 text-emerald-600 dark:text-emerald-400',
+      };
+    case 4: // AppointmentCancelled
+      return {
+        icon: CalendarX2,
+        boxClass: 'border-rose-500/30 bg-rose-500/12 text-rose-600 dark:text-rose-400',
+      };
+    case 6: // AppointmentCompleted
+      return {
+        icon: Sparkles,
+        boxClass: 'border-sky-500/30 bg-sky-500/12 text-sky-600 dark:text-sky-400',
+      };
+    default:
+      return {
+        icon: Bell,
+        boxClass: 'border-amber-500/25 bg-amber-500/10 text-[#D97706] dark:text-amber-400',
+      };
+  }
+};
+
 export const NotificationBell: React.FC = () => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<'all' | 'unread'>('all');
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<NotificationResponse[]>([]);
   const [loading, setLoading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const fetchUnreadCount = useCallback(async () => {
+    if (!isAuthenticated) return;
+    try {
+      const res = await notificationService.getUnreadCount();
+      if (res.success && res.data) {
+        setUnreadCount(res.data.unreadCount);
+      }
+    } catch {
+      // silent
+    }
+  }, [isAuthenticated]);
+
+  const fetchNotifications = useCallback(async () => {
+    if (!isAuthenticated) return;
+    setLoading(true);
+    try {
+      const res = await notificationService.getMyNotifications(false);
+      if (res.success && res.data) {
+        setNotifications(res.data);
+        setUnreadCount(res.data.filter((n) => !n.isRead).length);
+      }
+    } catch {
+      // preserve
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -21,22 +96,16 @@ export const NotificationBell: React.FC = () => {
       return;
     }
 
-    let cancelled = false;
-    notificationService
-      .getUnreadCount()
-      .then((res) => {
-        if (!cancelled && res.success && res.data) {
-          setUnreadCount(res.data.unreadCount);
-        }
-      })
-      .catch(() => {
-        // silent
-      });
+    void fetchUnreadCount();
+    const interval = window.setInterval(() => void fetchUnreadCount(), 30000);
+    const onFocus = () => void fetchUnreadCount();
+    window.addEventListener('focus', onFocus);
 
     return () => {
-      cancelled = true;
+      window.clearInterval(interval);
+      window.removeEventListener('focus', onFocus);
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchUnreadCount]);
 
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
@@ -56,29 +125,15 @@ export const NotificationBell: React.FC = () => {
 
     const nextOpen = !open;
     setOpen(nextOpen);
-
     if (nextOpen) {
-      setLoading(true);
-      try {
-        const res = await notificationService.getMyNotifications(false);
-        if (res.success && res.data) {
-          setNotifications(res.data);
-          setUnreadCount(res.data.filter((n) => !n.isRead).length);
-        }
-      } catch {
-        // preserve
-      } finally {
-        setLoading(false);
-      }
+      await fetchNotifications();
     }
   };
 
   const handleMarkAsRead = async (id: string) => {
     try {
       await notificationService.markAsRead(id);
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
-      );
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch {
       toast.error('Bildirim okundu olarak işaretlenemedi.');
@@ -90,79 +145,146 @@ export const NotificationBell: React.FC = () => {
       await notificationService.markAllAsRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
       setUnreadCount(0);
+      toast.success('Tüm bildirimler okundu olarak işaretlendi.');
     } catch {
       toast.error('Bildirimler güncellenemedi.');
     }
   };
 
+  const visibleItems = tab === 'unread' ? notifications.filter((n) => !n.isRead) : notifications;
+
   return (
     <div ref={containerRef} className="relative">
       <button
         type="button"
-        onClick={handleToggle}
+        onClick={() => void handleToggle()}
         aria-label="Bildirimler"
-        className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition-colors hover:border-amber-500/50 hover:text-amber-600 dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-zinc-300 dark:hover:border-amber-500/40 dark:hover:text-amber-400 cursor-pointer"
+        className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-slate-200/90 bg-white/85 text-slate-600 shadow-sm transition-colors hover:border-amber-500/50 hover:text-[#D97706] dark:border-white/15 dark:bg-slate-900/75 dark:text-slate-300 dark:hover:border-amber-400/50 dark:hover:text-amber-400"
       >
         <Bell className="h-4 w-4" />
         {unreadCount > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold text-slate-950 shadow-sm animate-pulse">
+          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#D97706] px-1 text-[9px] font-bold text-white shadow-sm dark:bg-amber-500 dark:text-slate-950">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-80 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900/95 dark:shadow-2xl dark:shadow-black/60 backdrop-blur-xl z-50">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 px-4 py-3">
-            <span className="text-sm font-bold text-slate-900 dark:text-zinc-100">Bildirimler</span>
-            {unreadCount > 0 && (
+        <div className="absolute right-0 z-50 mt-2.5 w-[340px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-[20px] border border-slate-200/80 bg-white/95 shadow-2xl backdrop-blur-2xl dark:border-amber-500/25 dark:bg-slate-900/95">
+          {/* Header */}
+          <div className="border-b border-slate-100 px-4 py-3.5 dark:border-white/10">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="font-serif text-base font-bold text-slate-900 dark:text-white">
+                  Bildirimler
+                </span>
+                {unreadCount > 0 && (
+                  <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-[#B45309] dark:text-amber-300">
+                    {unreadCount} yeni
+                  </span>
+                )}
+              </div>
+
+              {unreadCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => void handleMarkAllAsRead()}
+                  className="inline-flex cursor-pointer items-center gap-1 text-[11px] font-semibold text-[#D97706] hover:underline dark:text-amber-400"
+                >
+                  <CheckCheck className="h-3.5 w-3.5" />
+                  Tümünü Oku
+                </button>
+              )}
+            </div>
+
+            {/* Filter Tabs */}
+            <div className="mt-2.5 inline-flex rounded-xl border border-slate-200/80 bg-slate-50/80 p-0.5 dark:border-white/10 dark:bg-slate-950/60">
               <button
                 type="button"
-                onClick={handleMarkAllAsRead}
-                className="inline-flex items-center gap-1 text-xs font-semibold text-amber-600 hover:text-amber-500 dark:text-amber-400 dark:hover:text-amber-300 cursor-pointer"
+                onClick={() => setTab('all')}
+                className={cn(
+                  'cursor-pointer rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors',
+                  tab === 'all'
+                    ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white'
+                    : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200',
+                )}
               >
-                <CheckCheck className="h-3.5 w-3.5" />
-                Tümünü Oku
+                Tümü
               </button>
-            )}
+              <button
+                type="button"
+                onClick={() => setTab('unread')}
+                className={cn(
+                  'cursor-pointer rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors',
+                  tab === 'unread'
+                    ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white'
+                    : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200',
+                )}
+              >
+                Okunmamış ({unreadCount})
+              </button>
+            </div>
           </div>
 
-          <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-zinc-800/70">
+          {/* Notification List */}
+          <div className="max-h-96 divide-y divide-slate-100 overflow-y-auto dark:divide-white/10">
             {loading ? (
-              <div className="p-4 text-center text-xs text-slate-400">Yükleniyor...</div>
-            ) : notifications.length === 0 ? (
-              <div className="p-6 text-center text-xs text-slate-400">
-                Henüz yeni bildiriminiz bulunmuyor.
+              <div className="p-6 text-center text-xs text-slate-400">Yükleniyor...</div>
+            ) : visibleItems.length === 0 ? (
+              <div className="p-8 text-center">
+                <Bell className="mx-auto h-7 w-7 text-slate-300 dark:text-slate-600" />
+                <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                  {tab === 'unread'
+                    ? 'Okunmamış bildiriminiz kalmadı.'
+                    : 'Henüz bildiriminiz bulunmuyor.'}
+                </p>
               </div>
             ) : (
-              notifications.slice(0, 8).map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => !item.isRead && handleMarkAsRead(item.id)}
-                  className={cn(
-                    'w-full px-4 py-3 text-left transition-colors hover:bg-slate-50 dark:hover:bg-zinc-800/60 cursor-pointer',
-                    !item.isRead && 'bg-amber-50/50 dark:bg-amber-500/5',
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-xs font-semibold text-slate-900 dark:text-zinc-100">{item.title}</p>
-                    {!item.isRead && (
-                      <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-amber-500" />
+              visibleItems.slice(0, 15).map((item) => {
+                const { icon: Icon, boxClass } = getNotificationIcon(item);
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => !item.isRead && void handleMarkAsRead(item.id)}
+                    className={cn(
+                      'flex w-full cursor-pointer items-start gap-3 px-4 py-3.5 text-left transition-colors hover:bg-slate-50 dark:hover:bg-white/5',
+                      !item.isRead && 'bg-amber-50/45 dark:bg-amber-500/8',
                     )}
-                  </div>
-                  <p className="mt-1 text-xs text-slate-600 dark:text-zinc-400 line-clamp-2">{item.message}</p>
-                  <span className="mt-1.5 inline-flex items-center gap-1 text-[10px] text-slate-400 dark:text-zinc-500">
-                    <Clock className="h-3 w-3" />
-                    {new Date(item.createdDate).toLocaleString('tr-TR', {
-                      day: '2-digit',
-                      month: 'short',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </span>
-                </button>
-              ))
+                  >
+                    <div
+                      className={cn(
+                        'mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border',
+                        boxClass,
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-xs font-bold text-slate-900 dark:text-white">
+                          {item.title}
+                        </p>
+                        {!item.isRead && (
+                          <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#D97706] dark:bg-amber-400" />
+                        )}
+                      </div>
+                      <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                        {item.message}
+                      </p>
+                      <span className="mt-1.5 inline-flex items-center gap-1 text-[10px] text-slate-400 dark:text-slate-500">
+                        <Clock className="h-3 w-3" />
+                        {new Date(item.createdDate).toLocaleString('tr-TR', {
+                          day: '2-digit',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })
             )}
           </div>
         </div>

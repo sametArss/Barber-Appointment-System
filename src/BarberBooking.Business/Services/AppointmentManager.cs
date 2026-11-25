@@ -4,6 +4,7 @@ using BarberBooking.Entities.Businesses;
 using BarberBooking.Entities.Common;
 using BarberBooking.Entities.Customers;
 using BarberBooking.Entities.Identity;
+using BarberBooking.Entities.Notifications;
 using BarberBooking.Entities.Scheduling;
 using BarberBooking.Entities.Services;
 using BarberBooking.Shared.DTOs.Appointments;
@@ -17,11 +18,16 @@ namespace BarberBooking.Business.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentTenantService _tenantService;
+        private readonly INotificationService _notificationService;
 
-        public AppointmentManager(IUnitOfWork unitOfWork, ICurrentTenantService tenantService)
+        public AppointmentManager(
+            IUnitOfWork unitOfWork,
+            ICurrentTenantService tenantService,
+            INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _tenantService = tenantService;
+            _notificationService = notificationService;
         }
 
         public async Task<IDataResult<IReadOnlyList<AvailableSlotResponseDto>>> GetAvailableSlotsAsync(AvailableSlotsQueryDto query, CancellationToken cancellationToken = default)
@@ -279,6 +285,18 @@ namespace BarberBooking.Business.Services
                     .Include(sp => sp.BusinessMember).ThenInclude(bm => bm.User)
                     .FirstOrDefaultAsync(sp => sp.Id == request.StaffProfileId, cancellationToken);
 
+                var customerDisplay = $"{customer?.FirstName} {customer?.LastName}".Trim();
+                var formattedDate = startUtc.ToOffset(TimeSpan.FromHours(3)).ToString("dd.MM.yyyy HH:mm");
+
+                await TryNotifyBusinessAndStaffAsync(
+                    appointment.BusinessId,
+                    staff?.BusinessMember.UserId,
+                    NotificationType.AppointmentCreated,
+                    "Yeni Randevu Talebi",
+                    $"{customerDisplay}, {branch.Name} şubesinde {branchService.Service.Name} hizmeti için {formattedDate} tarihine randevu oluşturdu.",
+                    appointment.Id,
+                    cancellationToken);
+
                 var response = new AppointmentResponseDto
                 {
                     Id = appointment.Id,
@@ -358,6 +376,32 @@ namespace BarberBooking.Business.Services
 
             await _unitOfWork.Repository<AppointmentStatusHistory>().AddAsync(history, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            var cancelDate = appointment.StartAt.ToOffset(TimeSpan.FromHours(3)).ToString("dd.MM.yyyy HH:mm");
+            if (isCustomer)
+            {
+                var staffProfile = await _unitOfWork.Repository<StaffProfile>().Query()
+                    .Include(sp => sp.BusinessMember)
+                    .FirstOrDefaultAsync(sp => sp.Id == appointment.StaffProfileId, cancellationToken);
+                await TryNotifyBusinessAndStaffAsync(
+                    appointment.BusinessId,
+                    staffProfile?.BusinessMember.UserId,
+                    NotificationType.AppointmentCancelled,
+                    "Randevu Müşteri Tarafından İptal Edildi",
+                    $"{cancelDate} tarihli randevu müşteri tarafından iptal edildi. Neden: {request.Reason.Trim()}",
+                    appointment.Id,
+                    cancellationToken);
+            }
+            else
+            {
+                await TrySendNotificationAsync(
+                    appointment.CustomerUserId,
+                    NotificationType.AppointmentCancelled,
+                    "Randevunuz İptal Edildi",
+                    $"{cancelDate} tarihli randevunuz salon tarafından iptal edildi. Neden: {request.Reason.Trim()}",
+                    appointment.Id,
+                    cancellationToken);
+            }
 
             return Result.Ok("Randevu başarıyla iptal edildi.");
         }
@@ -487,7 +531,97 @@ namespace BarberBooking.Business.Services
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+            var apptDateStr = appointment.StartAt.ToOffset(TimeSpan.FromHours(3)).ToString("dd.MM.yyyy HH:mm");
+            var (notifType, notifTitle, notifMessage) = newStatus switch
+            {
+                AppointmentStatus.Confirmed => (
+                    NotificationType.AppointmentConfirmed,
+                    "Randevunuz Onaylandı",
+                    $"{apptDateStr} tarihli randevunuz onaylandı. Sizi bekliyoruz!"
+                ),
+                AppointmentStatus.Completed => (
+                    NotificationType.AppointmentCompleted,
+                    "Randevunuz Tamamlandı",
+                    $"{apptDateStr} tarihli hizmetiniz tamamlandı. Salon detayından deneyiminizi değerlendirebilirsiniz."
+                ),
+                AppointmentStatus.NoShow => (
+                    NotificationType.General,
+                    "Randevuya Gelmedi (No-Show)",
+                    $"{apptDateStr} tarihli randevunuza katılmadığınız için hesabınıza 1 No-Show ceza puanı işlendi."
+                ),
+                AppointmentStatus.Cancelled => (
+                    NotificationType.AppointmentCancelled,
+                    "Randevunuz İptal Edildi",
+                    $"{apptDateStr} tarihli randevunuz iptal edildi."
+                ),
+                _ => (NotificationType.General, string.Empty, string.Empty)
+            };
+
+            if (!string.IsNullOrEmpty(notifTitle))
+            {
+                await TrySendNotificationAsync(
+                    appointment.CustomerUserId,
+                    notifType,
+                    notifTitle,
+                    notifMessage,
+                    appointment.Id,
+                    cancellationToken);
+            }
+
             return Result.Ok("Randevu durumu güncellendi.");
+        }
+
+        private async Task TrySendNotificationAsync(
+            Guid userId,
+            NotificationType type,
+            string title,
+            string message,
+            Guid? relatedEntityId,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                await _notificationService.SendNotificationAsync(userId, type, title, message, relatedEntityId, cancellationToken);
+            }
+            catch
+            {
+                // Bildirim hatası randevu akışını kesintiye uğratmamalı
+            }
+        }
+
+        private async Task TryNotifyBusinessAndStaffAsync(
+            Guid businessId,
+            Guid? assignedStaffUserId,
+            NotificationType type,
+            string title,
+            string message,
+            Guid? relatedEntityId,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                var recipientIds = await _unitOfWork.Repository<BusinessMember>().Query()
+                    .IgnoreQueryFilters()
+                    .Where(bm => bm.BusinessId == businessId &&
+                                 bm.IsActive &&
+                                 (bm.Role == BusinessRole.Owner || bm.Role == BusinessRole.Manager))
+                    .Select(bm => bm.UserId)
+                    .ToListAsync(cancellationToken);
+
+                if (assignedStaffUserId.HasValue)
+                {
+                    recipientIds.Add(assignedStaffUserId.Value);
+                }
+
+                foreach (var recipientId in recipientIds.Distinct())
+                {
+                    await TrySendNotificationAsync(recipientId, type, title, message, relatedEntityId, cancellationToken);
+                }
+            }
+            catch
+            {
+                // Bildirim hatası randevu akışını kesintiye uğratmamalı
+            }
         }
 
         public async Task<IDataResult<IReadOnlyList<AppointmentResponseDto>>> GetMyAppointmentsAsync(CancellationToken cancellationToken = default)

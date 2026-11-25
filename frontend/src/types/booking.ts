@@ -33,6 +33,7 @@ export interface BranchSearchResponse {
   branchId: string;
   businessId: string;
   businessName: string;
+  businessDescription?: string | null;
   branchName: string;
   address: string;
   city: string;
@@ -42,6 +43,8 @@ export interface BranchSearchResponse {
   latitude: number;
   distanceMeters: number;
   distanceKm: number;
+  averageRating?: number;
+  totalReviewCount?: number;
   offeredServices: string[];
 }
 

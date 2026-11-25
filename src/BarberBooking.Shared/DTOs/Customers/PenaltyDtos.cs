@@ -28,4 +28,24 @@ namespace BarberBooking.Shared.DTOs.Customers
         public DateTimeOffset CreatedDate { get; set; }
         public DateTimeOffset ExpiresAt { get; set; }
     }
+
+    public class BusinessPenaltyItemDto
+    {
+        public Guid Id { get; set; }
+        public Guid CustomerUserId { get; set; }
+        public string CustomerFullName { get; set; } = string.Empty;
+        public string CustomerEmail { get; set; } = string.Empty;
+        public string CustomerPhoneNumber { get; set; } = string.Empty;
+        public Guid? AppointmentId { get; set; }
+        public string? BranchName { get; set; }
+        public string? ServiceName { get; set; }
+        public DateTimeOffset? AppointmentStartAt { get; set; }
+        public string ReasonName { get; set; } = string.Empty;
+        public string? Note { get; set; }
+        public bool IsActive { get; set; }
+        public bool IsExpired { get; set; }
+        public DateTimeOffset CreatedDate { get; set; }
+        public DateTimeOffset ExpiresAt { get; set; }
+        public int CustomerActivePenaltyCount { get; set; }
+    }
 }

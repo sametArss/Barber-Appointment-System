@@ -17,6 +17,7 @@ namespace BarberBooking.Shared.DTOs.Search
         public Guid BranchId { get; set; }
         public Guid BusinessId { get; set; }
         public string BusinessName { get; set; } = string.Empty;
+        public string? BusinessDescription { get; set; }
         public string BranchName { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
         public string City { get; set; } = string.Empty;
@@ -26,6 +27,8 @@ namespace BarberBooking.Shared.DTOs.Search
         public double Latitude { get; set; }
         public double DistanceMeters { get; set; }
         public double DistanceKm => Math.Round(DistanceMeters / 1000.0, 2);
+        public double AverageRating { get; set; }
+        public int TotalReviewCount { get; set; }
         public List<string> OfferedServices { get; set; } = new();
     }
 }

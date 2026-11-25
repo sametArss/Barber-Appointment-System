@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
-  Badge,
   Button,
   Card,
   CardContent,
@@ -301,14 +300,18 @@ export const AdminStaffPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-7 py-2">
+      {/* Editorial Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-50">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#D97706] dark:text-amber-400">
+            Ekip &amp; Vardiya
+          </p>
+          <h1 className="mt-1 font-serif text-3xl font-semibold tracking-tight text-slate-900 dark:text-[#FAF8F5] sm:text-4xl">
             Personel &amp; Çalışma Saatleri
           </h1>
-          <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
-            Berber kadrosunu yönetin, şube atamalarını ve mesai/mola aralıklarını belirleyin.
+          <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">
+            Berber kadronuzu yönetin, şube ve hizmet atamalarını, mesai/mola aralıklarını belirleyin.
           </p>
         </div>
 
@@ -317,7 +320,7 @@ export const AdminStaffPage: React.FC = () => {
             setSelectedStaffBranchIds(branches[0]?.id ? [branches[0].id] : []);
             setOpenAddModal(true);
           }}
-          className="gap-2 shadow-sm"
+          className="h-11 gap-2 rounded-[16px] bg-[#D97706] px-5 text-sm font-semibold text-white shadow-md shadow-amber-600/25 hover:bg-[#B45309] dark:bg-amber-500 dark:text-slate-950 dark:shadow-[0_0_20px_rgba(245,158,11,0.3)] dark:hover:bg-amber-400"
           disabled={branches.length === 0}
         >
           <Plus className="h-4 w-4" />
@@ -326,96 +329,124 @@ export const AdminStaffPage: React.FC = () => {
       </div>
 
       {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-44 w-full rounded-2xl" />
+            <Skeleton key={i} className="h-56 w-full rounded-[22px]" />
           ))}
         </div>
       ) : staffList.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center space-y-3">
-            <Users className="h-10 w-10 text-amber-500/40 mx-auto" />
-            <h3 className="font-bold text-slate-800 dark:text-zinc-200">
-              Henüz personel kaydınız bulunmuyor
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-sm mx-auto">
-              Salonunuzdaki uzmanları sisteme ekleyin ve randevu takvimini aktif edin.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="rounded-[24px] border border-slate-200/80 bg-white/85 p-12 text-center shadow-sm backdrop-blur-xl dark:border-amber-500/20 dark:bg-slate-900/65">
+          <Users className="mx-auto h-10 w-10 text-[#D97706]/50 dark:text-amber-400/50" />
+          <h3 className="mt-3 font-serif text-xl font-bold text-slate-900 dark:text-white">
+            Henüz personel kaydınız bulunmuyor
+          </h3>
+          <p className="mx-auto mt-1.5 max-w-sm text-xs text-slate-500 dark:text-slate-400">
+            Salonunuzdaki uzmanları sisteme ekleyin ve randevu takvimini aktif edin.
+          </p>
+        </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {staffList.map((s) => (
-            <Card key={s.id} accent={s.isBookable}>
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-500/30 bg-amber-500/15 text-sm font-bold text-amber-600 dark:text-amber-400 shadow-sm">
-                    {s.fullName.charAt(0).toUpperCase()}
-                  </div>
-                  <Badge variant={s.isBookable ? 'success' : 'default'} className="text-[10px]">
-                    {s.isBookable ? 'Randevuya Açık' : 'Pasif'}
-                  </Badge>
-                </div>
-                <CardTitle className="text-base mt-2">{s.fullName}</CardTitle>
-                <CardDescription className="line-clamp-1">
-                  {s.biography || 'Uzman Berber'}
-                </CardDescription>
-              </CardHeader>
-
-              <CardContent className="space-y-3 pt-2 text-xs">
-                <div className="text-slate-500 dark:text-zinc-400 space-y-1">
-                  <p className="flex items-center gap-1.5">
-                    <User className="h-3.5 w-3.5 text-amber-500" />
-                    {s.email}
-                  </p>
-                  <p className="flex items-center gap-1.5">
-                    <Phone className="h-3.5 w-3.5 text-amber-500" />
-                    {s.phoneNumber || 'Telefon yok'}
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap gap-1.5">
-                  {s.assignedBranchIds.length > 0 ? (
-                    s.assignedBranchIds.map((bId) => {
-                      const br = branches.find((b) => b.id === bId);
-                      return (
-                        <span
-                          key={bId}
-                          className="inline-flex items-center gap-1 rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-amber-800 dark:text-amber-300"
-                        >
-                          <Building2 className="h-2.5 w-2.5" />
-                          {br?.name ?? 'Şube'}
-                        </span>
-                      );
-                    })
-                  ) : (
-                    <span className="text-[11px] italic text-slate-400">Şube atanmamış</span>
-                  )}
-                </div>
-
-                <div className="flex flex-wrap gap-1.5">
-                  {(s.assignedServiceNames ?? []).length > 0 ? (
-                    (s.assignedServiceNames ?? []).map((srvName) => (
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {staffList.map((s) => {
+            const initials = s.fullName
+              .split(' ')
+              .map((n) => n[0])
+              .join('')
+              .slice(0, 2)
+              .toUpperCase();
+            return (
+              <article
+                key={s.id}
+                className={cn(
+                  'flex flex-col justify-between rounded-[22px] border bg-white/85 p-5.5 shadow-[0_20px_55px_-28px_rgba(15,23,42,0.12)] backdrop-blur-2xl transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-500/45 dark:bg-slate-900/65 dark:shadow-[0_24px_65px_-26px_rgba(0,0,0,0.8)]',
+                  s.isBookable
+                    ? 'border-slate-200/80 dark:border-amber-500/20'
+                    : 'border-slate-200/60 opacity-80 dark:border-white/10',
+                )}
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-100 to-orange-100 font-serif text-base font-bold text-[#D97706] shadow-sm dark:border-amber-400/35 dark:from-amber-500/25 dark:to-slate-900 dark:text-amber-300">
+                      {initials}
+                    </div>
+                    <span
+                      className={cn(
+                        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
+                        s.isBookable
+                          ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400/30 dark:text-emerald-300'
+                          : 'border-slate-300 bg-slate-100 text-slate-600 dark:border-white/15 dark:bg-white/10 dark:text-slate-300',
+                      )}
+                    >
                       <span
-                        key={srvName}
-                        className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[10px] font-semibold text-slate-700 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-200"
-                      >
-                        <Sparkles className="h-2.5 w-2.5 text-amber-500" />
-                        {srvName}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-[11px] italic text-amber-600/80 dark:text-amber-400/80">
-                      Henüz hizmet atanmamış
+                        className={cn(
+                          'h-1.5 w-1.5 rounded-full',
+                          s.isBookable ? 'bg-emerald-500' : 'bg-slate-400',
+                        )}
+                      />
+                      {s.isBookable ? 'Randevuya Açık' : 'Pasif'}
                     </span>
-                  )}
+                  </div>
+
+                  <h2 className="mt-3.5 font-serif text-lg font-bold text-slate-900 dark:text-white">
+                    {s.fullName}
+                  </h2>
+                  <p className="mt-0.5 line-clamp-1 text-xs text-slate-500 dark:text-slate-400">
+                    {s.biography || 'Uzman Berber'}
+                  </p>
+
+                  <div className="mt-3.5 space-y-1.5 border-t border-slate-100 pt-3 text-xs text-slate-600 dark:border-white/10 dark:text-slate-300">
+                    <p className="flex items-center gap-2 truncate">
+                      <User className="h-3.5 w-3.5 shrink-0 text-[#D97706] dark:text-amber-400" />
+                      <span className="truncate">{s.email}</span>
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <Phone className="h-3.5 w-3.5 shrink-0 text-[#D97706] dark:text-amber-400" />
+                      <span>{s.phoneNumber || 'Telefon yok'}</span>
+                    </p>
+                  </div>
+
+                  <div className="mt-3.5 flex flex-wrap gap-1.5">
+                    {s.assignedBranchIds.length > 0 ? (
+                      s.assignedBranchIds.map((bId) => {
+                        const br = branches.find((b) => b.id === bId);
+                        return (
+                          <span
+                            key={bId}
+                            className="inline-flex items-center gap-1 rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-[#B45309] dark:border-amber-400/25 dark:text-amber-300"
+                          >
+                            <Building2 className="h-2.5 w-2.5" />
+                            {br?.name ?? 'Şube'}
+                          </span>
+                        );
+                      })
+                    ) : (
+                      <span className="text-[11px] italic text-slate-400">Şube atanmamış</span>
+                    )}
+                  </div>
+
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {(s.assignedServiceNames ?? []).length > 0 ? (
+                      (s.assignedServiceNames ?? []).map((srvName) => (
+                        <span
+                          key={srvName}
+                          className="inline-flex items-center gap-1 rounded-full border border-slate-200/90 bg-slate-50 px-2.5 py-0.5 text-[10px] font-semibold text-slate-700 dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-200"
+                        >
+                          <Sparkles className="h-2.5 w-2.5 text-[#D97706] dark:text-amber-400" />
+                          {srvName}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-[11px] italic text-[#D97706]/80 dark:text-amber-400/80">
+                        Henüz hizmet atanmamış
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 border-t border-slate-100 pt-2 dark:border-zinc-800">
+                <div className="mt-5 grid grid-cols-2 gap-2 border-t border-slate-100 pt-3.5 dark:border-white/10">
                   <Button
                     size="sm"
                     variant="outline"
-                    className="text-xs"
+                    className="h-9 gap-1.5 rounded-[12px] text-xs font-semibold"
                     onClick={() => {
                       setEditingStaff(s);
                       setEditingBiography(s.biography ?? '');
@@ -424,21 +455,22 @@ export const AdminStaffPage: React.FC = () => {
                       setEditingServiceIds(s.assignedServiceIds ?? []);
                     }}
                   >
-                    <Pencil className="h-3.5 w-3.5" /> Profili düzenle
+                    <Pencil className="h-3.5 w-3.5" />
+                    Düzenle
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
-                    className="text-xs"
+                    className="h-9 gap-1.5 rounded-[12px] text-xs font-semibold"
                     onClick={() => openWorkingHours(s)}
                   >
-                    <Clock className="h-3.5 w-3.5 text-amber-500" />
-                    Mesai &amp; Mola Ayarla
+                    <Clock className="h-3.5 w-3.5 text-[#D97706] dark:text-amber-400" />
+                    Mesai &amp; Mola
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+              </article>
+            );
+          })}
         </div>
       )}
 

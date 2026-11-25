@@ -53,6 +53,10 @@ namespace BarberBooking.Business.Services
 
             var assignedBranchIds = new List<Guid>();
             var assignedBranchNames = new List<string>();
+            var branchOverrides = new List<BranchServiceOverrideDto>();
+            var overrideMap = (request.BranchOverrides ?? new List<BranchServiceOverrideInputDto>())
+                .GroupBy(o => o.BranchId)
+                .ToDictionary(g => g.Key, g => g.Last());
 
             if (request.AssignToBranchIds != null && request.AssignToBranchIds.Count > 0)
             {
@@ -65,15 +69,28 @@ namespace BarberBooking.Business.Services
                 var branchServiceRepo = _unitOfWork.Repository<BranchService>();
                 foreach (var branch in validBranches)
                 {
+                    overrideMap.TryGetValue(branch.Id, out var ov);
+                    var priceOv = ov?.PriceOverride is >= 0 ? ov.PriceOverride : null;
+                    var durOv = ov?.DurationOverride is > 0 ? ov.DurationOverride : null;
+
                     await branchServiceRepo.AddAsync(new BranchService
                     {
                         Id = Guid.NewGuid(),
                         BranchId = branch.Id,
                         ServiceId = service.Id,
+                        PriceOverride = priceOv,
+                        DurationOverride = durOv,
                         IsActive = true
                     }, cancellationToken);
                     assignedBranchIds.Add(branch.Id);
                     assignedBranchNames.Add(branch.Name);
+                    branchOverrides.Add(new BranchServiceOverrideDto
+                    {
+                        BranchId = branch.Id,
+                        BranchName = branch.Name,
+                        PriceOverride = priceOv,
+                        DurationOverride = durOv
+                    });
                 }
             }
 
@@ -90,7 +107,8 @@ namespace BarberBooking.Business.Services
                 ImageUrl = service.ImageUrl,
                 IsActive = service.IsActive,
                 AssignedBranchIds = assignedBranchIds,
-                AssignedBranchNames = assignedBranchNames
+                AssignedBranchNames = assignedBranchNames,
+                BranchOverrides = branchOverrides
             };
 
             return DataResult<ServiceResponseDto>.Ok(response, "Hizmet başarıyla eklendi.");
@@ -141,6 +159,10 @@ namespace BarberBooking.Business.Services
 
             var assignedBranchIds = new List<Guid>();
             var assignedBranchNames = new List<string>();
+            var branchOverrides = new List<BranchServiceOverrideDto>();
+            var overrideMap = (request.BranchOverrides ?? new List<BranchServiceOverrideInputDto>())
+                .GroupBy(o => o.BranchId)
+                .ToDictionary(g => g.Key, g => g.Last());
 
             if (request.AssignToBranchIds != null)
             {
@@ -159,40 +181,81 @@ namespace BarberBooking.Business.Services
                 foreach (var existing in existingBranchServices)
                 {
                     var shouldBeActive = validBranchMap.ContainsKey(existing.BranchId);
-                    if (existing.IsActive != shouldBeActive)
+                    var changed = existing.IsActive != shouldBeActive;
+                    existing.IsActive = shouldBeActive;
+
+                    if (shouldBeActive && request.BranchOverrides != null)
                     {
-                        existing.IsActive = shouldBeActive;
+                        overrideMap.TryGetValue(existing.BranchId, out var ov);
+                        var nextPrice = ov?.PriceOverride is >= 0 ? ov.PriceOverride : null;
+                        var nextDur = ov?.DurationOverride is > 0 ? ov.DurationOverride : null;
+                        if (existing.PriceOverride != nextPrice || existing.DurationOverride != nextDur)
+                        {
+                            existing.PriceOverride = nextPrice;
+                            existing.DurationOverride = nextDur;
+                            changed = true;
+                        }
+                    }
+
+                    if (changed)
+                    {
                         branchServiceRepo.Update(existing);
                     }
                 }
 
                 foreach (var kvp in validBranchMap)
                 {
-                    if (!existingMap.ContainsKey(kvp.Key))
+                    decimal? finalPriceOv;
+                    int? finalDurOv;
+
+                    if (!existingMap.TryGetValue(kvp.Key, out var existingRecord))
                     {
+                        overrideMap.TryGetValue(kvp.Key, out var ov);
+                        finalPriceOv = ov?.PriceOverride is >= 0 ? ov.PriceOverride : null;
+                        finalDurOv = ov?.DurationOverride is > 0 ? ov.DurationOverride : null;
+
                         await branchServiceRepo.AddAsync(new BranchService
                         {
                             Id = Guid.NewGuid(),
                             BranchId = kvp.Key,
                             ServiceId = service.Id,
+                            PriceOverride = finalPriceOv,
+                            DurationOverride = finalDurOv,
                             IsActive = true
                         }, cancellationToken);
+                    }
+                    else
+                    {
+                        finalPriceOv = existingRecord.PriceOverride;
+                        finalDurOv = existingRecord.DurationOverride;
                     }
 
                     assignedBranchIds.Add(kvp.Key);
                     assignedBranchNames.Add(kvp.Value);
+                    branchOverrides.Add(new BranchServiceOverrideDto
+                    {
+                        BranchId = kvp.Key,
+                        BranchName = kvp.Value,
+                        PriceOverride = finalPriceOv,
+                        DurationOverride = finalDurOv
+                    });
                 }
             }
             else
             {
-                assignedBranchIds = existingBranchServices
-                    .Where(bs => bs.IsActive)
-                    .Select(bs => bs.BranchId)
-                    .ToList();
-                assignedBranchNames = existingBranchServices
-                    .Where(bs => bs.IsActive && bs.Branch != null)
+                var activeExisting = existingBranchServices.Where(bs => bs.IsActive).ToList();
+                assignedBranchIds = activeExisting.Select(bs => bs.BranchId).ToList();
+                assignedBranchNames = activeExisting
+                    .Where(bs => bs.Branch != null)
                     .Select(bs => bs.Branch.Name)
                     .ToList();
+                branchOverrides = activeExisting.Select(bs => new BranchServiceOverrideDto
+                {
+                    BranchId = bs.BranchId,
+                    BranchName = bs.Branch?.Name ?? string.Empty,
+                    PriceOverride = bs.PriceOverride,
+                    DurationOverride = bs.DurationOverride
+                }).ToList();
             }
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -208,7 +271,8 @@ namespace BarberBooking.Business.Services
                 ImageUrl = service.ImageUrl,
                 IsActive = service.IsActive,
                 AssignedBranchIds = assignedBranchIds,
-                AssignedBranchNames = assignedBranchNames
+                AssignedBranchNames = assignedBranchNames,
+                BranchOverrides = branchOverrides
             };
 
             return DataResult<ServiceResponseDto>.Ok(response, "Hizmet başarıyla güncellendi.");
@@ -263,7 +327,17 @@ namespace BarberBooking.Business.Services
                 ImageUrl = s.ImageUrl,
                 IsActive = s.IsActive,
                 AssignedBranchIds = s.BranchServices.Where(bs => bs.IsActive).Select(bs => bs.BranchId).ToList(),
-                AssignedBranchNames = s.BranchServices.Where(bs => bs.IsActive && bs.Branch != null).Select(bs => bs.Branch.Name).ToList()
+                AssignedBranchNames = s.BranchServices.Where(bs => bs.IsActive && bs.Branch != null).Select(bs => bs.Branch.Name).ToList(),
+                BranchOverrides = s.BranchServices
+                    .Where(bs => bs.IsActive)
+                    .Select(bs => new BranchServiceOverrideDto
+                    {
+                        BranchId = bs.BranchId,
+                        BranchName = bs.Branch != null ? bs.Branch.Name : string.Empty,
+                        PriceOverride = bs.PriceOverride,
+                        DurationOverride = bs.DurationOverride
+                    })
+                    .ToList()
             }).ToList();
 
             return DataResult<IReadOnlyList<ServiceResponseDto>>.Ok(response);

@@ -1,5 +1,20 @@
 namespace BarberBooking.Shared.DTOs.Services
 {
+    public class BranchServiceOverrideInputDto
+    {
+        public Guid BranchId { get; set; }
+        public decimal? PriceOverride { get; set; }
+        public int? DurationOverride { get; set; }
+    }
+
+    public class BranchServiceOverrideDto
+    {
+        public Guid BranchId { get; set; }
+        public string BranchName { get; set; } = string.Empty;
+        public decimal? PriceOverride { get; set; }
+        public int? DurationOverride { get; set; }
+    }
+
     public class CreateServiceRequestDto
     {
         public string Name { get; set; } = string.Empty;
@@ -8,6 +23,7 @@ namespace BarberBooking.Shared.DTOs.Services
         public int DurationMinutes { get; set; }
         public string? ImageUrl { get; set; }
         public List<Guid>? AssignToBranchIds { get; set; }
+        public List<BranchServiceOverrideInputDto>? BranchOverrides { get; set; }
     }
 
     public class UpdateServiceRequestDto
@@ -20,6 +36,7 @@ namespace BarberBooking.Shared.DTOs.Services
         public string? ImageUrl { get; set; }
         public bool IsActive { get; set; }
         public List<Guid>? AssignToBranchIds { get; set; }
+        public List<BranchServiceOverrideInputDto>? BranchOverrides { get; set; }
     }
 
     public class AssignBranchServiceRequestDto
@@ -49,6 +66,7 @@ namespace BarberBooking.Shared.DTOs.Services
         public bool IsActive { get; set; }
         public List<Guid> AssignedBranchIds { get; set; } = new();
         public List<string> AssignedBranchNames { get; set; } = new();
+        public List<BranchServiceOverrideDto> BranchOverrides { get; set; } = new();
     }
 
     public class BranchServiceResponseDto

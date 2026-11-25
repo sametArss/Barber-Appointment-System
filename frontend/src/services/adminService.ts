@@ -1,5 +1,6 @@
 import apiClient from '@/lib/axios';
 import type {
+  BusinessPenaltyItem,
   BusinessServiceItem,
   CreateBranchRequest,
   CreateBusinessRequest,
@@ -95,6 +96,18 @@ export const adminService = {
     const { data } = await apiClient.get<DataResult<CustomerPenaltyStatus>>(
       `/api/penalties/my-status/${businessId}`,
     );
+    return data;
+  },
+
+  async getBusinessPenalties(): Promise<DataResult<BusinessPenaltyItem[]>> {
+    const { data } = await apiClient.get<DataResult<BusinessPenaltyItem[]>>(
+      '/api/penalties/my-business',
+    );
+    return data;
+  },
+
+  async forgivePenalty(penaltyId: string): Promise<Result> {
+    const { data } = await apiClient.post<Result>(`/api/penalties/forgive/${penaltyId}`);
     return data;
   },
 

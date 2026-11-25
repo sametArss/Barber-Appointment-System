@@ -1,5 +1,6 @@
 using BarberBooking.DataAccess.Repositories;
 using BarberBooking.Entities.Businesses;
+using BarberBooking.Entities.Reviews;
 using BarberBooking.Entities.Services;
 using BarberBooking.Shared.DTOs.Search;
 using BarberBooking.Shared.Results;
@@ -36,6 +37,7 @@ namespace BarberBooking.Business.Services
                 {
                     Branch = b,
                     BusinessName = b.Business.Name,
+                    BusinessDescription = b.Business.Description,
                     BusinessPhone = b.Business.PhoneNumber
                 })
                 .ToListAsync(cancellationToken);
@@ -54,6 +56,18 @@ namespace BarberBooking.Business.Services
             var servicesByBranchId = branchServices
                 .GroupBy(bs => bs.BranchId)
                 .ToDictionary(g => g.Key, g => g.Select(s => s.ServiceName).ToList());
+
+            var reviewStatsByBranchId = await _unitOfWork.Repository<Review>().Query()
+                .Include(r => r.Appointment)
+                .Where(r => allBranchIds.Contains(r.Appointment.BranchId))
+                .GroupBy(r => r.Appointment.BranchId)
+                .Select(g => new
+                {
+                    BranchId = g.Key,
+                    AverageRating = g.Average(r => (double)r.Rating),
+                    TotalReviewCount = g.Count()
+                })
+                .ToDictionaryAsync(x => x.BranchId, cancellationToken);
 
             var filteredBranches = branches.AsEnumerable();
 
@@ -94,6 +108,7 @@ namespace BarberBooking.Business.Services
                 {
                     x.Branch,
                     x.BusinessName,
+                    x.BusinessDescription,
                     x.BusinessPhone,
                     DistanceMeters = CalculateDistanceMeters(query.Latitude, query.Longitude, x.Branch.Location!.Y, x.Branch.Location!.X)
                 })
@@ -109,20 +124,27 @@ namespace BarberBooking.Business.Services
                 return DataResult<IReadOnlyList<NearbyBranchResponseDto>>.Ok(new List<NearbyBranchResponseDto>());
             }
 
-            var results = nearbyCandidates.Select(x => new NearbyBranchResponseDto
+            var results = nearbyCandidates.Select(x =>
             {
-                BranchId = x.Branch.Id,
-                BusinessId = x.Branch.BusinessId,
-                BusinessName = x.BusinessName,
-                BranchName = x.Branch.Name,
-                Address = x.Branch.Address,
-                City = x.Branch.City,
-                District = x.Branch.District,
-                PhoneNumber = x.BusinessPhone,
-                Longitude = x.Branch.Location!.X,
-                Latitude = x.Branch.Location!.Y,
-                DistanceMeters = Math.Round(x.DistanceMeters, 1),
-                OfferedServices = servicesByBranchId.TryGetValue(x.Branch.Id, out var sList) ? sList : new List<string>()
+                var hasStats = reviewStatsByBranchId.TryGetValue(x.Branch.Id, out var stats);
+                return new NearbyBranchResponseDto
+                {
+                    BranchId = x.Branch.Id,
+                    BusinessId = x.Branch.BusinessId,
+                    BusinessName = x.BusinessName,
+                    BusinessDescription = x.BusinessDescription,
+                    BranchName = x.Branch.Name,
+                    Address = x.Branch.Address,
+                    City = x.Branch.City,
+                    District = x.Branch.District,
+                    PhoneNumber = x.BusinessPhone,
+                    Longitude = x.Branch.Location!.X,
+                    Latitude = x.Branch.Location!.Y,
+                    DistanceMeters = Math.Round(x.DistanceMeters, 1),
+                    AverageRating = hasStats && stats != null ? Math.Round(stats.AverageRating, 1) : 0.0,
+                    TotalReviewCount = hasStats && stats != null ? stats.TotalReviewCount : 0,
+                    OfferedServices = servicesByBranchId.TryGetValue(x.Branch.Id, out var sList) ? sList : new List<string>()
+                };
             }).ToList();
 
             return DataResult<IReadOnlyList<NearbyBranchResponseDto>>.Ok(results);
@@ -143,11 +165,18 @@ namespace BarberBooking.Business.Services
                 .Select(bs => bs.Service.Name)
                 .ToListAsync(cancellationToken);
 
+            var branchRatings = await _unitOfWork.Repository<Review>().Query()
+                .Include(r => r.Appointment)
+                .Where(r => r.Appointment.BranchId == branchId)
+                .Select(r => r.Rating)
+                .ToListAsync(cancellationToken);
+
             return DataResult<NearbyBranchResponseDto>.Ok(new NearbyBranchResponseDto
             {
                 BranchId = branch.Id,
                 BusinessId = branch.BusinessId,
                 BusinessName = branch.Business.Name,
+                BusinessDescription = branch.Business.Description,
                 BranchName = branch.Name,
                 Address = branch.Address,
                 City = branch.City,
@@ -155,6 +184,8 @@ namespace BarberBooking.Business.Services
                 PhoneNumber = branch.Business.PhoneNumber,
                 Longitude = branch.Location!.X,
                 Latitude = branch.Location!.Y,
+                AverageRating = branchRatings.Count > 0 ? Math.Round(branchRatings.Average(), 1) : 0.0,
+                TotalReviewCount = branchRatings.Count,
                 OfferedServices = services
             });
         }

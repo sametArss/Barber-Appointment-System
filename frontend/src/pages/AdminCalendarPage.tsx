@@ -278,21 +278,24 @@ export const AdminCalendarPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header & Controls */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className="space-y-7 py-2">
+      {/* Editorial Header & Controls */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <div className="mb-1.5 flex items-center gap-2">
-            <Badge variant="amber">
-              <CalendarDays className="h-3 w-3" />
+          <div className="flex items-center gap-2">
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#D97706] dark:text-amber-400">
               Canlı Takvim
-            </Badge>
-            <Badge variant="outline">{appointments.length} Randevu</Badge>
+            </p>
+            <span className="inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-[#B45309] dark:border-amber-400/30 dark:text-amber-300">
+              {appointments.length} Randevu
+            </span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-50">
+          <h1 className="mt-1 font-serif text-3xl font-semibold tracking-tight text-slate-900 dark:text-[#FAF8F5] sm:text-4xl">
             Berber Randevu Takvimi
           </h1>
-          <p className="text-sm text-slate-500 dark:text-zinc-400 capitalize">{weekRangeLabel}</p>
+          <p className="mt-1.5 text-sm capitalize text-slate-500 dark:text-slate-400">
+            {weekRangeLabel}
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
@@ -301,7 +304,7 @@ export const AdminCalendarPage: React.FC = () => {
             <select
               value={selectedBranchId}
               onChange={(e) => setSelectedBranchId(e.target.value)}
-              className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 focus:border-amber-500 focus:outline-none shadow-sm"
+              className="h-10 rounded-[14px] border border-slate-200/90 bg-white/85 px-3.5 text-xs font-semibold text-slate-900 shadow-sm backdrop-blur-xl focus:border-[#D97706] focus:outline-none dark:border-white/15 dark:bg-slate-900/75 dark:text-slate-100"
             >
               {branches.map((b) => (
                 <option key={b.id} value={b.id}>
@@ -312,15 +315,15 @@ export const AdminCalendarPage: React.FC = () => {
           )}
 
           {/* Daily / Weekly Switch */}
-          <div className="inline-flex rounded-xl border border-slate-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 p-1 shadow-sm">
+          <div className="inline-flex rounded-[14px] border border-slate-200/90 bg-white/85 p-1 shadow-sm backdrop-blur-xl dark:border-white/15 dark:bg-slate-900/75">
             <button
               type="button"
               onClick={() => setViewMode('daily')}
               className={cn(
-                'rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
+                'cursor-pointer rounded-[10px] px-3 py-1.5 text-xs font-semibold transition-colors',
                 viewMode === 'daily'
-                  ? 'bg-amber-500 text-slate-950 font-bold'
-                  : 'text-slate-600 dark:text-zinc-400 hover:text-slate-950 dark:hover:text-zinc-100',
+                  ? 'bg-[#D97706] font-bold text-white shadow-sm dark:bg-amber-500 dark:text-slate-950'
+                  : 'text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white',
               )}
             >
               Günlük
@@ -329,10 +332,10 @@ export const AdminCalendarPage: React.FC = () => {
               type="button"
               onClick={() => setViewMode('weekly')}
               className={cn(
-                'rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
+                'cursor-pointer rounded-[10px] px-3 py-1.5 text-xs font-semibold transition-colors',
                 viewMode === 'weekly'
-                  ? 'bg-amber-500 text-slate-950 font-bold'
-                  : 'text-slate-600 dark:text-zinc-400 hover:text-slate-950 dark:hover:text-zinc-100',
+                  ? 'bg-[#D97706] font-bold text-white shadow-sm dark:bg-amber-500 dark:text-slate-950'
+                  : 'text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white',
               )}
             >
               Haftalık
@@ -344,6 +347,7 @@ export const AdminCalendarPage: React.FC = () => {
             <Button
               variant="outline"
               size="icon"
+              className="rounded-[12px]"
               onClick={() => shiftDate(-1)}
               aria-label="Önceki"
             >
@@ -353,11 +357,12 @@ export const AdminCalendarPage: React.FC = () => {
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs text-slate-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 focus:border-amber-500 focus:outline-none shadow-sm"
+              className="h-10 rounded-[14px] border border-slate-200/90 bg-white/85 px-3 text-xs font-medium text-slate-900 shadow-sm focus:border-[#D97706] focus:outline-none dark:border-white/15 dark:bg-slate-900/75 dark:text-slate-100"
             />
             <Button
               variant="outline"
               size="icon"
+              className="rounded-[12px]"
               onClick={() => shiftDate(1)}
               aria-label="Sonraki"
             >
@@ -366,8 +371,9 @@ export const AdminCalendarPage: React.FC = () => {
           </div>
 
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon"
+            className="rounded-[12px]"
             onClick={fetchCalendarData}
             title="Yenile"
             aria-label="Yenile"
@@ -379,39 +385,42 @@ export const AdminCalendarPage: React.FC = () => {
 
       {/* Staff Columns Grid */}
       {loadingInit || loadingCalendar ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-80 w-full" />
+            <Skeleton key={i} className="h-80 w-full rounded-[22px]" />
           ))}
         </div>
       ) : columns.length === 0 ? (
-        <Card>
-          <CardContent className="p-10 text-center text-sm text-slate-400">
-            Seçili şubede görüntülenecek personel bulunamadı.
-          </CardContent>
-        </Card>
+        <div className="rounded-[24px] border border-slate-200/80 bg-white/85 p-12 text-center text-sm text-slate-500 shadow-sm backdrop-blur-xl dark:border-amber-500/20 dark:bg-slate-900/65 dark:text-slate-400">
+          Seçili şubede görüntülenecek personel bulunamadı.
+        </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {columns.map((col) => (
-            <Card key={col.id} className="flex flex-col overflow-hidden">
-              <CardHeader className="border-b border-slate-200 bg-slate-50 py-4 dark:border-zinc-800 dark:bg-zinc-950/40">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/15 text-sm font-bold text-amber-700 dark:text-amber-400">
-                      {col.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <CardTitle className="text-base">{col.name}</CardTitle>
-                      <CardDescription className="text-xs">{col.subtitle}</CardDescription>
-                    </div>
+            <section
+              key={col.id}
+              className="flex flex-col overflow-hidden rounded-[22px] border border-slate-200/80 bg-white/85 shadow-[0_20px_55px_-28px_rgba(15,23,42,0.12)] backdrop-blur-2xl dark:border-amber-500/20 dark:bg-slate-900/65 dark:shadow-[0_24px_65px_-26px_rgba(0,0,0,0.8)]"
+            >
+              <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/75 px-5 py-4 dark:border-white/10 dark:bg-slate-950/50">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-100 to-orange-100 font-serif text-sm font-bold text-[#D97706] dark:border-amber-400/35 dark:from-amber-500/25 dark:to-slate-900 dark:text-amber-300">
+                    {col.name.charAt(0).toUpperCase()}
                   </div>
-                  <Badge variant="amber">{col.appointments.length}</Badge>
+                  <div className="min-w-0">
+                    <h2 className="truncate font-serif text-base font-bold text-slate-900 dark:text-white">
+                      {col.name}
+                    </h2>
+                    <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                      {col.subtitle}
+                    </p>
+                  </div>
                 </div>
-              </CardHeader>
+                <Badge variant="amber">{col.appointments.length}</Badge>
+              </div>
 
-              <CardContent className="flex-1 space-y-2.5 p-4">
+              <div className="flex-1 space-y-2.5 p-4">
                 {col.appointments.length === 0 ? (
-                  <div className="flex h-36 flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 text-xs text-slate-500 dark:border-zinc-800">
+                  <div className="flex h-36 flex-col items-center justify-center rounded-[16px] border border-dashed border-slate-200 text-xs text-slate-400 dark:border-white/10 dark:text-slate-500">
                     <CalendarDays className="mb-1.5 h-5 w-5 opacity-50" />
                     Bu aralıkta randevu yok
                   </div>
@@ -434,12 +443,12 @@ export const AdminCalendarPage: React.FC = () => {
                           setActionNote('');
                         }}
                         className={cn(
-                          'w-full rounded-xl border border-slate-200 dark:border-zinc-800 border-l-4 bg-white/95 dark:bg-zinc-950/70 p-3.5 text-left transition-all hover:border-amber-500/50 hover:bg-slate-50 dark:hover:bg-zinc-900 cursor-pointer shadow-sm',
+                          'w-full cursor-pointer rounded-[16px] border border-slate-200/80 border-l-4 bg-white/95 p-3.5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-amber-500/50 hover:bg-amber-50/30 dark:border-white/10 dark:bg-slate-950/60 dark:hover:border-amber-400/45 dark:hover:bg-slate-950',
                           meta.borderAccent,
                         )}
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400">
+                          <span className="inline-flex items-center gap-1 text-xs font-bold text-[#D97706] dark:text-amber-400">
                             <Clock className="h-3.5 w-3.5" />
                             {viewMode === 'weekly' &&
                               `${start.toLocaleDateString('tr-TR', {
@@ -461,17 +470,17 @@ export const AdminCalendarPage: React.FC = () => {
                           </Badge>
                         </div>
 
-                        <p className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-zinc-100">
-                          <User className="h-3.5 w-3.5 text-slate-400 dark:text-zinc-500" />
+                        <p className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-white">
+                          <User className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
                           {appt.customerFullName}
                         </p>
 
-                        <div className="mt-1 flex items-center justify-between text-xs text-slate-500 dark:text-zinc-400">
+                        <div className="mt-1 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                           <span className="inline-flex items-center gap-1">
-                            <Scissors className="h-3 w-3 text-slate-400" />
+                            <Scissors className="h-3 w-3 text-[#D97706] dark:text-amber-400" />
                             {appt.serviceName}
                           </span>
-                          <span className="font-bold text-slate-900 dark:text-zinc-100">
+                          <span className="font-serif text-sm font-bold text-slate-900 dark:text-white">
                             {formatCurrency(appt.priceSnapshot)}
                           </span>
                         </div>
@@ -479,8 +488,8 @@ export const AdminCalendarPage: React.FC = () => {
                     );
                   })
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </section>
           ))}
         </div>
       )}
@@ -492,7 +501,10 @@ export const AdminCalendarPage: React.FC = () => {
           aria-modal="true"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
         >
-          <Card accent className="w-full max-w-lg">
+          <Card
+            accent
+            className="w-full max-w-lg rounded-[24px] border-slate-200/80 bg-white/95 backdrop-blur-2xl dark:border-amber-500/25 dark:bg-slate-900/95"
+          >
             <CardHeader className="relative">
               <button
                 type="button"

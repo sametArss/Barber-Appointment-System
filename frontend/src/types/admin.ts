@@ -42,12 +42,20 @@ export interface CreateStaffRequest {
   branchIds: string[];
 }
 
+export interface BranchServiceOverride {
+  branchId: string;
+  branchName?: string;
+  priceOverride?: number | null;
+  durationOverride?: number | null;
+}
+
 export interface CreateServiceRequest {
   name: string;
   description?: string;
   durationMinutes: number;
   basePrice: number;
   assignToBranchIds?: string[];
+  branchOverrides?: BranchServiceOverride[];
 }
 
 export interface UpdateServiceRequest extends CreateServiceRequest {
@@ -64,6 +72,7 @@ export interface BusinessServiceItem {
   isActive: boolean;
   assignedBranchIds?: string[];
   assignedBranchNames?: string[];
+  branchOverrides?: BranchServiceOverride[];
 }
 
 export interface SetStaffWorkingHoursRequest {
@@ -80,5 +89,24 @@ export interface SetStaffWorkingHoursRequest {
 export interface SubscribeRequest {
   planId: string;
   billingCycle: number;
+}
+
+export interface BusinessPenaltyItem {
+  id: string;
+  customerUserId: string;
+  customerFullName: string;
+  customerEmail: string;
+  customerPhoneNumber: string;
+  appointmentId: string | null;
+  branchName: string | null;
+  serviceName: string | null;
+  appointmentStartAt: string | null;
+  reasonName: string;
+  note: string | null;
+  isActive: boolean;
+  isExpired: boolean;
+  createdDate: string;
+  expiresAt: string;
+  customerActivePenaltyCount: number;
 }
 

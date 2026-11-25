@@ -13,6 +13,7 @@ import {
   UserCircle2,
   Menu,
   Scissors,
+  ShieldAlert,
   Sparkles,
   Users,
   X,
@@ -31,6 +32,7 @@ const sidebarItems = [
   { to: '/admin/profile', label: 'Hesabım', icon: UserCircle2 },
   { to: '/admin/staff', label: 'Personel & Mesai', icon: Users },
   { to: '/admin/services', label: 'Hizmet Menüsü', icon: Sparkles },
+  { to: '/admin/penalties', label: 'Ceza Yönetimi', icon: ShieldAlert },
   { to: '/admin/subscription', label: 'Paket & Abonelik', icon: CreditCard },
   { to: '/admin/reports', label: 'Gelir Raporları', icon: BarChart3 },
 ];

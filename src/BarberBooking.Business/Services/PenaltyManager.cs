@@ -1,6 +1,7 @@
 using BarberBooking.DataAccess.Repositories;
 using BarberBooking.Entities.Common;
 using BarberBooking.Entities.Customers;
+using BarberBooking.Entities.Notifications;
 using BarberBooking.Shared.DTOs.Customers;
 using BarberBooking.Shared.Results;
 using Microsoft.EntityFrameworkCore;
@@ -11,14 +12,19 @@ namespace BarberBooking.Business.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentTenantService _tenantService;
+        private readonly INotificationService _notificationService;
         private const int StrikeLimit = 3;
         private const int PenaltyValidityDays = 90;
         private const int BanDurationDays = 14;
 
-        public PenaltyManager(IUnitOfWork unitOfWork, ICurrentTenantService tenantService)
+        public PenaltyManager(
+            IUnitOfWork unitOfWork,
+            ICurrentTenantService tenantService,
+            INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _tenantService = tenantService;
+            _notificationService = notificationService;
         }
 
         public async Task<IResult> AddPenaltyAsync(CreatePenaltyRequestDto request, CancellationToken cancellationToken = default)
@@ -131,6 +137,53 @@ namespace BarberBooking.Business.Services
             return await CheckCustomerRestrictionAsync(userId.Value, businessId, cancellationToken);
         }
 
+        public async Task<IDataResult<IReadOnlyList<BusinessPenaltyItemDto>>> GetBusinessPenaltiesAsync(CancellationToken cancellationToken = default)
+        {
+            var businessId = _tenantService.BusinessId;
+            if (!businessId.HasValue)
+            {
+                return DataResult<IReadOnlyList<BusinessPenaltyItemDto>>.Fail("İşletme yetkiniz bulunamadı.", 403);
+            }
+
+            var now = DateTimeOffset.UtcNow;
+            var penalties = await _unitOfWork.Repository<CustomerPenalty>().Query()
+                .IgnoreQueryFilters()
+                .Include(p => p.Customer)
+                .Include(p => p.Appointment).ThenInclude(a => a!.Branch)
+                .Include(p => p.Appointment).ThenInclude(a => a!.Service)
+                .Where(p => p.BusinessId == businessId.Value)
+                .OrderByDescending(p => p.IsActive && p.ExpiresAt > now)
+                .ThenByDescending(p => p.CreatedAt)
+                .ToListAsync(cancellationToken);
+
+            var activeCounts = penalties
+                .Where(p => p.IsActive && p.ExpiresAt > now)
+                .GroupBy(p => p.CustomerUserId)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            var result = penalties.Select(p => new BusinessPenaltyItemDto
+            {
+                Id = p.Id,
+                CustomerUserId = p.CustomerUserId,
+                CustomerFullName = $"{p.Customer.FirstName} {p.Customer.LastName}".Trim(),
+                CustomerEmail = p.Customer.Email,
+                CustomerPhoneNumber = p.Customer.PhoneNumber ?? string.Empty,
+                AppointmentId = p.AppointmentId,
+                BranchName = p.Appointment?.Branch?.Name,
+                ServiceName = p.Appointment?.Service?.Name,
+                AppointmentStartAt = p.Appointment?.StartAt,
+                ReasonName = p.Reason.ToString(),
+                Note = p.Note,
+                IsActive = p.IsActive,
+                IsExpired = p.ExpiresAt <= now,
+                CreatedDate = p.CreatedAt,
+                ExpiresAt = p.ExpiresAt,
+                CustomerActivePenaltyCount = activeCounts.TryGetValue(p.CustomerUserId, out var cnt) ? cnt : 0
+            }).ToList();
+
+            return DataResult<IReadOnlyList<BusinessPenaltyItemDto>>.Ok(result);
+        }
+
         public async Task<IResult> ForgivePenaltyAsync(Guid penaltyId, CancellationToken cancellationToken = default)
         {
             var businessId = _tenantService.BusinessId;
@@ -140,9 +193,10 @@ namespace BarberBooking.Business.Services
             }
 
             var penaltyRepo = _unitOfWork.Repository<CustomerPenalty>();
-            var penalty = await penaltyRepo.FirstOrDefaultAsync(
-                p => p.Id == penaltyId && p.BusinessId == businessId.Value,
-                cancellationToken);
+            var penalty = await penaltyRepo.Query()
+                .IgnoreQueryFilters()
+                .Include(p => p.Business)
+                .FirstOrDefaultAsync(p => p.Id == penaltyId && p.BusinessId == businessId.Value, cancellationToken);
 
             if (penalty == null)
             {
@@ -152,6 +206,21 @@ namespace BarberBooking.Business.Services
             penalty.IsActive = false;
             penaltyRepo.Update(penalty);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            try
+            {
+                await _notificationService.SendNotificationAsync(
+                    penalty.CustomerUserId,
+                    NotificationType.General,
+                    "Ceza Kaydınız Affedildi",
+                    $"{penalty.Business?.Name ?? "Salon"} işletmesindeki ceza kaydınız işletme yöneticisi tarafından kaldırıldı.",
+                    penalty.AppointmentId ?? penalty.Id,
+                    cancellationToken);
+            }
+            catch
+            {
+                // Bildirim hatası ceza affını engellememeli
+            }
 
             return Result.Ok("Ceza kaydı işletme tarafından affedildi.");
         }
