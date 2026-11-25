@@ -32,8 +32,9 @@ export const BranchDetailPage: React.FC = () => {
   const routeState = location.state as BranchDetailLocationState | null;
 
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const currentUser = useAuthStore((s) => s.user);
   const hasRole = useAuthStore((s) => s.hasRole);
-  const isCustomer = isAuthenticated && hasRole('Customer');
+  const isOwnerOrManager = hasRole(['BusinessOwner', 'BusinessManager']);
 
   const [branch, setBranch] = useState<BranchSearchResponse | undefined>(routeState?.branch);
   const [services, setServices] = useState<BranchServiceResponse[]>([]);
@@ -51,7 +52,7 @@ export const BranchDetailPage: React.FC = () => {
         bookingService.getBranchServices(id),
         bookingService.getBranchStaff(id),
         reviewService.getBranchReviews(id),
-        isCustomer ? bookingService.getMyAppointments().catch(() => null) : Promise.resolve(null),
+        isAuthenticated ? bookingService.getMyAppointments().catch(() => null) : Promise.resolve(null),
       ]);
 
       if (branchRes.data) {
@@ -72,7 +73,7 @@ export const BranchDetailPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [id, isCustomer]);
+  }, [id, isAuthenticated]);
 
   useEffect(() => {
     void loadBranchDetails();
@@ -96,7 +97,10 @@ export const BranchDetailPage: React.FC = () => {
   const reviewCount = reviews.length > 0 ? reviews.length : (branch?.totalReviewCount ?? 0);
 
   const eligibleAppointments = useMemo(() => {
-    if (!id || !isCustomer) return [];
+    if (!id || !isAuthenticated) return [];
+    if (isOwnerOrManager && currentUser?.businessId && branch?.businessId === currentUser.businessId) {
+      return [];
+    }
     const reviewedAppointmentIds = new Set(reviews.map((r) => r.appointmentId));
     return myAppointments.filter(
       (a) =>
@@ -104,7 +108,7 @@ export const BranchDetailPage: React.FC = () => {
         a.status === AppointmentStatus.Completed &&
         !reviewedAppointmentIds.has(a.id),
     );
-  }, [id, isCustomer, myAppointments, reviews]);
+  }, [id, isAuthenticated, isOwnerOrManager, currentUser?.businessId, branch?.businessId, myAppointments, reviews]);
 
   if (!id) return null;
 

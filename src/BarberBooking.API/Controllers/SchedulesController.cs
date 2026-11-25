@@ -70,7 +70,7 @@ namespace BarberBooking.API.Controllers
         }
 
         [HttpPost("staff-working-hours")]
-        [Authorize(Roles = "BusinessOwner,BusinessManager")]
+        [Authorize(Roles = "BusinessOwner,BusinessManager,Employee")]
         public async Task<IActionResult> SetStaffWorkingHours([FromBody] SetStaffWorkingHoursRequestDto request, CancellationToken cancellationToken)
         {
             var result = await _scheduleService.SetStaffWorkingHoursAsync(request, cancellationToken);
@@ -113,6 +113,19 @@ namespace BarberBooking.API.Controllers
         public async Task<IActionResult> GetStaffExceptions([FromRoute] Guid staffProfileId, [FromRoute] Guid branchId, CancellationToken cancellationToken)
         {
             var result = await _scheduleService.GetStaffExceptionsAsync(staffProfileId, branchId, cancellationToken);
+            if (!result.Success)
+            {
+                return StatusCode(result.StatusCode, result);
+            }
+
+            return Ok(result);
+        }
+
+        [HttpDelete("staff-exception/{exceptionId:guid}")]
+        [Authorize(Roles = "BusinessOwner,BusinessManager,Employee")]
+        public async Task<IActionResult> DeleteStaffException([FromRoute] Guid exceptionId, CancellationToken cancellationToken)
+        {
+            var result = await _scheduleService.DeleteStaffExceptionAsync(exceptionId, cancellationToken);
             if (!result.Success)
             {
                 return StatusCode(result.StatusCode, result);

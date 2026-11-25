@@ -439,6 +439,7 @@ namespace BarberBooking.Business.Services
 
             var staff = await _unitOfWork.Repository<StaffProfile>().Query()
                 .Include(sp => sp.BusinessMember)
+                .Include(sp => sp.BranchAssignments)
                 .FirstOrDefaultAsync(
                     sp => sp.Id == request.StaffProfileId && sp.BusinessMember.BusinessId == businessId.Value,
                     cancellationToken);
@@ -449,26 +450,73 @@ namespace BarberBooking.Business.Services
             }
 
             var staffServiceRepo = _unitOfWork.Repository<StaffService>();
-            var existingStaffServices = await staffServiceRepo.GetAsync(
-                ss => ss.StaffProfileId == request.StaffProfileId,
-                cancellationToken);
+            var distinctServiceIds = (request.ServiceIds ?? new List<Guid>()).Distinct().ToList();
 
-            staffServiceRepo.RemoveRange(existingStaffServices);
-
-            if (request.ServiceIds.Count > 0)
+            if (request.BranchId.HasValue && request.BranchId.Value != Guid.Empty)
             {
-                var validServices = await _unitOfWork.Repository<Service>().Query()
-                    .Where(s => s.BusinessId == businessId.Value && request.ServiceIds.Contains(s.Id))
-                    .Select(s => s.Id)
-                    .ToListAsync(cancellationToken);
-
-                foreach (var serviceId in validServices)
+                var targetBranchId = request.BranchId.Value;
+                if (!staff.BranchAssignments.Any(ba => ba.BranchId == targetBranchId))
                 {
-                    await staffServiceRepo.AddAsync(new StaffService
+                    return Result.Fail("Çalışan seçilen şubeye atanmamış.", 400);
+                }
+
+                var existingForBranch = await staffServiceRepo.GetAsync(
+                    ss => ss.StaffProfileId == request.StaffProfileId && ss.BranchId == targetBranchId,
+                    cancellationToken);
+                staffServiceRepo.RemoveRange(existingForBranch);
+
+                if (distinctServiceIds.Count > 0)
+                {
+                    var validBranchServiceIds = await _unitOfWork.Repository<BranchService>().Query()
+                        .Include(bs => bs.Service)
+                        .Where(bs => bs.BranchId == targetBranchId &&
+                                     bs.IsActive &&
+                                     bs.Service.BusinessId == businessId.Value &&
+                                     distinctServiceIds.Contains(bs.ServiceId))
+                        .Select(bs => bs.ServiceId)
+                        .Distinct()
+                        .ToListAsync(cancellationToken);
+
+                    foreach (var serviceId in validBranchServiceIds)
                     {
-                        StaffProfileId = request.StaffProfileId,
-                        ServiceId = serviceId
-                    }, cancellationToken);
+                        await staffServiceRepo.AddAsync(new StaffService
+                        {
+                            StaffProfileId = request.StaffProfileId,
+                            BranchId = targetBranchId,
+                            ServiceId = serviceId
+                        }, cancellationToken);
+                    }
+                }
+            }
+            else
+            {
+                var assignedBranchIds = staff.BranchAssignments.Select(ba => ba.BranchId).Distinct().ToList();
+                var existingStaffServices = await staffServiceRepo.GetAsync(
+                    ss => ss.StaffProfileId == request.StaffProfileId,
+                    cancellationToken);
+                staffServiceRepo.RemoveRange(existingStaffServices);
+
+                if (distinctServiceIds.Count > 0 && assignedBranchIds.Count > 0)
+                {
+                    var validPairs = await _unitOfWork.Repository<BranchService>().Query()
+                        .Include(bs => bs.Service)
+                        .Where(bs => assignedBranchIds.Contains(bs.BranchId) &&
+                                     bs.IsActive &&
+                                     bs.Service.BusinessId == businessId.Value &&
+                                     distinctServiceIds.Contains(bs.ServiceId))
+                        .Select(bs => new { bs.BranchId, bs.ServiceId })
+                        .Distinct()
+                        .ToListAsync(cancellationToken);
+
+                    foreach (var pair in validPairs)
+                    {
+                        await staffServiceRepo.AddAsync(new StaffService
+                        {
+                            StaffProfileId = request.StaffProfileId,
+                            BranchId = pair.BranchId,
+                            ServiceId = pair.ServiceId
+                        }, cancellationToken);
+                    }
                 }
             }
 
@@ -486,6 +534,7 @@ namespace BarberBooking.Business.Services
 
             var staffQuery = _unitOfWork.Repository<StaffProfile>().Query()
                 .Include(sp => sp.BusinessMember)
+                .Include(sp => sp.BranchAssignments)
                 .Where(sp => sp.BusinessMember.UserId == userId.Value && sp.BusinessMember.IsActive);
 
             var staff = request.StaffProfileId != Guid.Empty
@@ -499,35 +548,85 @@ namespace BarberBooking.Business.Services
 
             var businessId = staff.BusinessMember.BusinessId;
             var staffServiceRepo = _unitOfWork.Repository<StaffService>();
-            var existingStaffServices = await staffServiceRepo.GetAsync(
-                ss => ss.StaffProfileId == staff.Id,
-                cancellationToken);
-
-            staffServiceRepo.RemoveRange(existingStaffServices);
-
             var distinctIds = (request.ServiceIds ?? new List<Guid>()).Distinct().ToList();
-            if (distinctIds.Count > 0)
-            {
-                var validServiceIds = await _unitOfWork.Repository<Service>().Query()
-                    .Where(s => s.BusinessId == businessId && s.IsActive && distinctIds.Contains(s.Id))
-                    .Select(s => s.Id)
-                    .ToListAsync(cancellationToken);
 
-                foreach (var serviceId in validServiceIds)
+            if (request.BranchId.HasValue && request.BranchId.Value != Guid.Empty)
+            {
+                var targetBranchId = request.BranchId.Value;
+                if (!staff.BranchAssignments.Any(ba => ba.BranchId == targetBranchId))
                 {
-                    await staffServiceRepo.AddAsync(new StaffService
+                    return Result.Fail("Seçilen şubede aktif bir çalışma atamanız bulunamadı.", 403);
+                }
+
+                var existingForBranch = await staffServiceRepo.GetAsync(
+                    ss => ss.StaffProfileId == staff.Id && ss.BranchId == targetBranchId,
+                    cancellationToken);
+
+                staffServiceRepo.RemoveRange(existingForBranch);
+
+                if (distinctIds.Count > 0)
+                {
+                    var validServiceIds = await _unitOfWork.Repository<BranchService>().Query()
+                        .Include(bs => bs.Service)
+                        .Where(bs => bs.BranchId == targetBranchId &&
+                                     bs.IsActive &&
+                                     bs.Service.BusinessId == businessId &&
+                                     bs.Service.IsActive &&
+                                     distinctIds.Contains(bs.ServiceId))
+                        .Select(bs => bs.ServiceId)
+                        .Distinct()
+                        .ToListAsync(cancellationToken);
+
+                    foreach (var serviceId in validServiceIds)
                     {
-                        StaffProfileId = staff.Id,
-                        ServiceId = serviceId
-                    }, cancellationToken);
+                        await staffServiceRepo.AddAsync(new StaffService
+                        {
+                            StaffProfileId = staff.Id,
+                            BranchId = targetBranchId,
+                            ServiceId = serviceId
+                        }, cancellationToken);
+                    }
+                }
+            }
+            else
+            {
+                var assignedBranchIds = staff.BranchAssignments.Select(ba => ba.BranchId).Distinct().ToList();
+                var existingStaffServices = await staffServiceRepo.GetAsync(
+                    ss => ss.StaffProfileId == staff.Id,
+                    cancellationToken);
+
+                staffServiceRepo.RemoveRange(existingStaffServices);
+
+                if (distinctIds.Count > 0 && assignedBranchIds.Count > 0)
+                {
+                    var validPairs = await _unitOfWork.Repository<BranchService>().Query()
+                        .Include(bs => bs.Service)
+                        .Where(bs => assignedBranchIds.Contains(bs.BranchId) &&
+                                     bs.IsActive &&
+                                     bs.Service.BusinessId == businessId &&
+                                     bs.Service.IsActive &&
+                                     distinctIds.Contains(bs.ServiceId))
+                        .Select(bs => new { bs.BranchId, bs.ServiceId })
+                        .Distinct()
+                        .ToListAsync(cancellationToken);
+
+                    foreach (var pair in validPairs)
+                    {
+                        await staffServiceRepo.AddAsync(new StaffService
+                        {
+                            StaffProfileId = staff.Id,
+                            BranchId = pair.BranchId,
+                            ServiceId = pair.ServiceId
+                        }, cancellationToken);
+                    }
                 }
             }
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            return Result.Ok("Seçili salon için verdiğiniz hizmetler güncellendi.");
+            return Result.Ok("Seçili şube için verdiğiniz hizmetler güncellendi.");
         }
 
-        public async Task<IDataResult<IReadOnlyList<ServiceResponseDto>>> GetMyAssignedServicesAsync(Guid? staffProfileId = null, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<IReadOnlyList<ServiceResponseDto>>> GetMyAssignedServicesAsync(Guid? staffProfileId = null, Guid? branchId = null, CancellationToken cancellationToken = default)
         {
             var userId = _tenantService.UserId;
             if (!userId.HasValue)
@@ -548,27 +647,36 @@ namespace BarberBooking.Business.Services
                 return DataResult<IReadOnlyList<ServiceResponseDto>>.Ok(new List<ServiceResponseDto>());
             }
 
-            return await GetStaffServicesAsync(staff.Id, cancellationToken);
+            return await GetStaffServicesAsync(staff.Id, branchId, cancellationToken);
         }
 
-        public async Task<IDataResult<IReadOnlyList<ServiceResponseDto>>> GetStaffServicesAsync(Guid staffProfileId, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<IReadOnlyList<ServiceResponseDto>>> GetStaffServicesAsync(Guid staffProfileId, Guid? branchId = null, CancellationToken cancellationToken = default)
         {
-            var staffServices = await _unitOfWork.Repository<StaffService>().Query()
+            var query = _unitOfWork.Repository<StaffService>().Query()
                 .Include(ss => ss.Service)
-                .Where(ss => ss.StaffProfileId == staffProfileId && ss.Service.IsActive)
-                .ToListAsync(cancellationToken);
+                .Where(ss => ss.StaffProfileId == staffProfileId && ss.Service.IsActive);
 
-            var response = staffServices.Select(ss => new ServiceResponseDto
+            if (branchId.HasValue && branchId.Value != Guid.Empty)
             {
-                Id = ss.Service.Id,
-                BusinessId = ss.Service.BusinessId,
-                Name = ss.Service.Name,
-                Description = ss.Service.Description,
-                BasePrice = ss.Service.BasePrice,
-                DurationMinutes = ss.Service.DurationMinutes,
-                ImageUrl = ss.Service.ImageUrl,
-                IsActive = ss.Service.IsActive
-            }).ToList();
+                query = query.Where(ss => ss.BranchId == branchId.Value);
+            }
+
+            var staffServices = await query.ToListAsync(cancellationToken);
+
+            var response = staffServices
+                .GroupBy(ss => ss.Service.Id)
+                .Select(g => g.First().Service)
+                .Select(s => new ServiceResponseDto
+                {
+                    Id = s.Id,
+                    BusinessId = s.BusinessId,
+                    Name = s.Name,
+                    Description = s.Description,
+                    BasePrice = s.BasePrice,
+                    DurationMinutes = s.DurationMinutes,
+                    ImageUrl = s.ImageUrl,
+                    IsActive = s.IsActive
+                }).ToList();
 
             return DataResult<IReadOnlyList<ServiceResponseDto>>.Ok(response);
         }

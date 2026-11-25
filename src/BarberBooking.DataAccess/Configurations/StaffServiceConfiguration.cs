@@ -10,11 +10,16 @@ namespace BarberBooking.DataAccess.Configurations
         {
             builder.ToTable("StaffServices");
 
-            builder.HasKey(ss => new { ss.StaffProfileId, ss.ServiceId });
+            builder.HasKey(ss => new { ss.StaffProfileId, ss.BranchId, ss.ServiceId });
 
             builder.HasOne(ss => ss.StaffProfile)
                 .WithMany()
                 .HasForeignKey(ss => ss.StaffProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(ss => ss.Branch)
+                .WithMany()
+                .HasForeignKey(ss => ss.BranchId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasOne(ss => ss.Service)

@@ -26,6 +26,7 @@ import {
 import { Button, Skeleton } from '@/components/ui';
 import { cn, formatCurrency, getApiErrorMessage } from '@/lib/utils';
 import { bookingService } from '@/services/bookingService';
+import { useAuthStore } from '@/store/useAuthStore';
 import type {
   AppointmentResponse,
   AvailableSlot,
@@ -45,6 +46,7 @@ export const BookingPage: React.FC = () => {
   const { branchId } = useParams<{ branchId: string }>();
   const location = useLocation();
   const navigate = useNavigate();
+  const currentUserId = useAuthStore((s) => s.user?.id ?? null);
   const routeState = location.state as BookingLocationState | null;
 
   const [step, setStep] = useState<number>(1);
@@ -472,7 +474,8 @@ export const BookingPage: React.FC = () => {
                 ) : (
                   <div className="grid gap-3.5 sm:grid-cols-2">
                     {eligibleStaffList.map((member) => {
-                      const isSelected = selectedStaff?.id === member.id;
+                      const isSelf = currentUserId !== null && member.userId === currentUserId;
+                      const isSelected = !isSelf && selectedStaff?.id === member.id;
                       const initials = member.fullName
                         .split(' ')
                         .map((n) => n[0])
@@ -483,26 +486,40 @@ export const BookingPage: React.FC = () => {
                         <button
                           key={member.id}
                           type="button"
+                          disabled={isSelf}
+                          title={isSelf ? 'Kendi kendinize randevu oluşturamazsınız' : undefined}
                           onClick={() => {
+                            if (isSelf) return;
                             setSelectedStaff(member);
                             setSelectedSlot(null);
                           }}
                           className={cn(
-                            'flex cursor-pointer items-center gap-4 rounded-[18px] border p-4.5 text-left transition-all duration-200',
-                            isSelected
-                              ? 'border-[#D97706] bg-amber-50/80 ring-2 ring-amber-500/25 dark:border-amber-400 dark:bg-amber-500/12 dark:shadow-[0_0_24px_-8px_rgba(245,158,11,0.35)]'
-                              : 'border-slate-200/90 bg-slate-50/60 hover:-translate-y-0.5 hover:border-amber-400/60 hover:bg-white dark:border-white/10 dark:bg-slate-950/50 dark:hover:border-amber-400/45 dark:hover:bg-slate-950/80',
+                            'flex items-center gap-4 rounded-[18px] border p-4.5 text-left transition-all duration-200',
+                            isSelf
+                              ? 'cursor-not-allowed border-slate-200/70 bg-slate-100/70 opacity-65 dark:border-white/10 dark:bg-slate-950/40'
+                              : isSelected
+                                ? 'cursor-pointer border-[#D97706] bg-amber-50/80 ring-2 ring-amber-500/25 dark:border-amber-400 dark:bg-amber-500/12 dark:shadow-[0_0_24px_-8px_rgba(245,158,11,0.35)]'
+                                : 'cursor-pointer border-slate-200/90 bg-slate-50/60 hover:-translate-y-0.5 hover:border-amber-400/60 hover:bg-white dark:border-white/10 dark:bg-slate-950/50 dark:hover:border-amber-400/45 dark:hover:bg-slate-950/80',
                           )}
                         >
                           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-amber-500/30 bg-gradient-to-br from-amber-100 to-orange-100 font-serif text-base font-bold text-[#D97706] dark:border-amber-400/35 dark:from-amber-500/25 dark:to-slate-900 dark:text-amber-300">
                             {initials}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <h3 className="truncate font-serif text-base font-bold text-slate-900 dark:text-white">
-                              {member.fullName}
-                            </h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className="truncate font-serif text-base font-bold text-slate-900 dark:text-white">
+                                {member.fullName}
+                              </h3>
+                              {isSelf && (
+                                <span className="shrink-0 rounded-full border border-slate-300 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:border-white/15 dark:bg-slate-900 dark:text-slate-300">
+                                  Bu sensin
+                                </span>
+                              )}
+                            </div>
                             <p className="mt-0.5 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">
-                              {member.biography || 'Profesyonel Saç & Sakal Tasarım Uzmanı'}
+                              {isSelf
+                                ? 'Kendi profilinizden randevu oluşturamazsınız.'
+                                : member.biography || 'Profesyonel Saç & Sakal Tasarım Uzmanı'}
                             </p>
                           </div>
                           {isSelected && (

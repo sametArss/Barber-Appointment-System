@@ -80,6 +80,11 @@ const EmployeeAppointmentsPage = lazy(() =>
     default: m.EmployeeAppointmentsPage,
   })),
 );
+const EmployeeSchedulePage = lazy(() =>
+  import('@/pages/employee/EmployeeSchedulePage').then((m) => ({
+    default: m.EmployeeSchedulePage,
+  })),
+);
 
 const PageLoader: React.FC = () => (
   <div className="flex min-h-[50vh] items-center justify-center">
@@ -113,10 +118,6 @@ export function App() {
             <Route path="/branch/:id" element={<BranchDetailPage />} />
 
             <Route element={<ProtectedRoute />}>
-              <Route element={<RoleGuard allowedRoles={['Customer']} />}>
-                <Route path="/book/:branchId" element={<BookingPage />} />
-                <Route path="/my-appointments" element={<MyAppointmentsPage />} />
-              </Route>
               <Route
                 element={
                   <RoleGuard
@@ -124,6 +125,8 @@ export function App() {
                   />
                 }
               >
+                <Route path="/book/:branchId" element={<BookingPage />} />
+                <Route path="/my-appointments" element={<MyAppointmentsPage />} />
                 <Route path="/profile" element={<CustomerProfilePage />} />
               </Route>
             </Route>
@@ -152,6 +155,7 @@ export function App() {
                 </Route>
                 <Route element={<RoleGuard allowedRoles={['Employee']} />}>
                   <Route path="workplaces" element={<EmployeeWorkplacesPage />} />
+                  <Route path="schedule" element={<EmployeeSchedulePage />} />
                   <Route path="appointments" element={<EmployeeAppointmentsPage />} />
                 </Route>
               </Route>

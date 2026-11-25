@@ -170,7 +170,7 @@ export const NotificationBell: React.FC = () => {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-2.5 w-[340px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-[20px] border border-slate-200/80 bg-white/95 shadow-2xl backdrop-blur-2xl dark:border-amber-500/25 dark:bg-slate-900/95">
+        <div className="absolute right-0 z-50 mt-2.5 w-[380px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-[20px] border border-slate-200/80 bg-white/95 shadow-2xl backdrop-blur-2xl dark:border-amber-500/25 dark:bg-slate-900/95">
           {/* Header */}
           <div className="border-b border-slate-100 px-4 py-3.5 dark:border-white/10">
             <div className="flex items-center justify-between gap-2">
@@ -269,7 +269,7 @@ export const NotificationBell: React.FC = () => {
                           <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#D97706] dark:bg-amber-400" />
                         )}
                       </div>
-                      <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                      <p className="mt-1 whitespace-normal break-words text-xs leading-relaxed text-slate-600 dark:text-slate-300">
                         {item.message}
                       </p>
                       <span className="mt-1.5 inline-flex items-center gap-1 text-[10px] text-slate-400 dark:text-slate-500">

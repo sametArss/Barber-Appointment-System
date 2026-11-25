@@ -34,7 +34,7 @@ export const CustomerLayout: React.FC = () => {
   const location = useLocation();
 
   const isStaffOrOwner = hasRole(['BusinessOwner', 'BusinessManager', 'Employee']);
-  const canUseCustomerBookings = hasRole('Customer') && !isStaffOrOwner;
+  const canUseCustomerBookings = isAuthenticated;
 
   const handleLogout = () => {
     logout();

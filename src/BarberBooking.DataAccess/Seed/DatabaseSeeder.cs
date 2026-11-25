@@ -37,17 +37,19 @@ namespace BarberBooking.DataAccess.Seed
             if (await context.Users.AnyAsync())
             {
                 var seededStaffId = Guid.Parse("40000000-0000-0000-0000-000000000001");
+                var seededBranchId = Guid.Parse("20000000-0000-0000-0000-000000000001");
                 var seededHairId = Guid.Parse("30000000-0000-0000-0000-000000000001");
                 var seededBeardId = Guid.Parse("30000000-0000-0000-0000-000000000002");
 
                 var hasSeededStaff = await context.StaffProfiles.AnyAsync(sp => sp.Id == seededStaffId);
+                var hasSeededBranch = await context.Branches.AnyAsync(b => b.Id == seededBranchId);
                 var hasAnyStaffServices = await context.StaffServices.AnyAsync(ss => ss.StaffProfileId == seededStaffId);
-                if (hasSeededStaff && !hasAnyStaffServices)
+                if (hasSeededStaff && hasSeededBranch && !hasAnyStaffServices)
                 {
                     if (await context.Services.AnyAsync(s => s.Id == seededHairId))
-                        await context.StaffServices.AddAsync(new StaffService { StaffProfileId = seededStaffId, ServiceId = seededHairId });
+                        await context.StaffServices.AddAsync(new StaffService { StaffProfileId = seededStaffId, BranchId = seededBranchId, ServiceId = seededHairId });
                     if (await context.Services.AnyAsync(s => s.Id == seededBeardId))
-                        await context.StaffServices.AddAsync(new StaffService { StaffProfileId = seededStaffId, ServiceId = seededBeardId });
+                        await context.StaffServices.AddAsync(new StaffService { StaffProfileId = seededStaffId, BranchId = seededBranchId, ServiceId = seededBeardId });
                     await context.SaveChangesAsync();
                 }
                 return;
@@ -195,8 +197,8 @@ namespace BarberBooking.DataAccess.Seed
 
             // Seed Personelin Verebildiği Hizmetler
             await context.StaffServices.AddRangeAsync(
-                new StaffService { StaffProfileId = staffProfile.Id, ServiceId = serviceHair.Id },
-                new StaffService { StaffProfileId = staffProfile.Id, ServiceId = serviceBeard.Id }
+                new StaffService { StaffProfileId = staffProfile.Id, BranchId = branch.Id, ServiceId = serviceHair.Id },
+                new StaffService { StaffProfileId = staffProfile.Id, BranchId = branch.Id, ServiceId = serviceBeard.Id }
             );
 
             // Personel Çalışma Saatleri ve Molalar

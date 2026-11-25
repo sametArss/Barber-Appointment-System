@@ -59,7 +59,7 @@ namespace BarberBooking.Business.Services
             }
 
             var staffProvidesService = await _unitOfWork.Repository<StaffService>().AnyAsync(
-                ss => ss.StaffProfileId == query.StaffProfileId && ss.ServiceId == query.ServiceId,
+                ss => ss.StaffProfileId == query.StaffProfileId && ss.BranchId == query.BranchId && ss.ServiceId == query.ServiceId,
                 cancellationToken);
 
             if (!staffProvidesService)
@@ -101,19 +101,18 @@ namespace BarberBooking.Business.Services
                 return DataResult<IReadOnlyList<AvailableSlotResponseDto>>.Ok(new List<AvailableSlotResponseDto>(), "Şube seçilen tarihte kapalıdır.");
             }
 
-            var staffLeave = await _unitOfWork.Repository<StaffScheduleException>().AnyAsync(
-                e => e.StaffProfileId == query.StaffProfileId && e.BranchId == query.BranchId && e.StartAt < dayEndUtc && e.EndAt > dayStartUtc,
-                cancellationToken);
+            var staffExceptions = await _unitOfWork.Repository<StaffScheduleException>().Query()
+                .Where(e => e.StaffProfileId == query.StaffProfileId &&
+                            e.BranchId == query.BranchId &&
+                            e.StartAt < dayEndUtc &&
+                            e.EndAt > dayStartUtc)
+                .Select(e => new { e.StartAt, e.EndAt })
+                .ToListAsync(cancellationToken);
 
-            if (staffLeave)
-            {
-                return DataResult<IReadOnlyList<AvailableSlotResponseDto>>.Ok(new List<AvailableSlotResponseDto>(), "Personel seçilen tarihte izinlidir.");
-            }
-
-            // 3. Mevcut Randevular
+            // 3. Mevcut Randevular (aynı personelin tüm şubelerindeki çakışan randevuları dahil)
             var activeAppointments = await _unitOfWork.Repository<Appointment>().Query()
+                .IgnoreQueryFilters()
                 .Where(a => a.StaffProfileId == query.StaffProfileId &&
-                            a.BranchId == query.BranchId &&
                             a.StartAt < dayEndUtc &&
                             a.EndAt > dayStartUtc &&
                             (a.Status == AppointmentStatus.Pending || a.Status == AppointmentStatus.Confirmed))
@@ -148,6 +147,10 @@ namespace BarberBooking.Business.Services
                 // Mola çakışması kontrolü
                 bool overlapsBreak = breakIntervals.Any(b => cursor < b.EndUtc && slotEnd > b.StartUtc);
                 if (overlapsBreak) continue;
+
+                // Özel saat kapatma / izin çakışması kontrolü (yalnızca çakışan saat aralığı kapatılır)
+                bool overlapsException = staffExceptions.Any(e => cursor < e.EndAt && slotEnd > e.StartAt);
+                if (overlapsException) continue;
 
                 // Randevu çakışması kontrolü
                 bool overlapsAppointment = activeAppointments.Any(a => cursor < a.EndAt && slotEnd > a.StartAt);
@@ -213,12 +216,26 @@ namespace BarberBooking.Business.Services
             }
 
             var staffProvidesService = await _unitOfWork.Repository<StaffService>().AnyAsync(
-                ss => ss.StaffProfileId == request.StaffProfileId && ss.ServiceId == request.ServiceId,
+                ss => ss.StaffProfileId == request.StaffProfileId && ss.BranchId == request.BranchId && ss.ServiceId == request.ServiceId,
                 cancellationToken);
 
             if (!staffProvidesService)
             {
                 return DataResult<AppointmentResponseDto>.Fail("Seçilen personel bu hizmeti vermemektedir.", 400);
+            }
+
+            var targetStaffProfile = await _unitOfWork.Repository<StaffProfile>().Query()
+                .Include(sp => sp.BusinessMember)
+                .FirstOrDefaultAsync(sp => sp.Id == request.StaffProfileId, cancellationToken);
+
+            if (targetStaffProfile == null)
+            {
+                return DataResult<AppointmentResponseDto>.Fail("Seçilen personel bulunamadı.", 404);
+            }
+
+            if (targetStaffProfile.BusinessMember.UserId == customerUserId.Value)
+            {
+                return DataResult<AppointmentResponseDto>.Fail("Kendi kendinize randevu oluşturamazsınız.", 400);
             }
 
             var priceSnapshot = branchService.PriceOverride ?? branchService.Service.BasePrice;
@@ -231,6 +248,18 @@ namespace BarberBooking.Business.Services
             if (startUtc <= DateTimeOffset.UtcNow)
             {
                 return DataResult<AppointmentResponseDto>.Fail("Geçmiş zamana randevu alınamaz.", 400);
+            }
+
+            var hasBlockedSlot = await _unitOfWork.Repository<StaffScheduleException>().AnyAsync(
+                e => e.StaffProfileId == request.StaffProfileId &&
+                     e.BranchId == request.BranchId &&
+                     e.StartAt < endUtc &&
+                     e.EndAt > startUtc,
+                cancellationToken);
+
+            if (hasBlockedSlot)
+            {
+                return DataResult<AppointmentResponseDto>.Fail("Personel seçilen saat aralığında kapalı veya izinlidir.", 400);
             }
 
             await using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);

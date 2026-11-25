@@ -7,6 +7,7 @@ import {
   CalendarCheck2,
   ChevronLeft,
   ChevronRight,
+  Clock,
   CreditCard,
   LayoutDashboard,
   LogOut,
@@ -40,6 +41,7 @@ const sidebarItems = [
 const employeeSidebarItems = [
   { to: '/admin/dashboard', label: 'Ana Sayfa', icon: LayoutDashboard },
   { to: '/admin/workplaces', label: 'Çalıştığım Yerler', icon: Building2 },
+  { to: '/admin/schedule', label: 'Mesai & Saatlerim', icon: Clock },
   { to: '/admin/appointments', label: 'Randevularım', icon: CalendarCheck2 },
   { to: '/admin/profile', label: 'Hesabım', icon: UserCircle2 },
 ];

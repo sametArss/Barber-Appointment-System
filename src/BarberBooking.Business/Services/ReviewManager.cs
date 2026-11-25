@@ -1,5 +1,6 @@
 using BarberBooking.DataAccess.Repositories;
 using BarberBooking.Entities.Appointments;
+using BarberBooking.Entities.Businesses;
 using BarberBooking.Entities.Common;
 using BarberBooking.Entities.Reviews;
 using BarberBooking.Shared.DTOs.Reviews;
@@ -54,6 +55,20 @@ namespace BarberBooking.Business.Services
             if (appointment.Status != AppointmentStatus.Completed)
             {
                 return DataResult<ReviewResponseDto>.Fail("Yalnızca tamamlanmış randevular için değerlendirme yapabilirsiniz.", 400);
+            }
+
+            // Salon sahibi / yöneticisi kendi işletmesine sahte değerlendirme yapamaz
+            var isBusinessOwnerOrManager = await _unitOfWork.Repository<BusinessMember>().Query()
+                .IgnoreQueryFilters()
+                .AnyAsync(bm => bm.BusinessId == appointment.BusinessId &&
+                                bm.UserId == userId.Value &&
+                                bm.IsActive &&
+                                (bm.Role == BusinessRole.Owner || bm.Role == BusinessRole.Manager),
+                          cancellationToken);
+
+            if (isBusinessOwnerOrManager || appointment.StaffProfile.BusinessMember.UserId == userId.Value)
+            {
+                return DataResult<ReviewResponseDto>.Fail("Kendi işletmeniz veya kendi verdiğiniz hizmet için değerlendirme yapamazsınız.", 403);
             }
 
             var reviewRepo = _unitOfWork.Repository<Review>();

@@ -339,8 +339,8 @@ namespace BarberBooking.Business.Services
                     ProfileImageUrl = sp.ProfileImageUrl,
                     IsBookable = sp.IsBookable,
                     AssignedBranchIds = sp.BranchAssignments.Select(ba => ba.BranchId).ToList(),
-                    AssignedServiceIds = assignedServices?.Select(ss => ss.ServiceId).ToList() ?? new List<Guid>(),
-                    AssignedServiceNames = assignedServices?.Select(ss => ss.Service.Name).ToList() ?? new List<string>()
+                    AssignedServiceIds = assignedServices?.Select(ss => ss.ServiceId).Distinct().ToList() ?? new List<Guid>(),
+                    AssignedServiceNames = assignedServices?.Select(ss => ss.Service.Name).Distinct().ToList() ?? new List<string>()
                 };
             }).ToList();
 
@@ -359,7 +359,7 @@ namespace BarberBooking.Business.Services
             var staffIds = assignments.Select(a => a.StaffProfileId).Distinct().ToList();
             var staffServicesLookup = (await _unitOfWork.Repository<StaffService>().Query()
                 .Include(ss => ss.Service)
-                .Where(ss => staffIds.Contains(ss.StaffProfileId) && ss.Service.IsActive)
+                .Where(ss => staffIds.Contains(ss.StaffProfileId) && ss.BranchId == branchId && ss.Service.IsActive)
                 .ToListAsync(cancellationToken))
                 .GroupBy(ss => ss.StaffProfileId)
                 .ToDictionary(g => g.Key, g => g.ToList());

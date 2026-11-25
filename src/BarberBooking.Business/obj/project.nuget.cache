@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "eH09Ar4qlAI=",
+  "dgSpecHash": "Z4AslWNT+ls=",
   "success": true,
   "projectFilePath": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\BarberBooking.Business.csproj",
   "expectedPackageFiles": [
@@ -39,9 +39,20 @@
     "C:\\Users\\Samet\\.nuget\\packages\\npgsql.entityframeworkcore.postgresql\\10.0.3\\npgsql.entityframeworkcore.postgresql.10.0.3.nupkg.sha512",
     "C:\\Users\\Samet\\.nuget\\packages\\npgsql.entityframeworkcore.postgresql.nettopologysuite\\10.0.3\\npgsql.entityframeworkcore.postgresql.nettopologysuite.10.0.3.nupkg.sha512",
     "C:\\Users\\Samet\\.nuget\\packages\\npgsql.nettopologysuite\\10.0.3\\npgsql.nettopologysuite.10.0.3.nupkg.sha512",
-    "C:\\Users\\Samet\\.nuget\\packages\\system.buffers\\4.6.0\\system.buffers.4.6.0.nupkg.sha512",
-    "C:\\Users\\Samet\\.nuget\\packages\\system.identitymodel.tokens.jwt\\8.23.0\\system.identitymodel.tokens.jwt.8.23.0.nupkg.sha512",
-    "C:\\Users\\Samet\\.nuget\\packages\\system.text.encodings.web\\8.0.0\\system.text.encodings.web.8.0.0.nupkg.sha512"
+    "C:\\Users\\Samet\\.nuget\\packages\\system.identitymodel.tokens.jwt\\8.23.0\\system.identitymodel.tokens.jwt.8.23.0.nupkg.sha512"
   ],
-  "logs": []
+  "logs": [
+    {
+      "code": "NU1902",
+      "level": "Warning",
+      "message": "'Microsoft.AspNetCore.WebUtilities' 2.3.12 paketinde önem derecesi orta olan bilinen bir https://github.com/advisories/GHSA-6527-9fp8-r4x6 güvenlik açığı var",
+      "projectPath": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\BarberBooking.Business.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\Samet\\Desktop\\Barber Gemini\\src\\BarberBooking.Business\\BarberBooking.Business.csproj",
+      "libraryId": "Microsoft.AspNetCore.WebUtilities",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    }
+  ]
 }

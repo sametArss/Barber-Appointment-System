@@ -37,7 +37,7 @@ export const EmployeeWorkplacesPage: React.FC = () => {
     try {
       const [branchSrvRes, mySrvRes] = await Promise.all([
         bookingService.getBranchServices(workplace.branchId),
-        employeeService.getMyAssignedServices(workplace.staffProfileId),
+        employeeService.getMyAssignedServices(workplace.staffProfileId, workplace.branchId),
       ]);
       const activeBranchServices = (branchSrvRes.data ?? []).filter((s) => s.isActive);
       setBranchServices(activeBranchServices);
@@ -72,13 +72,16 @@ export const EmployeeWorkplacesPage: React.FC = () => {
     try {
       const res = await employeeService.updateMyAssignedServices(
         selectedWorkplace.staffProfileId,
+        selectedWorkplace.branchId,
         selectedServiceIds,
       );
       if (!res.success) {
         toast.error(res.message || 'Hizmetleriniz kaydedilemedi.');
         return;
       }
-      toast.success(`${selectedWorkplace.businessName} için verdiğiniz hizmetler güncellendi!`);
+      toast.success(
+        `${selectedWorkplace.branchName} şubesi için verdiğiniz hizmetler güncellendi!`,
+      );
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Hizmetleriniz kaydedilemedi.'));
     } finally {

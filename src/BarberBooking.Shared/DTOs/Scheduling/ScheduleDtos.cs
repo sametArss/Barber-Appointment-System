@@ -52,6 +52,7 @@ namespace BarberBooking.Shared.DTOs.Scheduling
         public DateTimeOffset StartAt { get; set; }
         public DateTimeOffset EndAt { get; set; }
         public string? Reason { get; set; }
+        public bool CancelConflictingAppointments { get; set; } = false;
     }
 
     public class ScheduleExceptionResponseDto

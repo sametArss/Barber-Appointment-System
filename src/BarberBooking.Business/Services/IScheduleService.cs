@@ -16,5 +16,6 @@ namespace BarberBooking.Business.Services
         Task<IDataResult<IReadOnlyList<WorkingHourResponseDto>>> GetStaffWorkingHoursAsync(Guid staffProfileId, Guid branchId, CancellationToken cancellationToken = default);
         Task<IResult> AddStaffExceptionAsync(CreateStaffExceptionRequestDto request, CancellationToken cancellationToken = default);
         Task<IDataResult<IReadOnlyList<ScheduleExceptionResponseDto>>> GetStaffExceptionsAsync(Guid staffProfileId, Guid branchId, CancellationToken cancellationToken = default);
+        Task<IResult> DeleteStaffExceptionAsync(Guid exceptionId, CancellationToken cancellationToken = default);
     }
 }

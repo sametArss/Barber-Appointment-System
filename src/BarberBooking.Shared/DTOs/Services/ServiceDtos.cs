@@ -51,6 +51,7 @@ namespace BarberBooking.Shared.DTOs.Services
     public class AssignStaffServicesRequestDto
     {
         public Guid StaffProfileId { get; set; }
+        public Guid? BranchId { get; set; }
         public List<Guid> ServiceIds { get; set; } = new();
     }
 

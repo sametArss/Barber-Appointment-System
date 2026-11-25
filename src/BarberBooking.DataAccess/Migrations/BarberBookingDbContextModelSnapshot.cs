@@ -860,10 +860,15 @@ namespace BarberBooking.DataAccess.Migrations
                     b.Property<Guid>("StaffProfileId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("ServiceId")
                         .HasColumnType("uuid");
 
-                    b.HasKey("StaffProfileId", "ServiceId");
+                    b.HasKey("StaffProfileId", "BranchId", "ServiceId");
+
+                    b.HasIndex("BranchId");
 
                     b.HasIndex("ServiceId");
 
@@ -1337,6 +1342,12 @@ namespace BarberBooking.DataAccess.Migrations
 
             modelBuilder.Entity("BarberBooking.Entities.Services.StaffService", b =>
                 {
+                    b.HasOne("BarberBooking.Entities.Businesses.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("BarberBooking.Entities.Services.Service", "Service")
                         .WithMany("StaffServices")
                         .HasForeignKey("ServiceId")
@@ -1348,6 +1359,8 @@ namespace BarberBooking.DataAccess.Migrations
                         .HasForeignKey("StaffProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Branch");
 
                     b.Navigation("Service");
 
