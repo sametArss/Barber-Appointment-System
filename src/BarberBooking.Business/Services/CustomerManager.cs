@@ -48,11 +48,9 @@ namespace BarberBooking.Business.Services
                 cancellationToken);
 
             var now = DateTimeOffset.UtcNow;
-            var activePenalties = await _unitOfWork.Repository<CustomerPenalty>().Query()
-                .IgnoreQueryFilters()
-                .CountAsync(
-                    p => p.CustomerUserId == userId.Value && p.IsActive && p.ExpiresAt > now,
-                    cancellationToken);
+            var activePenalties = await _unitOfWork.Repository<CustomerPenalty>().CountAsync(
+                p => p.CustomerUserId == userId.Value && p.IsActive && p.ExpiresAt > now,
+                cancellationToken);
 
             var response = new CustomerProfileResponseDto
             {
@@ -127,7 +125,7 @@ namespace BarberBooking.Business.Services
             return Result.Ok("Şifreniz başarıyla değiştirildi.");
         }
 
-        public async Task<IResult> ToggleFavoriteAsync(Guid businessId, CancellationToken cancellationToken = default)
+        public async Task<IResult> ToggleFavoriteAsync(Guid branchId, CancellationToken cancellationToken = default)
         {
             var userId = _tenantService.UserId;
             if (!userId.HasValue)
@@ -135,38 +133,40 @@ namespace BarberBooking.Business.Services
                 return Result.Fail("Oturum açmanız gerekmektedir.", 401);
             }
 
-            var businessExists = await _unitOfWork.Repository<BusinessEntity>().AnyAsync(
-                b => b.Id == businessId && b.IsActive,
-                cancellationToken);
+            var branch = await _unitOfWork.Repository<Entities.Businesses.Branch>().QueryAsNoTracking()
+                .IgnoreQueryFilters()
+                .Include(b => b.Business)
+                .FirstOrDefaultAsync(b => b.Id == branchId && b.IsActive && b.Business.IsActive, cancellationToken);
 
-            if (!businessExists)
+            if (branch == null)
             {
-                return Result.Fail("İşletme bulunamadı.", 404);
+                return Result.Fail("Şube bulunamadı.", 404);
             }
 
             var favoriteRepo = _unitOfWork.Repository<Favorite>();
             var existingFavorite = await favoriteRepo.FirstOrDefaultAsync(
-                f => f.UserId == userId.Value && f.BusinessId == businessId,
+                f => f.UserId == userId.Value && f.BranchId == branchId,
                 cancellationToken);
 
             if (existingFavorite != null)
             {
                 favoriteRepo.Remove(existingFavorite);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
-                return Result.Ok("İşletme favorilerden çıkarıldı.");
+                return Result.Ok("Şube favorilerden çıkarıldı.");
             }
 
             var favorite = new Favorite
             {
                 UserId = userId.Value,
-                BusinessId = businessId,
+                BranchId = branchId,
+                BusinessId = branch.BusinessId,
                 CreatedAt = DateTimeOffset.UtcNow
             };
 
             await favoriteRepo.AddAsync(favorite, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return Result.Ok("İşletme favorilere eklendi.");
+            return Result.Ok("Şube favorilere eklendi.");
         }
 
         public async Task<IDataResult<IReadOnlyList<FavoriteBusinessResponseDto>>> GetMyFavoritesAsync(CancellationToken cancellationToken = default)
@@ -177,39 +177,46 @@ namespace BarberBooking.Business.Services
                 return DataResult<IReadOnlyList<FavoriteBusinessResponseDto>>.Fail("Oturum açmanız gerekmektedir.", 401);
             }
 
-            var favorites = await _unitOfWork.Repository<Favorite>().Query()
+            var favorites = await _unitOfWork.Repository<Favorite>().QueryAsNoTracking()
+                .IgnoreQueryFilters()
+                .Include(f => f.Branch)
                 .Include(f => f.Business)
-                    .ThenInclude(b => b.Branches)
-                .Where(f => f.UserId == userId.Value && f.Business.IsActive)
+                .Where(f => f.UserId == userId.Value && f.Branch.IsActive && f.Business.IsActive)
                 .OrderByDescending(f => f.CreatedAt)
                 .ToListAsync(cancellationToken);
 
-            var businessIds = favorites.Select(f => f.BusinessId).ToList();
+            if (favorites.Count == 0)
+            {
+                return DataResult<IReadOnlyList<FavoriteBusinessResponseDto>>.Ok(Array.Empty<FavoriteBusinessResponseDto>());
+            }
 
-            var reviews = await _unitOfWork.Repository<Review>().Query()
-                .Where(r => businessIds.Contains(r.BusinessId))
-                .Select(r => new { r.BusinessId, r.Rating })
-                .ToListAsync(cancellationToken);
+            var branchIds = favorites.Select(f => f.BranchId).Distinct().ToList();
 
-            var reviewLookup = reviews
-                .GroupBy(r => r.BusinessId)
-                .ToDictionary(
-                    g => g.Key,
-                    g => new { Avg = Math.Round(g.Average(x => x.Rating), 1), Count = g.Count() });
+            var reviewLookup = await _unitOfWork.Repository<Review>().QueryAsNoTracking()
+                .IgnoreQueryFilters()
+                .Where(r => branchIds.Contains(r.Appointment.BranchId))
+                .GroupBy(r => r.Appointment.BranchId)
+                .Select(g => new
+                {
+                    BranchId = g.Key,
+                    Avg = g.Average(x => (double)x.Rating),
+                    Count = g.Count()
+                })
+                .ToDictionaryAsync(x => x.BranchId, cancellationToken);
 
             var response = favorites.Select(f =>
             {
-                reviewLookup.TryGetValue(f.BusinessId, out var stats);
+                reviewLookup.TryGetValue(f.BranchId, out var stats);
 
                 return new FavoriteBusinessResponseDto
                 {
                     BusinessId = f.BusinessId,
-                    BusinessName = f.Business.Name,
+                    BusinessName = $"{f.Business.Name} — {f.Branch.Name}",
                     Description = f.Business.Description,
                     PhoneNumber = f.Business.PhoneNumber,
-                    AverageRating = stats?.Avg ?? 0.0,
+                    AverageRating = stats != null ? Math.Round(stats.Avg, 1) : 0.0,
                     TotalReviews = stats?.Count ?? 0,
-                    BranchCount = f.Business.Branches.Count(br => br.IsActive),
+                    BranchCount = 1,
                     AddedAt = f.CreatedAt
                 };
             }).ToList();

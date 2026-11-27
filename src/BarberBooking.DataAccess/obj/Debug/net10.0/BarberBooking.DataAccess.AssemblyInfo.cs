@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("BarberBooking.DataAccess")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+09bf0abd12a06329b0b6549d6acc2da090f175cf")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9b473a42dcea1559ff96300bfd97aa53f23326a3")]
 [assembly: System.Reflection.AssemblyProductAttribute("BarberBooking.DataAccess")]
 [assembly: System.Reflection.AssemblyTitleAttribute("BarberBooking.DataAccess")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

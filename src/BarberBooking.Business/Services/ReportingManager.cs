@@ -27,14 +27,9 @@ namespace BarberBooking.Business.Services
                 return DataResult<DashboardSummaryResponseDto>.Fail("İşletme yetkiniz bulunamadı.", 403);
             }
 
-            var appointmentsQuery = _unitOfWork.Repository<Appointment>().Query()
-                .Include(a => a.Service)
-                .Include(a => a.StaffProfile)
-                    .ThenInclude(sp => sp.BusinessMember)
-                        .ThenInclude(bm => bm.User)
+            var appointmentsQuery = _unitOfWork.Repository<Appointment>().QueryAsNoTracking()
                 .Where(a => a.BusinessId == businessId.Value);
 
-            // Tarih filtrelerini sadece parametre olarak gönderildiyse uyguluyoruz
             if (query.StartDate.HasValue)
             {
                 var startUtc = query.StartDate.Value.ToUniversalTime();
@@ -52,65 +47,95 @@ namespace BarberBooking.Business.Services
                 appointmentsQuery = appointmentsQuery.Where(a => a.BranchId == query.BranchId.Value);
             }
 
-            var appointments = await appointmentsQuery.ToListAsync(cancellationToken);
+            // 1) SQL-side durum özeti (RAM'e en fazla 5 satır gelir)
+            var statusAggs = await appointmentsQuery
+                .GroupBy(a => a.Status)
+                .Select(g => new
+                {
+                    Status = g.Key,
+                    Count = g.Count(),
+                    Revenue = g.Sum(x => x.PriceSnapshot)
+                })
+                .ToListAsync(cancellationToken);
 
-            int total = appointments.Count;
-            int completed = appointments.Count(a => a.Status == AppointmentStatus.Completed);
-            int cancelled = appointments.Count(a => a.Status == AppointmentStatus.Cancelled);
-            int noShow = appointments.Count(a => a.Status == AppointmentStatus.NoShow);
+            var total = statusAggs.Sum(x => x.Count);
+            var completed = statusAggs.FirstOrDefault(x => x.Status == AppointmentStatus.Completed)?.Count ?? 0;
+            var cancelled = statusAggs.FirstOrDefault(x => x.Status == AppointmentStatus.Cancelled)?.Count ?? 0;
+            var noShow = statusAggs.FirstOrDefault(x => x.Status == AppointmentStatus.NoShow)?.Count ?? 0;
+            var totalRevenue = statusAggs.FirstOrDefault(x => x.Status == AppointmentStatus.Completed)?.Revenue ?? 0m;
+            var cancellationRate = total > 0 ? Math.Round((double)(cancelled + noShow) / total * 100.0, 1) : 0.0;
 
-            decimal totalRevenue = appointments
+            // 2) SQL-side en çok tercih edilen 5 hizmet
+            var topServices = await appointmentsQuery
                 .Where(a => a.Status == AppointmentStatus.Completed)
-                .Sum(a => a.PriceSnapshot);
-
-            double cancellationRate = total > 0 ? Math.Round((double)(cancelled + noShow) / total * 100.0, 1) : 0.0;
-
-            // En çok tercih edilen hizmetler
-            var topServices = appointments
-                .Where(a => a.Status == AppointmentStatus.Completed)
-                .GroupBy(a => new { a.ServiceId, a.Service.Name })
+                .GroupBy(a => new { a.ServiceId, ServiceName = a.Service.Name })
                 .Select(g => new TopServiceReportDto
                 {
                     ServiceId = g.Key.ServiceId,
-                    ServiceName = g.Key.Name,
+                    ServiceName = g.Key.ServiceName,
                     AppointmentCount = g.Count(),
                     TotalRevenue = g.Sum(x => x.PriceSnapshot)
                 })
                 .OrderByDescending(x => x.AppointmentCount)
                 .Take(5)
-                .ToList();
-
-            // İncelemeler / Puanlar
-            var reviews = await _unitOfWork.Repository<Review>().Query()
-                .Where(r => r.BusinessId == businessId.Value)
-                .Select(r => new { r.Rating, r.Appointment.StaffProfileId })
                 .ToListAsync(cancellationToken);
 
-            double businessAvgRating = reviews.Count > 0 ? Math.Round(reviews.Average(r => r.Rating), 1) : 0.0;
+            // 3) SQL-side işletme ortalama puanı + personel puanları
+            var reviewsQuery = _unitOfWork.Repository<Review>().QueryAsNoTracking()
+                .Where(r => r.BusinessId == businessId.Value);
 
-            // Personel Performansı
-            var staffPerformances = appointments
+            if (query.BranchId.HasValue)
+            {
+                reviewsQuery = reviewsQuery.Where(r => r.Appointment.BranchId == query.BranchId.Value);
+            }
+
+            var overallReviewStats = await reviewsQuery
+                .GroupBy(_ => 1)
+                .Select(g => new
+                {
+                    Avg = g.Average(r => (double)r.Rating),
+                    Count = g.Count()
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            var businessAvgRating = overallReviewStats != null ? Math.Round(overallReviewStats.Avg, 1) : 0.0;
+
+            var staffRatingMap = await reviewsQuery
+                .GroupBy(r => r.Appointment.StaffProfileId)
+                .Select(g => new
+                {
+                    StaffProfileId = g.Key,
+                    Avg = g.Average(r => (double)r.Rating)
+                })
+                .ToDictionaryAsync(x => x.StaffProfileId, x => Math.Round(x.Avg, 1), cancellationToken);
+
+            // 4) SQL-side personel performansı (RAM'e sadece personel sayısı kadar satır gelir)
+            var staffAggs = await appointmentsQuery
                 .GroupBy(a => new
                 {
                     a.StaffProfileId,
-                    FullName = $"{a.StaffProfile.BusinessMember.User.FirstName} {a.StaffProfile.BusinessMember.User.LastName}"
+                    FirstName = a.StaffProfile.BusinessMember.User.FirstName,
+                    LastName = a.StaffProfile.BusinessMember.User.LastName
                 })
-                .Select(g =>
+                .Select(g => new
                 {
-                    var staffReviews = reviews.Where(r => r.StaffProfileId == g.Key.StaffProfileId).ToList();
-                    double staffAvg = staffReviews.Count > 0 ? Math.Round(staffReviews.Average(r => r.Rating), 1) : 0.0;
-
-                    return new StaffPerformanceReportDto
-                    {
-                        StaffProfileId = g.Key.StaffProfileId,
-                        StaffFullName = g.Key.FullName,
-                        CompletedAppointments = g.Count(x => x.Status == AppointmentStatus.Completed),
-                        TotalRevenue = g.Where(x => x.Status == AppointmentStatus.Completed).Sum(x => x.PriceSnapshot),
-                        AverageRating = staffAvg
-                    };
+                    g.Key.StaffProfileId,
+                    g.Key.FirstName,
+                    g.Key.LastName,
+                    CompletedAppointments = g.Count(x => x.Status == AppointmentStatus.Completed),
+                    TotalRevenue = g.Where(x => x.Status == AppointmentStatus.Completed).Sum(x => x.PriceSnapshot)
                 })
                 .OrderByDescending(x => x.TotalRevenue)
-                .ToList();
+                .ToListAsync(cancellationToken);
+
+            var staffPerformances = staffAggs.Select(s => new StaffPerformanceReportDto
+            {
+                StaffProfileId = s.StaffProfileId,
+                StaffFullName = $"{s.FirstName} {s.LastName}".Trim(),
+                CompletedAppointments = s.CompletedAppointments,
+                TotalRevenue = s.TotalRevenue,
+                AverageRating = staffRatingMap.TryGetValue(s.StaffProfileId, out var avg) ? avg : 0.0
+            }).ToList();
 
             var response = new DashboardSummaryResponseDto
             {

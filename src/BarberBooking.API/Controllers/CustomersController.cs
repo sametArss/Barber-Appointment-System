@@ -53,10 +53,10 @@ namespace BarberBooking.API.Controllers
             return Ok(result);
         }
 
-        [HttpPost("favorites/{businessId:guid}/toggle")]
-        public async Task<IActionResult> ToggleFavorite([FromRoute] Guid businessId, CancellationToken cancellationToken)
+        [HttpPost("favorites/{branchId:guid}/toggle")]
+        public async Task<IActionResult> ToggleFavorite([FromRoute] Guid branchId, CancellationToken cancellationToken)
         {
-            var result = await _customerService.ToggleFavoriteAsync(businessId, cancellationToken);
+            var result = await _customerService.ToggleFavoriteAsync(branchId, cancellationToken);
             if (!result.Success)
             {
                 return StatusCode(result.StatusCode, result);

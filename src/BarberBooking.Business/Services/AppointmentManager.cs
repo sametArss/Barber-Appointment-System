@@ -224,13 +224,14 @@ namespace BarberBooking.Business.Services
                 return DataResult<AppointmentResponseDto>.Fail("Seçilen personel bu hizmeti vermemektedir.", 400);
             }
 
-            var targetStaffProfile = await _unitOfWork.Repository<StaffProfile>().Query()
+            var targetStaffProfile = await _unitOfWork.Repository<StaffProfile>().QueryAsNoTracking()
+                .IgnoreQueryFilters()
                 .Include(sp => sp.BusinessMember)
                 .FirstOrDefaultAsync(sp => sp.Id == request.StaffProfileId, cancellationToken);
 
-            if (targetStaffProfile == null)
+            if (targetStaffProfile == null || !targetStaffProfile.IsBookable || !targetStaffProfile.BusinessMember.IsActive || targetStaffProfile.BusinessMember.BusinessId != branch.BusinessId)
             {
-                return DataResult<AppointmentResponseDto>.Fail("Seçilen personel bulunamadı.", 404);
+                return DataResult<AppointmentResponseDto>.Fail("Seçilen personel şu an bu şubede randevuya uygun değildir.", 400);
             }
 
             if (targetStaffProfile.BusinessMember.UserId == customerUserId.Value)
@@ -250,12 +251,54 @@ namespace BarberBooking.Business.Services
                 return DataResult<AppointmentResponseDto>.Fail("Geçmiş zamana randevu alınamaz.", 400);
             }
 
-            var hasBlockedSlot = await _unitOfWork.Repository<StaffScheduleException>().AnyAsync(
-                e => e.StaffProfileId == request.StaffProfileId &&
-                     e.BranchId == request.BranchId &&
-                     e.StartAt < endUtc &&
-                     e.EndAt > startUtc,
-                cancellationToken);
+            // Şube kapalı/tatil kontrolü
+            var hasBranchClosure = await _unitOfWork.Repository<BranchScheduleException>().QueryAsNoTracking()
+                .IgnoreQueryFilters()
+                .AnyAsync(
+                    e => e.BranchId == request.BranchId &&
+                         e.StartAt < endUtc &&
+                         e.EndAt > startUtc,
+                    cancellationToken);
+
+            if (hasBranchClosure)
+            {
+                return DataResult<AppointmentResponseDto>.Fail("Şube seçilen tarih/saat aralığında kapalıdır.", 400);
+            }
+
+            // Personel mesai ve mola kontrolü (yerel saat)
+            var localStart = startUtc.ToOffset(TimeSpan.FromHours(3));
+            var localEnd = endUtc.ToOffset(TimeSpan.FromHours(3));
+            var dayOfWeek = localStart.DayOfWeek;
+            var startTimeOnly = TimeOnly.FromDateTime(localStart.DateTime);
+            var endTimeOnly = TimeOnly.FromDateTime(localEnd.DateTime);
+
+            var staffWorkingHour = await _unitOfWork.Repository<StaffWorkingHour>().QueryAsNoTracking()
+                .IgnoreQueryFilters()
+                .Include(wh => wh.Breaks)
+                .FirstOrDefaultAsync(
+                    wh => wh.StaffProfileId == request.StaffProfileId &&
+                          wh.BranchId == request.BranchId &&
+                          wh.DayOfWeek == dayOfWeek,
+                    cancellationToken);
+
+            if (staffWorkingHour == null || startTimeOnly < staffWorkingHour.StartTime || endTimeOnly > staffWorkingHour.EndTime || localEnd.Date != localStart.Date)
+            {
+                return DataResult<AppointmentResponseDto>.Fail("Seçilen saat personelin mesai saatleri dışındadır.", 400);
+            }
+
+            if (staffWorkingHour.Breaks.Any(b => startTimeOnly < b.EndTime && endTimeOnly > b.StartTime))
+            {
+                return DataResult<AppointmentResponseDto>.Fail("Seçilen saat personelin mola aralığıyla çakışmaktadır.", 400);
+            }
+
+            var hasBlockedSlot = await _unitOfWork.Repository<StaffScheduleException>().QueryAsNoTracking()
+                .IgnoreQueryFilters()
+                .AnyAsync(
+                    e => e.StaffProfileId == request.StaffProfileId &&
+                         e.BranchId == request.BranchId &&
+                         e.StartAt < endUtc &&
+                         e.EndAt > startUtc,
+                    cancellationToken);
 
             if (hasBlockedSlot)
             {
@@ -265,13 +308,14 @@ namespace BarberBooking.Business.Services
             await using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
             try
             {
-                // Çift rezervasyon kontrolü (Concurrency & Conflict Prevention)
-                var hasConflict = await _unitOfWork.Repository<Appointment>().AnyAsync(
-                    a => a.StaffProfileId == request.StaffProfileId &&
-                         a.BranchId == request.BranchId &&
-                         (a.Status == AppointmentStatus.Pending || a.Status == AppointmentStatus.Confirmed) &&
-                         a.StartAt < endUtc && a.EndAt > startUtc,
-                    cancellationToken);
+                // Şubeler arası dahil çift rezervasyon kontrolü (DB GIST constraint ile çift katmanlı koruma)
+                var hasConflict = await _unitOfWork.Repository<Appointment>().QueryAsNoTracking()
+                    .IgnoreQueryFilters()
+                    .AnyAsync(
+                        a => a.StaffProfileId == request.StaffProfileId &&
+                             (a.Status == AppointmentStatus.Pending || a.Status == AppointmentStatus.Confirmed) &&
+                             a.StartAt < endUtc && a.EndAt > startUtc,
+                        cancellationToken);
 
                 if (hasConflict)
                 {
@@ -349,11 +393,31 @@ namespace BarberBooking.Business.Services
 
                 return DataResult<AppointmentResponseDto>.Ok(response, "Randevu başarıyla oluşturuldu.");
             }
+            catch (DbUpdateException ex) when (IsOverlapExclusionViolation(ex))
+            {
+                await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+                return DataResult<AppointmentResponseDto>.Fail("Seçilen zaman diliminde personel doludur. Lütfen başka bir slot seçiniz.", 409);
+            }
             catch
             {
                 await _unitOfWork.RollbackTransactionAsync(cancellationToken);
                 throw;
             }
+        }
+
+        private static bool IsOverlapExclusionViolation(DbUpdateException ex)
+        {
+            var inner = ex.InnerException;
+            while (inner != null)
+            {
+                var sqlStateProp = inner.GetType().GetProperty("SqlState");
+                if (sqlStateProp?.GetValue(inner) is string sqlState && sqlState == "23P01")
+                {
+                    return true;
+                }
+                inner = inner.InnerException;
+            }
+            return false;
         }
 
         public async Task<IResult> CancelAppointmentAsync(CancelAppointmentRequestDto request, CancellationToken cancellationToken = default)
@@ -1202,28 +1266,65 @@ namespace BarberBooking.Business.Services
                 cancellationToken);
         }
 
-        public async Task<IDataResult<IReadOnlyList<AppointmentResponseDto>>> GetBranchAppointmentsAsync(Guid branchId, DateOnly? date = null, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<IReadOnlyList<AppointmentResponseDto>>> GetBranchAppointmentsAsync(Guid branchId, DateOnly? date = null, DateOnly? startDate = null, DateOnly? endDate = null, CancellationToken cancellationToken = default)
         {
-            var query = _unitOfWork.Repository<Appointment>().Query()
+            var businessId = _tenantService.BusinessId;
+            if (!businessId.HasValue)
+            {
+                return DataResult<IReadOnlyList<AppointmentResponseDto>>.Fail("İşletme yetkiniz bulunamadı.", 403);
+            }
+
+            // Cross-tenant IDOR koruması: yalnızca kendi işletmesinin şubesini sorgulayabilir
+            var branchOwned = await _unitOfWork.Repository<Branch>().QueryAsNoTracking()
+                .IgnoreQueryFilters()
+                .AnyAsync(b => b.Id == branchId && b.BusinessId == businessId.Value, cancellationToken);
+
+            if (!branchOwned)
+            {
+                return DataResult<IReadOnlyList<AppointmentResponseDto>>.Fail("Bu şubenin randevularına erişim yetkiniz bulunmamaktadır.", 403);
+            }
+
+            // Tarih aralığı hesapla (asla tüm veritabanı geçmişini limitsiz çekmez)
+            DateTimeOffset startUtc;
+            DateTimeOffset endUtc;
+            var tzOffset = TimeSpan.FromHours(3);
+
+            if (date.HasValue)
+            {
+                startUtc = new DateTimeOffset(date.Value.ToDateTime(TimeOnly.MinValue), tzOffset).ToUniversalTime();
+                endUtc = new DateTimeOffset(date.Value.ToDateTime(TimeOnly.MaxValue), tzOffset).ToUniversalTime();
+            }
+            else if (startDate.HasValue || endDate.HasValue)
+            {
+                var rangeStart = startDate ?? endDate!.Value.AddDays(-7);
+                var rangeEnd = endDate ?? startDate!.Value.AddDays(7);
+                if ((rangeEnd.DayNumber - rangeStart.DayNumber) > 62)
+                {
+                    rangeEnd = rangeStart.AddDays(62);
+                }
+
+                startUtc = new DateTimeOffset(rangeStart.ToDateTime(TimeOnly.MinValue), tzOffset).ToUniversalTime();
+                endUtc = new DateTimeOffset(rangeEnd.ToDateTime(TimeOnly.MaxValue), tzOffset).ToUniversalTime();
+            }
+            else
+            {
+                var today = DateOnly.FromDateTime(DateTimeOffset.UtcNow.ToOffset(tzOffset).DateTime);
+                startUtc = new DateTimeOffset(today.AddDays(-30).ToDateTime(TimeOnly.MinValue), tzOffset).ToUniversalTime();
+                endUtc = new DateTimeOffset(today.AddDays(60).ToDateTime(TimeOnly.MaxValue), tzOffset).ToUniversalTime();
+            }
+
+            var appointments = await _unitOfWork.Repository<Appointment>().QueryAsNoTracking()
+                .IgnoreQueryFilters()
                 .Include(a => a.Branch)
                 .Include(a => a.Service)
                 .Include(a => a.StaffProfile).ThenInclude(sp => sp.BusinessMember).ThenInclude(bm => bm.User)
                 .Include(a => a.Customer)
-                .Where(a => a.BranchId == branchId);
-
-            if (date.HasValue)
-            {
-                var dayStart = date.Value.ToDateTime(TimeOnly.MinValue);
-                var dayEnd = date.Value.ToDateTime(TimeOnly.MaxValue);
-                var startUtc = new DateTimeOffset(dayStart, TimeSpan.Zero);
-                var endUtc = new DateTimeOffset(dayEnd, TimeSpan.Zero);
-
-                query = query.Where(a => a.StartAt >= startUtc && a.StartAt <= endUtc);
-            }
-
-            var appointments = await query.OrderBy(a => a.StartAt).ToListAsync(cancellationToken);
-
-            await AutoExpireUnacceptedReschedulesAsync(appointments, cancellationToken);
+                .Where(a => a.BranchId == branchId &&
+                            a.BusinessId == businessId.Value &&
+                            a.StartAt >= startUtc &&
+                            a.StartAt <= endUtc)
+                .OrderBy(a => a.StartAt)
+                .ToListAsync(cancellationToken);
 
             return DataResult<IReadOnlyList<AppointmentResponseDto>>.Ok(appointments.Select(MapToDto).ToList());
         }

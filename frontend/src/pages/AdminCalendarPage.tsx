@@ -150,28 +150,24 @@ export const AdminCalendarPage: React.FC = () => {
 
     setLoadingCalendar(true);
     try {
+      const rangeParam =
+        viewMode === 'daily'
+          ? { date: selectedDate }
+          : (() => {
+              const { start, end } = getWeekBounds(selectedDate);
+              return {
+                startDate: toDateInputValue(start),
+                endDate: toDateInputValue(end),
+              };
+            })();
+
       const [staffRes, apptRes] = await Promise.all([
         bookingService.getBranchStaff(selectedBranchId),
-        adminService.getBranchAppointments(
-          selectedBranchId,
-          viewMode === 'daily' ? selectedDate : undefined,
-        ),
+        adminService.getBranchAppointments(selectedBranchId, rangeParam),
       ]);
 
       setStaffList((staffRes.data ?? []).filter((s) => s.isBookable));
-
-      const rawAppts = apptRes.data ?? [];
-      if (viewMode === 'weekly') {
-        const { start, end } = getWeekBounds(selectedDate);
-        setAppointments(
-          rawAppts.filter((a) => {
-            const dt = new Date(a.startAt);
-            return dt >= start && dt <= end;
-          }),
-        );
-      } else {
-        setAppointments(rawAppts);
-      }
+      setAppointments(apptRes.data ?? []);
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Takvim verileri alınamadı.'));
     } finally {

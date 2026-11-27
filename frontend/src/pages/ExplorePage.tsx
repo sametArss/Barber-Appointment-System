@@ -42,12 +42,18 @@ export const ExplorePage: React.FC = () => {
 
   const areaSearch = Boolean(city.trim() || district.trim());
 
+  const PAGE_SIZE = 20;
+
   const [branches, setBranches] = useState<BranchSearchResponse[]>([]);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => new Set());
+  const [favoriteBranchDetails, setFavoriteBranchDetails] = useState<BranchSearchResponse[]>([]);
   const [onlyFavorites, setOnlyFavorites] = useState(false);
   const [togglingFavoriteId, setTogglingFavoriteId] = useState<string | null>(null);
 
@@ -100,18 +106,64 @@ export const ExplorePage: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (!onlyFavorites || !isAuthenticated) return;
+    favoriteService
+      .getMyFavorites()
+      .then((res) => {
+        if (res.success && res.data) {
+          const branchLookup = new Map(branches.map((b) => [b.branchId, b]));
+          const mapped: BranchSearchResponse[] = res.data.map((f) => {
+            const existing = branchLookup.get(f.branchId);
+            if (existing) return existing;
+            return {
+              branchId: f.branchId,
+              businessId: f.businessId,
+              businessName: f.businessName,
+              businessDescription: f.businessDescription,
+              branchName: f.branchName,
+              address: f.address,
+              city: f.city,
+              district: f.district,
+              phoneNumber: f.phoneNumber,
+              longitude: coords.lng,
+              latitude: coords.lat,
+              distanceMeters: 0,
+              distanceKm: 0,
+              averageRating: f.averageRating,
+              totalReviewCount: f.totalReviewCount,
+              offeredServices: [],
+            };
+          });
+          setFavoriteBranchDetails(mapped);
+        }
+      })
+      .catch(() => {
+        // Fallback: mevcut listeden filtrele
+      });
+  }, [onlyFavorites, isAuthenticated, branches, coords.lat, coords.lng]);
+
   const displayedBranches = useMemo(() => {
     if (!onlyFavorites) return branches;
+    if (favoriteBranchDetails.length > 0) {
+      return favoriteBranchDetails.filter((b) => favoriteIds.has(b.branchId));
+    }
     return branches.filter((b) => favoriteIds.has(b.branchId));
-  }, [branches, onlyFavorites, favoriteIds]);
+  }, [branches, onlyFavorites, favoriteIds, favoriteBranchDetails]);
 
   const fetchNearby = useCallback(
     async (
       targetLat: number,
       targetLng: number,
       filters?: { queryText?: string; city?: string; district?: string; radiusKm?: number | '' },
+      nextPage = 1,
     ) => {
-      setLoading(true);
+      const append = nextPage > 1;
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
       try {
         const activeRadius = filters && 'radiusKm' in filters ? filters.radiusKm : radiusKm;
         const res = await searchService.getNearbyBranches({
@@ -121,18 +173,28 @@ export const ExplorePage: React.FC = () => {
           queryText: filters?.queryText ?? queryText,
           city: filters?.city ?? city,
           district: filters?.district ?? district,
-          pageNumber: 1,
-          pageSize: 20,
+          pageNumber: nextPage,
+          pageSize: PAGE_SIZE,
         });
 
         if (res.success && res.data) {
-          setBranches(res.data);
-          if (res.data.length > 0) {
-            setSelectedBranchId((prev) =>
-              res.data?.some((b) => b.branchId === prev) ? prev : res.data![0].branchId,
-            );
+          const incoming = res.data;
+          setPageNumber(nextPage);
+          setHasMore(incoming.length === PAGE_SIZE);
+          if (append) {
+            setBranches((prev) => {
+              const seen = new Set(prev.map((b) => b.branchId));
+              return [...prev, ...incoming.filter((b) => !seen.has(b.branchId))];
+            });
           } else {
-            setSelectedBranchId(null);
+            setBranches(incoming);
+            if (incoming.length > 0) {
+              setSelectedBranchId((prev) =>
+                incoming.some((b) => b.branchId === prev) ? prev : incoming[0].branchId,
+              );
+            } else {
+              setSelectedBranchId(null);
+            }
           }
         } else {
           toast.error(res.message || 'Şubeler yüklenemedi.');
@@ -140,7 +202,11 @@ export const ExplorePage: React.FC = () => {
       } catch (error) {
         toast.error(getApiErrorMessage(error, 'Yakındaki kuaförler alınamadı.'));
       } finally {
-        setLoading(false);
+        if (append) {
+          setLoadingMore(false);
+        } else {
+          setLoading(false);
+        }
       }
     },
     [city, district, queryText, radiusKm],
@@ -569,6 +635,20 @@ export const ExplorePage: React.FC = () => {
                 </Card>
               );
             })
+          )}
+
+          {!loading && !onlyFavorites && hasMore && (
+            <div className="flex justify-center pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                isLoading={loadingMore}
+                onClick={() => fetchNearby(coords.lat, coords.lng, undefined, pageNumber + 1)}
+                className="w-full rounded-xl border-slate-200 bg-white/80 font-semibold text-slate-700 hover:border-amber-500/50 hover:text-amber-700 dark:border-white/15 dark:bg-slate-900/60 dark:text-slate-200"
+              >
+                Daha Fazla Salon Yükle
+              </Button>
+            </div>
           )}
         </div>
 

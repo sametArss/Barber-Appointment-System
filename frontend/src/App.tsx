@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { RoleGuard } from '@/components/auth/RoleGuard';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { AdminLayout } from '@/layouts/AdminLayout';
 import { CustomerLayout } from '@/layouts/CustomerLayout';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -103,8 +104,9 @@ const AdminHomePage: React.FC = () => {
 
 export function App() {
   return (
-    <BrowserRouter>
-      <Suspense fallback={<PageLoader />}>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Auth & Error Routes */}
           <Route path="/login" element={<LoginPage />} />
@@ -165,8 +167,9 @@ export function App() {
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </Suspense>
-    </BrowserRouter>
+        </Suspense>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 

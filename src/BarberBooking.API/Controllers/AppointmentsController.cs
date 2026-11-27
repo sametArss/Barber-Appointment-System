@@ -124,9 +124,14 @@ namespace BarberBooking.API.Controllers
 
         [HttpGet("branch/{branchId:guid}")]
         [Authorize(Roles = "BusinessOwner,BusinessManager")]
-        public async Task<IActionResult> GetBranchAppointments([FromRoute] Guid branchId, [FromQuery] DateOnly? date, CancellationToken cancellationToken)
+        public async Task<IActionResult> GetBranchAppointments(
+            [FromRoute] Guid branchId,
+            [FromQuery] DateOnly? date,
+            [FromQuery] DateOnly? startDate,
+            [FromQuery] DateOnly? endDate,
+            CancellationToken cancellationToken = default)
         {
-            var result = await _appointmentService.GetBranchAppointmentsAsync(branchId, date, cancellationToken);
+            var result = await _appointmentService.GetBranchAppointmentsAsync(branchId, date, startDate, endDate, cancellationToken);
             if (!result.Success)
             {
                 return StatusCode(result.StatusCode, result);

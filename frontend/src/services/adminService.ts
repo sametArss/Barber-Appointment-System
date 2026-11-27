@@ -71,13 +71,15 @@ export const adminService = {
   // Appointments
   async getBranchAppointments(
     branchId: string,
-    date?: string,
+    dateOrRange?: string | { date?: string; startDate?: string; endDate?: string },
   ): Promise<DataResult<AppointmentResponse[]>> {
+    const params =
+      typeof dateOrRange === 'string'
+        ? { date: dateOrRange }
+        : dateOrRange;
     const { data } = await apiClient.get<DataResult<AppointmentResponse[]>>(
       `/api/appointments/branch/${branchId}`,
-      {
-        params: date ? { date } : undefined,
-      },
+      { params },
     );
     return data;
   },

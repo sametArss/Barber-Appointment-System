@@ -336,10 +336,14 @@ export const HomePage: React.FC = () => {
                         'border-amber-500 ring-1 ring-amber-500/30 dark:border-amber-400 dark:ring-amber-400/35',
                     )}
                   >
-                    {/* Floating Rating Badge */}
+                    {/* Floating Rating Badge (DB) */}
                     <div className="absolute right-3.5 top-3.5 inline-flex items-center gap-1 rounded-full border border-amber-500/25 bg-amber-50/90 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800 shadow-sm backdrop-blur-md dark:border-amber-400/35 dark:bg-slate-950/80 dark:text-amber-300">
                       <Star className="h-3 w-3 fill-amber-400 text-amber-500" />
-                      <span>4.9</span>
+                      <span>
+                        {branch.totalReviewCount && branch.totalReviewCount > 0 && branch.averageRating
+                          ? `${branch.averageRating.toFixed(1)} (${branch.totalReviewCount})`
+                          : 'Yeni'}
+                      </span>
                     </div>
 
                     <CardContent className="p-4 sm:p-5">
