@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   CalendarPlus,
   ChevronDown,
   Compass,
+  Heart,
   LocateFixed,
   MapPin,
   Phone,
@@ -17,7 +18,9 @@ import { toast } from 'sonner';
 import { BranchMap } from '@/components/explore/BranchMap';
 import { Button, Card, CardContent, Skeleton } from '@/components/ui';
 import { cn, formatDistance, getApiErrorMessage } from '@/lib/utils';
+import { favoriteService } from '@/services/favoriteService';
 import { searchService } from '@/services/searchService';
+import { useAuthStore } from '@/store/useAuthStore';
 import type { BranchSearchResponse } from '@/types/booking';
 
 const DEFAULT_COORDS = {
@@ -42,6 +45,65 @@ export const ExplorePage: React.FC = () => {
   const [branches, setBranches] = useState<BranchSearchResponse[]>([]);
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => new Set());
+  const [onlyFavorites, setOnlyFavorites] = useState(false);
+  const [togglingFavoriteId, setTogglingFavoriteId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setFavoriteIds(new Set());
+      setOnlyFavorites(false);
+      return;
+    }
+    favoriteService
+      .getMyFavoriteBranchIds()
+      .then((res) => {
+        if (res.success && res.data) {
+          setFavoriteIds(new Set(res.data));
+        }
+      })
+      .catch(() => {
+        // Favori listesi alınamazsa keşfet akışını kesme
+      });
+  }, [isAuthenticated]);
+
+  const handleToggleFavorite = async (e: React.MouseEvent, branchId: string) => {
+    e.stopPropagation();
+    if (!isAuthenticated) {
+      toast.info('Şubeleri favorilemek için giriş yapmalısınız.');
+      navigate('/login');
+      return;
+    }
+    setTogglingFavoriteId(branchId);
+    try {
+      const res = await favoriteService.toggleFavorite(branchId);
+      if (res.success && res.data) {
+        setFavoriteIds((prev) => {
+          const next = new Set(prev);
+          if (res.data!.isFavorited) {
+            next.add(branchId);
+          } else {
+            next.delete(branchId);
+          }
+          return next;
+        });
+        toast.success(
+          res.message || (res.data.isFavorited ? 'Şube favorilere eklendi.' : 'Şube favorilerden çıkarıldı.'),
+        );
+      }
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Favori durumu güncellenemedi.'));
+    } finally {
+      setTogglingFavoriteId(null);
+    }
+  };
+
+  const displayedBranches = useMemo(() => {
+    if (!onlyFavorites) return branches;
+    return branches.filter((b) => favoriteIds.has(b.branchId));
+  }, [branches, onlyFavorites, favoriteIds]);
 
   const fetchNearby = useCallback(
     async (
@@ -181,6 +243,27 @@ export const ExplorePage: React.FC = () => {
                 <LocateFixed className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                 Konumumu Güncelle
               </Button>
+              {isAuthenticated && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setOnlyFavorites((prev) => !prev)}
+                  className={cn(
+                    'gap-2 rounded-full transition-all',
+                    onlyFavorites
+                      ? 'border-rose-500/50 bg-rose-50 text-rose-700 shadow-sm dark:border-rose-400/50 dark:bg-rose-500/20 dark:text-rose-200'
+                      : 'border-slate-200 bg-white/80 text-slate-700 hover:border-rose-400/50 dark:border-white/15 dark:bg-slate-900/70 dark:text-slate-200',
+                  )}
+                >
+                  <Heart
+                    className={cn(
+                      'h-4 w-4',
+                      onlyFavorites ? 'fill-rose-500 text-rose-500' : 'text-rose-500',
+                    )}
+                  />
+                  Favorilerim ({favoriteIds.size})
+                </Button>
+              )}
             </div>
           </motion.div>
 
@@ -334,23 +417,31 @@ export const ExplorePage: React.FC = () => {
                 </CardContent>
               </Card>
             ))
-          ) : branches.length === 0 ? (
+          ) : displayedBranches.length === 0 ? (
             <Card className="rounded-2xl border-slate-200/80 bg-white/85 backdrop-blur-xl dark:border-amber-500/20 dark:bg-slate-900/65">
               <CardContent className="flex flex-col items-center p-10 text-center">
                 <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
-                  <Scissors className="h-6 w-6" />
+                  {onlyFavorites ? <Heart className="h-6 w-6 text-rose-500" /> : <Scissors className="h-6 w-6" />}
                 </div>
                 <p className="font-serif text-lg font-semibold text-slate-900 dark:text-white">
-                  Seçili kriterlere uygun salon bulunamadı
+                  {onlyFavorites
+                    ? 'Bu filtrede favori salonunuz bulunmuyor'
+                    : 'Seçili kriterlere uygun salon bulunamadı'}
                 </p>
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Şehir/ilçe filtresini temizleyebilir veya mesafeyi genişletebilirsin.
+                  {onlyFavorites
+                    ? 'Salon kartlarındaki kalp ikonuna tıklayarak favori listenizi oluşturabilirsiniz.'
+                    : 'Şehir/ilçe filtresini temizleyebilir veya mesafeyi genişletebilirsin.'}
                 </p>
                 <Button
                   variant="outline"
                   size="sm"
                   className="mt-4 rounded-full"
                   onClick={() => {
+                    if (onlyFavorites) {
+                      setOnlyFavorites(false);
+                      return;
+                    }
                     setQueryText('');
                     setCity('');
                     setDistrict('');
@@ -363,13 +454,14 @@ export const ExplorePage: React.FC = () => {
                     });
                   }}
                 >
-                  Filtreleri Temizle
+                  {onlyFavorites ? 'Tüm Salonları Göster' : 'Filtreleri Temizle'}
                 </Button>
               </CardContent>
             </Card>
           ) : (
-            branches.map((branch) => {
+            displayedBranches.map((branch) => {
               const isSelected = branch.branchId === selectedBranchId;
+              const isFav = favoriteIds.has(branch.branchId);
               return (
                 <Card
                   key={branch.branchId}
@@ -382,18 +474,35 @@ export const ExplorePage: React.FC = () => {
                       'border-amber-500 ring-1 ring-amber-500/30 dark:border-amber-400 dark:ring-amber-400/35',
                   )}
                 >
-                  {/* Floating Rating Badge (DB) */}
-                  <div className="absolute right-3.5 top-3.5 inline-flex items-center gap-1 rounded-full border border-amber-500/25 bg-amber-50/90 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800 shadow-sm backdrop-blur-md dark:border-amber-400/35 dark:bg-slate-950/80 dark:text-amber-300">
-                    <Star className="h-3 w-3 fill-amber-400 text-amber-500" />
-                    <span>
-                      {branch.totalReviewCount && branch.totalReviewCount > 0 && branch.averageRating
-                        ? `${branch.averageRating.toFixed(1)} (${branch.totalReviewCount})`
-                        : 'Yeni'}
-                    </span>
+                  {/* Floating Rating Badge + Favorite Heart */}
+                  <div className="absolute right-3.5 top-3.5 flex items-center gap-1.5">
+                    <div className="inline-flex items-center gap-1 rounded-full border border-amber-500/25 bg-amber-50/90 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800 shadow-sm backdrop-blur-md dark:border-amber-400/35 dark:bg-slate-950/80 dark:text-amber-300">
+                      <Star className="h-3 w-3 fill-amber-400 text-amber-500" />
+                      <span>
+                        {branch.totalReviewCount && branch.totalReviewCount > 0 && branch.averageRating
+                          ? `${branch.averageRating.toFixed(1)} (${branch.totalReviewCount})`
+                          : 'Yeni'}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={togglingFavoriteId === branch.branchId}
+                      onClick={(e) => handleToggleFavorite(e, branch.branchId)}
+                      aria-label={isFav ? 'Favorilerden çıkar' : 'Favorilere ekle'}
+                      title={isFav ? 'Favorilerden çıkar' : 'Favorilere ekle'}
+                      className={cn(
+                        'inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border shadow-sm backdrop-blur-md transition-all disabled:opacity-50',
+                        isFav
+                          ? 'border-rose-400/50 bg-rose-50 text-rose-600 dark:border-rose-400/40 dark:bg-rose-500/20 dark:text-rose-300'
+                          : 'border-slate-200/80 bg-white/90 text-slate-400 hover:border-rose-300 hover:text-rose-500 dark:border-white/15 dark:bg-slate-950/80 dark:text-slate-400 dark:hover:border-rose-400/40 dark:hover:text-rose-300',
+                      )}
+                    >
+                      <Heart className={cn('h-3.5 w-3.5', isFav && 'fill-rose-500 text-rose-500')} />
+                    </button>
                   </div>
 
                   <CardContent className="space-y-3.5 p-4 sm:p-5">
-                    <div className="flex items-start gap-3.5 pr-14">
+                    <div className="flex items-start gap-3.5 pr-24">
                       <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-50 to-orange-100/70 text-amber-700 dark:border-amber-400/25 dark:from-amber-500/15 dark:to-slate-800 dark:text-amber-300">
                         <Scissors className="h-6 w-6" strokeWidth={1.5} />
                       </div>
@@ -469,7 +578,7 @@ export const ExplorePage: React.FC = () => {
             userLocation={coords}
             radiusKm={radiusKm === '' ? null : radiusKm}
             areaSearch={areaSearch}
-            branches={branches}
+            branches={displayedBranches}
             selectedBranchId={selectedBranchId}
             onSelectBranch={setSelectedBranchId}
           />

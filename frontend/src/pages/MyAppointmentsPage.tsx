@@ -4,11 +4,14 @@ import {
   AlertTriangle,
   CalendarCheck,
   CalendarClock,
+  CalendarPlus,
   CheckCircle2,
   Clock,
+  Heart,
   MapPin,
   MessageSquarePlus,
   Plus,
+  RotateCcw,
   Scissors,
   ShieldAlert,
   Star,
@@ -30,8 +33,10 @@ import {
 } from '@/components/ui';
 import { cn, formatCurrency, getApiErrorMessage } from '@/lib/utils';
 import { bookingService } from '@/services/bookingService';
+import { favoriteService } from '@/services/favoriteService';
 import { reviewService } from '@/services/reviewService';
 import { AppointmentStatus, type AppointmentResponse } from '@/types/booking';
+import type { FavoriteBranchResponse } from '@/types/favorite';
 
 type AppointmentTab = 'all' | 'active' | 'pending' | 'past';
 
@@ -75,6 +80,8 @@ export const MyAppointmentsPage: React.FC = () => {
   const navigate = useNavigate();
 
   const [appointments, setAppointments] = useState<AppointmentResponse[]>([]);
+  const [favoriteBranches, setFavoriteBranches] = useState<FavoriteBranchResponse[]>([]);
+  const [removingFavId, setRemovingFavId] = useState<string | null>(null);
   const [reviewedAppointmentIds, setReviewedAppointmentIds] = useState<Set<string>>(
     () => new Set(),
   );
@@ -97,7 +104,15 @@ export const MyAppointmentsPage: React.FC = () => {
   const loadAppointmentsAndReviews = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await bookingService.getMyAppointments();
+      const [res, favRes] = await Promise.all([
+        bookingService.getMyAppointments(),
+        favoriteService.getMyFavorites().catch(() => null),
+      ]);
+
+      if (favRes?.success && favRes.data) {
+        setFavoriteBranches(favRes.data);
+      }
+
       if (res.success && res.data) {
         const list = res.data;
         setAppointments(list);
@@ -256,6 +271,36 @@ export const MyAppointmentsPage: React.FC = () => {
     }
   };
 
+  const handleRemoveFavorite = async (branchId: string) => {
+    setRemovingFavId(branchId);
+    try {
+      const res = await favoriteService.removeFavorite(branchId);
+      if (res.success) {
+        setFavoriteBranches((prev) => prev.filter((f) => f.branchId !== branchId));
+        toast.success('Şube favorilerden çıkarıldı.');
+      }
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Favori kaldırılamadı.'));
+    } finally {
+      setRemovingFavId(null);
+    }
+  };
+
+  const handleQuickRebook = (appt: AppointmentResponse) => {
+    const params = new URLSearchParams({
+      serviceId: appt.serviceId,
+      staffId: appt.staffProfileId,
+      rebook: '1',
+    });
+    navigate(`/book/${appt.branchId}?${params.toString()}`, {
+      state: {
+        preselectedServiceId: appt.serviceId,
+        preselectedStaffProfileId: appt.staffProfileId,
+        isQuickRebook: true,
+      },
+    });
+  };
+
   const tabs: Array<{ id: AppointmentTab; label: string; count: number }> = [
     { id: 'all', label: 'Tümü', count: counts.all },
     { id: 'active', label: 'Aktif', count: counts.active },
@@ -284,6 +329,86 @@ export const MyAppointmentsPage: React.FC = () => {
           Yeni Randevu Al
         </Button>
       </div>
+
+      {/* Favori Şubelerim Hızlı Erişim Bandı */}
+      {favoriteBranches.length > 0 && (
+        <section className="rounded-[20px] border border-rose-500/20 bg-white/80 p-4 shadow-sm backdrop-blur-xl dark:border-rose-400/20 dark:bg-slate-900/60 sm:p-5">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Heart className="h-4 w-4 fill-rose-500 text-rose-500" />
+              <h2 className="font-serif text-base font-semibold text-slate-900 dark:text-white">
+                Favori Şubelerim ({favoriteBranches.length})
+              </h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/explore')}
+              className="cursor-pointer text-xs font-semibold text-amber-700 hover:underline dark:text-amber-400"
+            >
+              Keşfet&apos;te Gör
+            </button>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {favoriteBranches.map((fav) => (
+              <div
+                key={fav.branchId}
+                className="flex flex-col justify-between gap-2.5 rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-amber-500/40 dark:border-white/10 dark:bg-slate-950/50"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                      {fav.businessName}
+                    </p>
+                    <p className="truncate font-serif text-sm font-semibold text-slate-900 dark:text-white">
+                      {fav.branchName}
+                    </p>
+                    <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-slate-500 dark:text-slate-400">
+                      <MapPin className="h-3 w-3 shrink-0 text-amber-500" />
+                      {fav.district}/{fav.city}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={removingFavId === fav.branchId}
+                    onClick={() => handleRemoveFavorite(fav.branchId)}
+                    title="Favorilerden çıkar"
+                    aria-label="Favorilerden çıkar"
+                    className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-500 transition hover:bg-rose-100 disabled:opacity-50 dark:border-rose-400/30 dark:bg-rose-500/15 dark:text-rose-300"
+                  >
+                    <Heart className="h-3.5 w-3.5 fill-rose-500" />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between gap-2 border-t border-slate-200/70 pt-2.5 dark:border-white/10">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
+                    <Star className="h-3 w-3 fill-amber-400 text-amber-500" />
+                    {fav.totalReviewCount > 0
+                      ? `${fav.averageRating.toFixed(1)} (${fav.totalReviewCount})`
+                      : 'Yeni'}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/branch/${fav.branchId}`)}
+                      className="cursor-pointer rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:border-amber-400 hover:text-amber-700 dark:border-white/15 dark:text-slate-300"
+                    >
+                      İncele
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/book/${fav.branchId}`)}
+                      className="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-[#D97706] px-2.5 py-1 text-[11px] font-semibold text-white transition hover:bg-[#B45309] dark:bg-amber-500 dark:text-slate-950"
+                    >
+                      <CalendarPlus className="h-3 w-3" />
+                      Randevu Al
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Modern Segmented Tabs */}
       <div className="flex flex-wrap gap-2.5">
@@ -473,6 +598,17 @@ export const MyAppointmentsPage: React.FC = () => {
                   </p>
 
                   <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleQuickRebook(appt)}
+                      title={`${appt.staffFullName} ile ${appt.serviceName} için tekrar randevu al`}
+                      className="h-9 gap-1.5 rounded-xl border-amber-500/35 bg-amber-50/70 text-xs font-semibold text-amber-800 hover:border-amber-500 hover:bg-amber-100/80 dark:border-amber-400/35 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      Tekrar Al
+                    </Button>
+
                     {canCancel && (
                       <Button
                         variant="outline"

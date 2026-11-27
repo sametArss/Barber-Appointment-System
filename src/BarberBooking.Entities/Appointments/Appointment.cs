@@ -48,6 +48,9 @@ namespace BarberBooking.Entities.Appointments
 
         public DateTimeOffset? RescheduleProposedAt { get; set; }
 
+        // Otomatik randevu hatırlatma bildiriminin gönderildiği zaman (idempotency için)
+        public DateTimeOffset? ReminderSentAt { get; set; }
+
         public User Customer { get; set; } = null!;
 
         public Business Business { get; set; } = null!;

@@ -11,7 +11,7 @@ import {
   UserCheck,
 } from 'lucide-react';
 import axios from 'axios';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   BOOKING_STEPS,
@@ -26,6 +26,7 @@ import {
 import { Button, Skeleton } from '@/components/ui';
 import { cn, formatCurrency, getApiErrorMessage } from '@/lib/utils';
 import { bookingService } from '@/services/bookingService';
+import { searchService } from '@/services/searchService';
 import { useAuthStore } from '@/store/useAuthStore';
 import type {
   AppointmentResponse,
@@ -40,14 +41,26 @@ import type {
 interface BookingLocationState {
   branch?: BranchSearchResponse;
   preselectedServiceId?: string;
+  preselectedStaffProfileId?: string;
+  isQuickRebook?: boolean;
 }
 
 export const BookingPage: React.FC = () => {
   const { branchId } = useParams<{ branchId: string }>();
+  const [searchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
   const currentUserId = useAuthStore((s) => s.user?.id ?? null);
   const routeState = location.state as BookingLocationState | null;
+
+  const preselectedServiceId =
+    routeState?.preselectedServiceId ?? searchParams.get('serviceId') ?? undefined;
+  const preselectedStaffProfileId =
+    routeState?.preselectedStaffProfileId ?? searchParams.get('staffId') ?? undefined;
+  const isQuickRebook = Boolean(routeState?.isQuickRebook || searchParams.get('rebook') === '1');
+
+  const [branchInfo, setBranchInfo] = useState<BranchSearchResponse | undefined>(routeState?.branch);
+  const [quickRebookApplied, setQuickRebookApplied] = useState(false);
 
   const [step, setStep] = useState<number>(1);
   const [services, setServices] = useState<BranchServiceResponse[]>([]);
@@ -73,7 +86,7 @@ export const BookingPage: React.FC = () => {
   const [conflictMessage, setConflictMessage] = useState<string | null>(null);
   const [createdAppointment, setCreatedAppointment] = useState<AppointmentResponse | null>(null);
 
-  const businessId = selectedStaff?.businessId ?? routeState?.branch?.businessId ?? null;
+  const businessId = selectedStaff?.businessId ?? branchInfo?.businessId ?? null;
 
   useEffect(() => {
     if (!branchId) return;
@@ -84,20 +97,46 @@ export const BookingPage: React.FC = () => {
     Promise.all([
       bookingService.getBranchServices(branchId),
       bookingService.getBranchStaff(branchId),
+      routeState?.branch ? Promise.resolve(null) : searchService.getBranch(branchId).catch(() => null),
     ])
-      .then(([srvRes, staffRes]) => {
+      .then(([srvRes, staffRes, branchRes]) => {
         if (cancelled) return;
+        if (branchRes?.success && branchRes.data) {
+          setBranchInfo(branchRes.data);
+        }
+
         const activeServices = (srvRes.data ?? []).filter((s) => s.isActive);
         const bookableStaff = (staffRes.data ?? []).filter((s) => s.isBookable);
 
         setServices(activeServices);
         setStaffList(bookableStaff);
 
-        if (routeState?.preselectedServiceId) {
-          const found = activeServices.find(
-            (s) => s.serviceId === routeState.preselectedServiceId,
+        let matchedService: BranchServiceResponse | null = null;
+        if (preselectedServiceId) {
+          matchedService = activeServices.find((s) => s.serviceId === preselectedServiceId) ?? null;
+          if (matchedService) {
+            setSelectedService(matchedService);
+          }
+        }
+
+        if (matchedService && preselectedStaffProfileId) {
+          const matchedStaff = bookableStaff.find(
+            (st) =>
+              st.id === preselectedStaffProfileId &&
+              st.userId !== currentUserId &&
+              (st.assignedServiceIds ?? []).includes(matchedService!.serviceId),
           );
-          if (found) setSelectedService(found);
+          if (matchedStaff) {
+            setSelectedStaff(matchedStaff);
+            setStep(3);
+            setQuickRebookApplied(true);
+            if (isQuickRebook) {
+              toast.success('Önceki hizmet ve berberiniz otomatik seçildi — sadece tarih & saat seçin!');
+            }
+          } else if (isQuickRebook) {
+            setStep(2);
+            toast.info('Önceki berberiniz şu an bu hizmet için uygun değil. Lütfen başka bir berber seçin.');
+          }
         }
       })
       .catch((error) => {
@@ -112,7 +151,14 @@ export const BookingPage: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [branchId, routeState?.preselectedServiceId]);
+  }, [
+    branchId,
+    preselectedServiceId,
+    preselectedStaffProfileId,
+    isQuickRebook,
+    currentUserId,
+    routeState?.branch,
+  ]);
 
   const fetchSlotsAndSchedule = useCallback(async () => {
     if (!branchId || !selectedStaff || !selectedService || !selectedDate) return;
@@ -248,15 +294,14 @@ export const BookingPage: React.FC = () => {
           </button>
 
           <h1 className="font-serif text-3xl font-semibold tracking-tight text-slate-900 dark:text-[#FAF8F5] sm:text-4xl">
-            {routeState?.branch?.branchName ?? 'Randevu Oluştur'}
+            {branchInfo?.branchName ?? 'Randevu Oluştur'}
           </h1>
           <p className="mt-1.5 flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
-            {routeState?.branch ? (
+            {branchInfo ? (
               <>
                 <MapPin className="h-4 w-4 text-[#D97706] dark:text-amber-400" />
                 <span>
-                  {routeState.branch.businessName} • {routeState.branch.district}/
-                  {routeState.branch.city}
+                  {branchInfo.businessName} • {branchInfo.district}/{branchInfo.city}
                 </span>
               </>
             ) : (
@@ -269,6 +314,25 @@ export const BookingPage: React.FC = () => {
           Adım {step} / 4
         </span>
       </div>
+
+      {quickRebookApplied && selectedService && selectedStaff && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.08] px-4 py-3 text-xs text-emerald-900 dark:border-emerald-400/30 dark:bg-emerald-500/12 dark:text-emerald-200">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+            <span>
+              <strong>Hızlı Tekrar Randevu:</strong> {selectedService.serviceName} &amp;{' '}
+              {selectedStaff.fullName} sizin için otomatik seçildi. Sadece tarih &amp; saat seçmeniz yeterli!
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setStep(1)}
+            className="cursor-pointer font-semibold underline decoration-emerald-500/60 underline-offset-2 hover:text-emerald-700 dark:hover:text-emerald-100"
+          >
+            Hizmeti Değiştir
+          </button>
+        </div>
+      )}
 
       {/* Modern Glassmorphic Stepper */}
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
@@ -591,9 +655,9 @@ export const BookingPage: React.FC = () => {
           </AnimatePresence>
         </div>
 
-        {/* Right: Sticky Live Booking Summary Receipt */}
+          {/* Right: Sticky Live Booking Summary Receipt */}
         <BookingSummarySidebar
-          branchName={routeState?.branch?.branchName}
+          branchName={branchInfo?.branchName}
           selectedService={selectedService}
           selectedStaff={selectedStaff}
           selectedDate={selectedDate}

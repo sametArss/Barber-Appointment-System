@@ -966,6 +966,7 @@ namespace BarberBooking.Business.Services
 
                 appointment.StartAt = newStartUtc;
                 appointment.EndAt = newEndUtc;
+                appointment.ReminderSentAt = null; // Yeni saat için 2 saat kala hatırlatma tekrar gönderilebilsin
                 appointment.ProposedStartAt = null;
                 appointment.ProposedEndAt = null;
                 appointment.RescheduleNote = null;

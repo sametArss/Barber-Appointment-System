@@ -2,6 +2,7 @@ import React from 'react';
 import {
   ArrowLeft,
   CalendarPlus,
+  Heart,
   MapPin,
   Navigation,
   Phone,
@@ -13,7 +14,7 @@ import {
   Users,
 } from 'lucide-react';
 import { Button } from '@/components/ui';
-import { formatCurrency, formatDistance } from '@/lib/utils';
+import { cn, formatCurrency, formatDistance } from '@/lib/utils';
 import type { BranchSearchResponse } from '@/types/booking';
 
 interface BranchHeroSectionProps {
@@ -24,6 +25,9 @@ interface BranchHeroSectionProps {
   minPrice: number | null;
   averageRating: number | null;
   reviewCount: number;
+  isFavorited?: boolean;
+  togglingFavorite?: boolean;
+  onToggleFavorite?: () => void;
   onBack: () => void;
   onShare: () => void;
   onBook: () => void;
@@ -37,6 +41,9 @@ export const BranchHeroSection: React.FC<BranchHeroSectionProps> = ({
   minPrice,
   averageRating,
   reviewCount,
+  isFavorited = false,
+  togglingFavorite = false,
+  onToggleFavorite,
   onBack,
   onShare,
   onBook,
@@ -58,14 +65,38 @@ export const BranchHeroSection: React.FC<BranchHeroSectionProps> = ({
           Salon Listesine Dön
         </button>
 
-        <button
-          type="button"
-          onClick={onShare}
-          className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200/90 bg-white/80 px-3.5 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:border-amber-500/45 hover:text-[#D97706] dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200 dark:hover:border-amber-400/45 dark:hover:text-amber-400"
-        >
-          <Share2 className="h-3.5 w-3.5" />
-          Paylaş
-        </button>
+        <div className="flex items-center gap-2">
+          {onToggleFavorite && (
+            <button
+              type="button"
+              disabled={togglingFavorite || !branch}
+              onClick={onToggleFavorite}
+              className={cn(
+                'inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all disabled:opacity-50',
+                isFavorited
+                  ? 'border-rose-500/40 bg-rose-50 text-rose-600 shadow-sm dark:border-rose-400/40 dark:bg-rose-500/15 dark:text-rose-300'
+                  : 'border-slate-200/90 bg-white/80 text-slate-700 hover:border-rose-400/50 hover:text-rose-600 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200 dark:hover:border-rose-400/45 dark:hover:text-rose-300',
+              )}
+            >
+              <Heart
+                className={cn(
+                  'h-3.5 w-3.5 transition-transform',
+                  isFavorited && 'fill-rose-500 text-rose-500 scale-110',
+                )}
+              />
+              {isFavorited ? 'Favorilerde' : 'Favorile'}
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={onShare}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200/90 bg-white/80 px-3.5 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:border-amber-500/45 hover:text-[#D97706] dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200 dark:hover:border-amber-400/45 dark:hover:text-amber-400"
+          >
+            <Share2 className="h-3.5 w-3.5" />
+            Paylaş
+          </button>
+        </div>
       </div>
 
       {/* Editorial Hero Card */}

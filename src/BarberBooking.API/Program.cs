@@ -1,3 +1,4 @@
+using BarberBooking.API.BackgroundServices;
 using BarberBooking.API.Filters;
 using BarberBooking.API.Middlewares;
 using BarberBooking.Business;
@@ -18,6 +19,7 @@ var builder = WebApplication.CreateBuilder(args);
 // DataAccess & Business Kayıtları
 builder.Services.AddDataAccess(builder.Configuration);
 builder.Services.AddBusinessServices(builder.Configuration);
+builder.Services.AddHostedService<AppointmentReminderBackgroundService>();
 
 // Exception Handling & ProblemDetails
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();

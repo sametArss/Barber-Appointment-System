@@ -9,6 +9,7 @@ import {
 } from '@/components/branch';
 import { getApiErrorMessage } from '@/lib/utils';
 import { bookingService } from '@/services/bookingService';
+import { favoriteService } from '@/services/favoriteService';
 import { reviewService } from '@/services/reviewService';
 import { searchService } from '@/services/searchService';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -41,18 +42,21 @@ export const BranchDetailPage: React.FC = () => {
   const [staff, setStaff] = useState<StaffResponse[]>([]);
   const [reviews, setReviews] = useState<ReviewResponse[]>([]);
   const [myAppointments, setMyAppointments] = useState<AppointmentResponse[]>([]);
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => new Set());
+  const [togglingFavorite, setTogglingFavorite] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const loadBranchDetails = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     try {
-      const [branchRes, srvRes, staffRes, revRes, myApptRes] = await Promise.all([
+      const [branchRes, srvRes, staffRes, revRes, myApptRes, favRes] = await Promise.all([
         searchService.getBranch(id),
         bookingService.getBranchServices(id),
         bookingService.getBranchStaff(id),
         reviewService.getBranchReviews(id),
         isAuthenticated ? bookingService.getMyAppointments().catch(() => null) : Promise.resolve(null),
+        isAuthenticated ? favoriteService.getMyFavoriteBranchIds().catch(() => null) : Promise.resolve(null),
       ]);
 
       if (branchRes.data) {
@@ -67,6 +71,9 @@ export const BranchDetailPage: React.FC = () => {
       setReviews(revRes.data ?? []);
       if (myApptRes?.success && myApptRes.data) {
         setMyAppointments(myApptRes.data);
+      }
+      if (favRes?.success && favRes.data) {
+        setFavoriteIds(new Set(favRes.data));
       }
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Şube detayları alınamadı.'));
@@ -124,6 +131,37 @@ export const BranchDetailPage: React.FC = () => {
     }
   };
 
+  const isFavorited = Boolean(id && favoriteIds.has(id));
+
+  const handleToggleFavorite = async () => {
+    if (!id) return;
+    if (!isAuthenticated) {
+      toast.info('Şubeleri favorilemek için giriş yapmalısınız.');
+      navigate('/login');
+      return;
+    }
+    setTogglingFavorite(true);
+    try {
+      const res = await favoriteService.toggleFavorite(id);
+      if (res.success && res.data) {
+        setFavoriteIds((prev) => {
+          const next = new Set(prev);
+          if (res.data!.isFavorited) {
+            next.add(id);
+          } else {
+            next.delete(id);
+          }
+          return next;
+        });
+        toast.success(res.message || (res.data.isFavorited ? 'Şube favorilere eklendi.' : 'Şube favorilerden çıkarıldı.'));
+      }
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Favori durumu güncellenemedi.'));
+    } finally {
+      setTogglingFavorite(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-6xl space-y-8 pb-16">
       <BranchHeroSection
@@ -134,6 +172,9 @@ export const BranchDetailPage: React.FC = () => {
         minPrice={minPrice}
         averageRating={averageRating}
         reviewCount={reviewCount}
+        isFavorited={isFavorited}
+        togglingFavorite={togglingFavorite}
+        onToggleFavorite={handleToggleFavorite}
         onBack={() => navigate(-1)}
         onShare={handleShare}
         onBook={() => navigate(`/book/${id}`, { state: { branch } })}

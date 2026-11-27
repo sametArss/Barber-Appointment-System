@@ -10,12 +10,17 @@ namespace BarberBooking.DataAccess.Configurations
         {
             builder.ToTable("Favorites");
 
-            // Bir kullanıcının aynı işletmeyi tek bir kez favoriye almasını sağlar
-            builder.HasKey(f => new { f.UserId, f.BusinessId });
+            // Bir kullanıcının aynı şubeyi tek bir kez favoriye almasını sağlar
+            builder.HasKey(f => new { f.UserId, f.BranchId });
 
             builder.HasOne(f => f.User)
                 .WithMany()
                 .HasForeignKey(f => f.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(f => f.Branch)
+                .WithMany()
+                .HasForeignKey(f => f.BranchId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasOne(f => f.Business)

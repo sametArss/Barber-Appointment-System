@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using FluentValidation;
 using BarberBooking.Business.Security;
 using BarberBooking.Business.Services;
@@ -36,6 +36,8 @@ namespace BarberBooking.Business
             services.AddScoped<INotificationService, NotificationManager>();
             services.AddScoped<IReportingService, ReportingManager>();
             services.AddScoped<ICustomerService, CustomerManager>();
+            services.AddScoped<IFavoriteService, FavoriteManager>();
+            services.AddScoped<IAppointmentReminderProcessor, AppointmentReminderProcessor>();
 
             return services;
         }

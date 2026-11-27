@@ -7,12 +7,16 @@ namespace BarberBooking.Entities.Favorites
     {
         public Guid UserId { get; set; }
 
+        public Guid BranchId { get; set; }
+
         public Guid BusinessId { get; set; }
 
         public DateTimeOffset CreatedAt { get; set; }
             = DateTimeOffset.UtcNow;
 
         public User User { get; set; } = null!;
+
+        public Branch Branch { get; set; } = null!;
 
         public Business Business { get; set; } = null!;
     }

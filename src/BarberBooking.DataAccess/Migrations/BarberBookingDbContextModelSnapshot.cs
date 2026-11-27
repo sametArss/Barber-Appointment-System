@@ -69,6 +69,9 @@ namespace BarberBooking.DataAccess.Migrations
                     b.Property<DateTimeOffset?>("ProposedStartAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTimeOffset?>("ReminderSentAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("RescheduleNote")
                         .HasColumnType("text");
 
@@ -379,13 +382,18 @@ namespace BarberBooking.DataAccess.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("BusinessId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.HasKey("UserId", "BusinessId");
+                    b.HasKey("UserId", "BranchId");
+
+                    b.HasIndex("BranchId");
 
                     b.HasIndex("BusinessId");
 
@@ -1169,6 +1177,12 @@ namespace BarberBooking.DataAccess.Migrations
 
             modelBuilder.Entity("BarberBooking.Entities.Favorites.Favorite", b =>
                 {
+                    b.HasOne("BarberBooking.Entities.Businesses.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("BarberBooking.Entities.Businesses.Business", "Business")
                         .WithMany()
                         .HasForeignKey("BusinessId")
@@ -1180,6 +1194,8 @@ namespace BarberBooking.DataAccess.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Branch");
 
                     b.Navigation("Business");
 
