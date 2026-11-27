@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
+  CalendarClock,
   CalendarDays,
   CheckCircle2,
   ChevronLeft,
@@ -16,6 +17,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { NoShowConfirmModal } from '@/components/appointments/NoShowConfirmModal';
+import { ProposeRescheduleModal } from '@/components/appointments/ProposeRescheduleModal';
 import {
   Badge,
   Button,
@@ -112,6 +114,7 @@ export const AdminCalendarPage: React.FC = () => {
   // Selected appointment quick action modal
   const [selectedAppt, setSelectedAppt] = useState<AppointmentResponse | null>(null);
   const [confirmNoShowModal, setConfirmNoShowModal] = useState(false);
+  const [rescheduleAppt, setRescheduleAppt] = useState<AppointmentResponse | null>(null);
   const [actionNote, setActionNote] = useState('');
   const [updatingStatus, setUpdatingStatus] = useState<AppointmentStatus | null>(null);
 
@@ -624,6 +627,22 @@ export const AdminCalendarPage: React.FC = () => {
                       </div>
                     )}
 
+                    {selectedAppt.hasPendingReschedule && selectedAppt.proposedStartAt && (
+                      <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/35 bg-amber-50/90 p-3 text-xs text-amber-900 dark:bg-amber-500/12 dark:text-amber-200">
+                        <CalendarClock className="mt-0.5 h-4 w-4 shrink-0 text-[#D97706] dark:text-amber-400" />
+                        <span>
+                          Müşteriye{' '}
+                          <strong>
+                            {new Date(selectedAppt.proposedStartAt).toLocaleString('tr-TR', {
+                              dateStyle: 'medium',
+                              timeStyle: 'short',
+                            })}
+                          </strong>{' '}
+                          yeni saat teklifi gönderildi; müşteri onayı bekleniyor.
+                        </span>
+                      </div>
+                    )}
+
                     {/* Quick Action Buttons */}
                     <div className="grid gap-2.5 sm:grid-cols-3">
                       <Button
@@ -656,6 +675,24 @@ export const AdminCalendarPage: React.FC = () => {
                         Gelmedi
                       </Button>
                     </div>
+
+                    {isConfirmed && isBeforeStart && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-10 w-full gap-2 rounded-xl border-amber-500/40 text-xs font-semibold text-[#B45309] hover:bg-amber-50 dark:border-amber-400/35 dark:text-amber-300 dark:hover:bg-amber-500/15"
+                        onClick={() => {
+                          const target = selectedAppt;
+                          setSelectedAppt(null);
+                          setRescheduleAppt(target);
+                        }}
+                      >
+                        <CalendarClock className="h-4 w-4" />
+                        {selectedAppt.hasPendingReschedule
+                          ? 'Saat Değişikliği Teklifini Güncelle'
+                          : 'Yeni Saat Teklif Et (Reschedule)'}
+                      </Button>
+                    )}
                   </div>
                 );
               })()}
@@ -675,6 +712,12 @@ export const AdminCalendarPage: React.FC = () => {
         loading={updatingStatus === AppointmentStatus.NoShow}
         onCancel={() => setConfirmNoShowModal(false)}
         onConfirm={() => void handleQuickStatusUpdate(AppointmentStatus.NoShow)}
+      />
+
+      <ProposeRescheduleModal
+        appointment={rescheduleAppt}
+        onClose={() => setRescheduleAppt(null)}
+        onSuccess={fetchCalendarData}
       />
     </div>
   );

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import {
   AlertTriangle,
   CalendarCheck,
+  CalendarClock,
   CheckCircle2,
   Clock,
   MapPin,
@@ -84,6 +85,7 @@ export const MyAppointmentsPage: React.FC = () => {
   const [cancelTarget, setCancelTarget] = useState<AppointmentResponse | null>(null);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelling, setCancelling] = useState(false);
+  const [respondingRescheduleId, setRespondingRescheduleId] = useState<string | null>(null);
 
   // Review modal state
   const [reviewTarget, setReviewTarget] = useState<AppointmentResponse | null>(null);
@@ -190,6 +192,27 @@ export const MyAppointmentsPage: React.FC = () => {
       toast.error(getApiErrorMessage(error, 'Randevu iptal edilemedi.'));
     } finally {
       setCancelling(false);
+    }
+  };
+
+  const handleRespondReschedule = async (appointmentId: string, accept: boolean) => {
+    setRespondingRescheduleId(appointmentId);
+    try {
+      const res = await bookingService.respondToReschedule({ appointmentId, accept });
+      if (!res.success) {
+        toast.error(res.message || 'Yanıtınız işlenemedi.');
+        return;
+      }
+      toast.success(
+        accept
+          ? 'Yeni randevu saati onaylandı!'
+          : 'Saat değişikliği reddedildi ve randevu iptal edildi.',
+      );
+      await loadAppointmentsAndReviews();
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'İşlem gerçekleştirilemedi.'));
+    } finally {
+      setRespondingRescheduleId(null);
     }
   };
 
@@ -377,6 +400,60 @@ export const MyAppointmentsPage: React.FC = () => {
                     {formatCurrency(appt.priceSnapshot)}
                   </span>
                 </div>
+
+                {appt.hasPendingReschedule && appt.proposedStartAt && (
+                  <div className="mt-3.5 space-y-3 rounded-[16px] border border-amber-500/40 bg-amber-50/85 p-4 dark:border-amber-400/35 dark:bg-amber-500/10">
+                    <div className="flex items-start gap-2.5">
+                      <CalendarClock className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[#D97706] dark:text-amber-400" />
+                      <div className="min-w-0 space-y-1 text-xs">
+                        <p className="font-bold text-slate-900 dark:text-white">
+                          Salon Yeni Saat Teklif Etti!
+                        </p>
+                        <p className="text-slate-700 dark:text-slate-200">
+                          Önerilen Yeni Saat:{' '}
+                          <strong className="text-[#B45309] dark:text-amber-300">
+                            {new Date(appt.proposedStartAt).toLocaleString('tr-TR', {
+                              dateStyle: 'medium',
+                              timeStyle: 'short',
+                            })}
+                          </strong>
+                        </p>
+                        {appt.rescheduleNote && (
+                          <p className="italic text-slate-600 dark:text-slate-300">
+                            &ldquo;{appt.rescheduleNote}&rdquo;
+                          </p>
+                        )}
+                        <p className="text-[11px] text-amber-800/90 dark:text-amber-200/80">
+                          Mevcut randevu saatine kadar onaylamazsanız randevu otomatik iptal
+                          edilecektir.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        disabled={respondingRescheduleId === appt.id}
+                        isLoading={respondingRescheduleId === appt.id}
+                        onClick={() => void handleRespondReschedule(appt.id, true)}
+                        className="h-9 gap-1.5 rounded-xl bg-emerald-600 px-4 text-xs font-semibold text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:text-slate-950"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        Yeni Saati Onayla
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={respondingRescheduleId === appt.id}
+                        onClick={() => void handleRespondReschedule(appt.id, false)}
+                        className="h-9 gap-1.5 rounded-xl border-red-300 bg-white/80 px-4 text-xs font-semibold text-red-600 hover:bg-red-50 dark:border-red-500/35 dark:bg-red-500/10 dark:text-red-300"
+                      >
+                        <XCircle className="h-3.5 w-3.5" />
+                        Reddet &amp; İptal Et
+                      </Button>
+                    </div>
+                  </div>
+                )}
 
                 {appt.cancellationReason && (
                   <p className="mt-2.5 rounded-xl border border-red-500/20 bg-red-500/[0.06] px-3 py-1.5 text-xs text-red-600 dark:text-red-300">

@@ -37,6 +37,17 @@ namespace BarberBooking.Entities.Appointments
 
         public Guid? CancelledByUserId { get; set; }
 
+        // Randevu saat değişikliği (Reschedule) teklifi alanları
+        public DateTimeOffset? ProposedStartAt { get; set; }
+
+        public DateTimeOffset? ProposedEndAt { get; set; }
+
+        public string? RescheduleNote { get; set; }
+
+        public Guid? RescheduleProposedByUserId { get; set; }
+
+        public DateTimeOffset? RescheduleProposedAt { get; set; }
+
         public User Customer { get; set; } = null!;
 
         public Business Business { get; set; } = null!;

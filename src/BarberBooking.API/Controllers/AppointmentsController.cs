@@ -97,6 +97,23 @@ namespace BarberBooking.API.Controllers
             return Ok(result);
         }
 
+        [HttpPost("reschedule/propose")]
+        [Authorize(Roles = "BusinessOwner,BusinessManager,Employee")]
+        public async Task<IActionResult> ProposeReschedule([FromBody] ProposeRescheduleRequestDto request, CancellationToken cancellationToken)
+        {
+            var result = await _appointmentService.ProposeRescheduleAsync(request, cancellationToken);
+            if (!result.Success) return StatusCode(result.StatusCode, result);
+            return Ok(result);
+        }
+
+        [HttpPost("reschedule/respond")]
+        public async Task<IActionResult> RespondToReschedule([FromBody] RespondRescheduleRequestDto request, CancellationToken cancellationToken)
+        {
+            var result = await _appointmentService.RespondToRescheduleAsync(request, cancellationToken);
+            if (!result.Success) return StatusCode(result.StatusCode, result);
+            return Ok(result);
+        }
+
         [HttpGet("branch/{branchId:guid}")]
         [Authorize(Roles = "BusinessOwner,BusinessManager")]
         public async Task<IActionResult> GetBranchAppointments([FromRoute] Guid branchId, [FromQuery] DateOnly? date, CancellationToken cancellationToken)

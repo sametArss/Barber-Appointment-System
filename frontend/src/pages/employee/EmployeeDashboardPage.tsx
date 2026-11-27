@@ -122,6 +122,7 @@ export const EmployeeDashboardPage: React.FC = () => {
                 appointment={appointment}
                 updating={updatingId === appointment.id}
                 onUpdate={(status) => void updateStatus(appointment, status)}
+                onRefresh={refresh}
               />
             ))}
           </div>

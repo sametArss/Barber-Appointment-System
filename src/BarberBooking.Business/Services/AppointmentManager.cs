@@ -653,6 +653,388 @@ namespace BarberBooking.Business.Services
             }
         }
 
+        private static AppointmentResponseDto MapToDto(Appointment a) => new()
+        {
+            Id = a.Id,
+            CustomerUserId = a.CustomerUserId,
+            CustomerFullName = $"{a.Customer.FirstName} {a.Customer.LastName}".Trim(),
+            CustomerPhoneNumber = a.Customer.PhoneNumber ?? string.Empty,
+            BusinessId = a.BusinessId,
+            BranchId = a.BranchId,
+            BranchName = a.Branch.Name,
+            StaffProfileId = a.StaffProfileId,
+            StaffFullName = $"{a.StaffProfile.BusinessMember.User.FirstName} {a.StaffProfile.BusinessMember.User.LastName}".Trim(),
+            ServiceId = a.ServiceId,
+            ServiceName = a.Service.Name,
+            StartAt = a.StartAt,
+            EndAt = a.EndAt,
+            PriceSnapshot = a.PriceSnapshot,
+            DurationSnapshot = a.DurationSnapshot,
+            Status = (int)a.Status,
+            StatusName = a.Status.ToString(),
+            CancellationReason = a.CancellationReason,
+            HasPendingReschedule = a.Status == AppointmentStatus.Confirmed && a.ProposedStartAt.HasValue,
+            ProposedStartAt = a.ProposedStartAt,
+            ProposedEndAt = a.ProposedEndAt,
+            RescheduleNote = a.RescheduleNote,
+            RescheduleProposedAt = a.RescheduleProposedAt
+        };
+
+        private async Task AutoExpireUnacceptedReschedulesAsync(List<Appointment> appointments, CancellationToken cancellationToken)
+        {
+            var now = DateTimeOffset.UtcNow;
+            var expired = appointments
+                .Where(a => a.Status == AppointmentStatus.Confirmed &&
+                            a.ProposedStartAt.HasValue &&
+                            a.StartAt <= now)
+                .ToList();
+
+            if (expired.Count == 0) return;
+
+            var appointmentRepo = _unitOfWork.Repository<Appointment>();
+            var historyRepo = _unitOfWork.Repository<AppointmentStatusHistory>();
+            const string reason = "Saat değişikliği teklifi randevu saatine kadar onaylanmadığı için otomatik iptal edildi.";
+
+            foreach (var appt in expired)
+            {
+                appt.Status = AppointmentStatus.Cancelled;
+                appt.CancelledAt = now;
+                appt.CancellationReason = reason;
+                appt.ProposedStartAt = null;
+                appt.ProposedEndAt = null;
+                appt.RescheduleNote = null;
+                appt.RescheduleProposedByUserId = null;
+                appt.RescheduleProposedAt = null;
+                appointmentRepo.Update(appt);
+
+                await historyRepo.AddAsync(new AppointmentStatusHistory
+                {
+                    Id = Guid.NewGuid(),
+                    AppointmentId = appt.Id,
+                    OldStatus = AppointmentStatus.Confirmed,
+                    NewStatus = AppointmentStatus.Cancelled,
+                    ChangedByUserId = null,
+                    Note = reason
+                }, cancellationToken);
+            }
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            foreach (var appt in expired)
+            {
+                var dateStr = appt.StartAt.ToOffset(TimeSpan.FromHours(3)).ToString("dd.MM.yyyy HH:mm");
+                await TrySendNotificationAsync(
+                    appt.CustomerUserId,
+                    NotificationType.AppointmentCancelled,
+                    "Randevu Otomatik İptal Edildi",
+                    $"{dateStr} tarihli randevunuz için gönderilen saat değişikliği teklifi zamanında onaylanmadığından randevu otomatik iptal edildi.",
+                    appt.Id,
+                    cancellationToken);
+
+                await TryNotifyBusinessAndStaffAsync(
+                    appt.BusinessId,
+                    appt.StaffProfile?.BusinessMember?.UserId,
+                    NotificationType.AppointmentCancelled,
+                    "Saat Değişikliği Onaylanmadı — İptal",
+                    $"{dateStr} tarihli randevunun saat değişikliği teklifi müşteri tarafından zamanında onaylanmadığı için otomatik iptal edildi.",
+                    appt.Id,
+                    cancellationToken);
+            }
+        }
+
+        public async Task<IResult> ProposeRescheduleAsync(ProposeRescheduleRequestDto request, CancellationToken cancellationToken = default)
+        {
+            var userId = _tenantService.UserId;
+            if (!userId.HasValue)
+            {
+                return Result.Fail("Oturum açmanız gerekmektedir.", 401);
+            }
+
+            var appointmentRepo = _unitOfWork.Repository<Appointment>();
+            var appointment = await appointmentRepo.Query()
+                .IgnoreQueryFilters()
+                .Include(a => a.Branch)
+                .Include(a => a.Service)
+                .Include(a => a.StaffProfile).ThenInclude(sp => sp.BusinessMember)
+                .FirstOrDefaultAsync(a => a.Id == request.AppointmentId, cancellationToken);
+
+            if (appointment == null)
+            {
+                return Result.Fail("Randevu bulunamadı.", 404);
+            }
+
+            var isAssignedStaff = appointment.StaffProfile.BusinessMember.UserId == userId.Value && appointment.StaffProfile.BusinessMember.IsActive;
+            var isBusinessManager = _tenantService.BusinessId.HasValue && _tenantService.BusinessId.Value == appointment.BusinessId;
+
+            if (!isAssignedStaff && !isBusinessManager)
+            {
+                return Result.Fail("Bu randevu için saat değişikliği teklif etme yetkiniz yok.", 403);
+            }
+
+            if (appointment.Status != AppointmentStatus.Confirmed)
+            {
+                return Result.Fail("Yalnızca onaylanmış randevular için saat değişikliği teklif edilebilir.", 400);
+            }
+
+            var now = DateTimeOffset.UtcNow;
+            if (now >= appointment.StartAt)
+            {
+                return Result.Fail("Randevu saati geçtiği için saat değişikliği teklif edilemez.", 400);
+            }
+
+            var newStartUtc = request.NewStartAt.ToUniversalTime();
+            var durationMinutes = appointment.DurationSnapshot > 0 ? appointment.DurationSnapshot : 30;
+            var newEndUtc = newStartUtc.AddMinutes(durationMinutes);
+
+            if (newStartUtc <= now)
+            {
+                return Result.Fail("Teklif edilen yeni saat gelecekte olmalıdır.", 400);
+            }
+
+            if (newStartUtc == appointment.StartAt)
+            {
+                return Result.Fail("Teklif edilen saat mevcut randevu saatiyle aynı olamaz.", 400);
+            }
+
+            // Personelin o günkü çalışma saatleri ve mola kontrolü
+            TimeZoneInfo tz;
+            try
+            {
+                tz = TimeZoneInfo.FindSystemTimeZoneById(appointment.Branch.TimeZoneId ?? "Europe/Istanbul");
+            }
+            catch
+            {
+                tz = TimeZoneInfo.Utc;
+            }
+
+            var localNewStart = TimeZoneInfo.ConvertTime(newStartUtc, tz);
+            var localNewEnd = TimeZoneInfo.ConvertTime(newEndUtc, tz);
+            var localDate = DateOnly.FromDateTime(localNewStart.DateTime);
+
+            var staffWorkingHour = await _unitOfWork.Repository<StaffWorkingHour>().Query()
+                .Include(swh => swh.Breaks)
+                .FirstOrDefaultAsync(
+                    swh => swh.StaffProfileId == appointment.StaffProfileId &&
+                           swh.BranchId == appointment.BranchId &&
+                           swh.DayOfWeek == localDate.DayOfWeek,
+                    cancellationToken);
+
+            if (staffWorkingHour == null)
+            {
+                return Result.Fail("Personel seçilen günde bu şubede çalışmamaktadır.", 400);
+            }
+
+            var startTimeOnly = TimeOnly.FromDateTime(localNewStart.DateTime);
+            var endTimeOnly = TimeOnly.FromDateTime(localNewEnd.DateTime);
+            if (localNewStart.Date != localNewEnd.Date || startTimeOnly < staffWorkingHour.StartTime || endTimeOnly > staffWorkingHour.EndTime)
+            {
+                return Result.Fail("Seçilen saat personelin mesai saatleri dışındadır.", 400);
+            }
+
+            var overlapsBreak = staffWorkingHour.Breaks.Any(b => startTimeOnly < b.EndTime && endTimeOnly > b.StartTime);
+            if (overlapsBreak)
+            {
+                return Result.Fail("Seçilen saat personelin mola aralığıyla çakışmaktadır.", 400);
+            }
+
+            var overlapsException = await _unitOfWork.Repository<StaffScheduleException>().AnyAsync(
+                e => e.StaffProfileId == appointment.StaffProfileId &&
+                     e.BranchId == appointment.BranchId &&
+                     e.StartAt < newEndUtc &&
+                     e.EndAt > newStartUtc,
+                cancellationToken);
+
+            if (overlapsException)
+            {
+                return Result.Fail("Seçilen saat aralığı personelin kapalı/izinli olduğu zamana denk gelmektedir.", 400);
+            }
+
+            // Aynı personelin (diğer şubeler dahil) başka bir aktif randevusuyla çakışma kontrolü
+            var hasConflict = await appointmentRepo.Query()
+                .IgnoreQueryFilters()
+                .AnyAsync(a => a.Id != appointment.Id &&
+                               a.StaffProfileId == appointment.StaffProfileId &&
+                               (a.Status == AppointmentStatus.Pending || a.Status == AppointmentStatus.Confirmed) &&
+                               a.StartAt < newEndUtc &&
+                               a.EndAt > newStartUtc,
+                          cancellationToken);
+
+            if (hasConflict)
+            {
+                return Result.Fail("Seçilen yeni saat diliminde personelin başka bir randevusu bulunmaktadır.", 409);
+            }
+
+            appointment.ProposedStartAt = newStartUtc;
+            appointment.ProposedEndAt = newEndUtc;
+            appointment.RescheduleNote = request.Note?.Trim();
+            appointment.RescheduleProposedByUserId = userId.Value;
+            appointment.RescheduleProposedAt = now;
+
+            appointmentRepo.Update(appointment);
+
+            var oldStr = appointment.StartAt.ToOffset(TimeSpan.FromHours(3)).ToString("dd.MM.yyyy HH:mm");
+            var newStr = newStartUtc.ToOffset(TimeSpan.FromHours(3)).ToString("dd.MM.yyyy HH:mm");
+
+            await _unitOfWork.Repository<AppointmentStatusHistory>().AddAsync(new AppointmentStatusHistory
+            {
+                Id = Guid.NewGuid(),
+                AppointmentId = appointment.Id,
+                OldStatus = appointment.Status,
+                NewStatus = appointment.Status,
+                ChangedByUserId = userId.Value,
+                Note = $"Saat değişikliği teklifi gönderildi: {oldStr} -> {newStr}" +
+                       (string.IsNullOrWhiteSpace(request.Note) ? string.Empty : $" ({request.Note.Trim()})")
+            }, cancellationToken);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            await TrySendNotificationAsync(
+                appointment.CustomerUserId,
+                NotificationType.AppointmentReminder,
+                "Randevu Saat Değişikliği Teklifi",
+                $"{appointment.Branch.Name} şubesindeki {oldStr} randevunuz için {newStr} yeni saat teklifi gönderildi. Onaylamazsanız randevu saatinde otomatik iptal edilecektir.",
+                appointment.Id,
+                cancellationToken);
+
+            return Result.Ok("Saat değişikliği teklifi müşteriye iletildi.");
+        }
+
+        public async Task<IResult> RespondToRescheduleAsync(RespondRescheduleRequestDto request, CancellationToken cancellationToken = default)
+        {
+            var userId = _tenantService.UserId;
+            if (!userId.HasValue)
+            {
+                return Result.Fail("Oturum açmanız gerekmektedir.", 401);
+            }
+
+            var appointmentRepo = _unitOfWork.Repository<Appointment>();
+            var appointment = await appointmentRepo.Query()
+                .IgnoreQueryFilters()
+                .Include(a => a.Branch)
+                .Include(a => a.Customer)
+                .Include(a => a.StaffProfile).ThenInclude(sp => sp.BusinessMember)
+                .FirstOrDefaultAsync(a => a.Id == request.AppointmentId, cancellationToken);
+
+            if (appointment == null)
+            {
+                return Result.Fail("Randevu bulunamadı.", 404);
+            }
+
+            if (appointment.CustomerUserId != userId.Value)
+            {
+                return Result.Fail("Yalnızca kendi randevunuzdaki saat değişikliği teklifini yanıtlayabilirsiniz.", 403);
+            }
+
+            if (appointment.Status != AppointmentStatus.Confirmed || !appointment.ProposedStartAt.HasValue || !appointment.ProposedEndAt.HasValue)
+            {
+                return Result.Fail("Bu randevu için bekleyen bir saat değişikliği teklifi bulunmuyor.", 400);
+            }
+
+            var now = DateTimeOffset.UtcNow;
+            if (now >= appointment.StartAt)
+            {
+                await AutoExpireUnacceptedReschedulesAsync(new List<Appointment> { appointment }, cancellationToken);
+                return Result.Fail("Teklifin onay süresi dolduğu için randevu otomatik iptal edildi.", 400);
+            }
+
+            var oldStr = appointment.StartAt.ToOffset(TimeSpan.FromHours(3)).ToString("dd.MM.yyyy HH:mm");
+            var newStartUtc = appointment.ProposedStartAt.Value;
+            var newEndUtc = appointment.ProposedEndAt.Value;
+            var newStr = newStartUtc.ToOffset(TimeSpan.FromHours(3)).ToString("dd.MM.yyyy HH:mm");
+            var customerName = $"{appointment.Customer.FirstName} {appointment.Customer.LastName}".Trim();
+
+            if (request.Accept)
+            {
+                if (newStartUtc <= now)
+                {
+                    return Result.Fail("Teklif edilen yeni saat geçmişte kaldığı için onaylanamaz.", 400);
+                }
+
+                var hasConflict = await appointmentRepo.Query()
+                    .IgnoreQueryFilters()
+                    .AnyAsync(a => a.Id != appointment.Id &&
+                                   a.StaffProfileId == appointment.StaffProfileId &&
+                                   (a.Status == AppointmentStatus.Pending || a.Status == AppointmentStatus.Confirmed) &&
+                                   a.StartAt < newEndUtc &&
+                                   a.EndAt > newStartUtc,
+                              cancellationToken);
+
+                if (hasConflict)
+                {
+                    return Result.Fail("Teklif edilen saat dilimi az önce başka bir randevuyla doldu. Lütfen salonla iletişime geçin.", 409);
+                }
+
+                appointment.StartAt = newStartUtc;
+                appointment.EndAt = newEndUtc;
+                appointment.ProposedStartAt = null;
+                appointment.ProposedEndAt = null;
+                appointment.RescheduleNote = null;
+                appointment.RescheduleProposedByUserId = null;
+                appointment.RescheduleProposedAt = null;
+                appointmentRepo.Update(appointment);
+
+                await _unitOfWork.Repository<AppointmentStatusHistory>().AddAsync(new AppointmentStatusHistory
+                {
+                    Id = Guid.NewGuid(),
+                    AppointmentId = appointment.Id,
+                    OldStatus = AppointmentStatus.Confirmed,
+                    NewStatus = AppointmentStatus.Confirmed,
+                    ChangedByUserId = userId.Value,
+                    Note = $"Müşteri yeni saati onayladı: {oldStr} -> {newStr}"
+                }, cancellationToken);
+
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                await TryNotifyBusinessAndStaffAsync(
+                    appointment.BusinessId,
+                    appointment.StaffProfile.BusinessMember.UserId,
+                    NotificationType.AppointmentConfirmed,
+                    "Saat Değişikliği Onaylandı",
+                    $"{customerName}, {appointment.Branch.Name} şubesindeki randevusu için {newStr} yeni saat teklifini onayladı.",
+                    appointment.Id,
+                    cancellationToken);
+
+                return Result.Ok("Yeni randevu saati onaylandı ve takviminiz güncellendi.");
+            }
+            else
+            {
+                const string rejectReason = "Müşteri saat değişikliği teklifini kabul etmediği için randevu iptal edildi.";
+                appointment.Status = AppointmentStatus.Cancelled;
+                appointment.CancelledAt = now;
+                appointment.CancelledByUserId = userId.Value;
+                appointment.CancellationReason = rejectReason;
+                appointment.ProposedStartAt = null;
+                appointment.ProposedEndAt = null;
+                appointment.RescheduleNote = null;
+                appointment.RescheduleProposedByUserId = null;
+                appointment.RescheduleProposedAt = null;
+                appointmentRepo.Update(appointment);
+
+                await _unitOfWork.Repository<AppointmentStatusHistory>().AddAsync(new AppointmentStatusHistory
+                {
+                    Id = Guid.NewGuid(),
+                    AppointmentId = appointment.Id,
+                    OldStatus = AppointmentStatus.Confirmed,
+                    NewStatus = AppointmentStatus.Cancelled,
+                    ChangedByUserId = userId.Value,
+                    Note = rejectReason
+                }, cancellationToken);
+
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                await TryNotifyBusinessAndStaffAsync(
+                    appointment.BusinessId,
+                    appointment.StaffProfile.BusinessMember.UserId,
+                    NotificationType.AppointmentCancelled,
+                    "Saat Değişikliği Reddedildi — İptal",
+                    $"{customerName}, {oldStr} -> {newStr} saat değişikliği teklifini reddetti; randevu iptal edildi.",
+                    appointment.Id,
+                    cancellationToken);
+
+                return Result.Ok("Saat değişikliği teklifi reddedildi ve randevu iptal edildi.");
+            }
+        }
+
         public async Task<IDataResult<IReadOnlyList<AppointmentResponseDto>>> GetMyAppointmentsAsync(CancellationToken cancellationToken = default)
         {
             var userId = _tenantService.UserId;
@@ -670,29 +1052,9 @@ namespace BarberBooking.Business.Services
                 .OrderByDescending(a => a.StartAt)
                 .ToListAsync(cancellationToken);
 
-            var response = appointments.Select(a => new AppointmentResponseDto
-            {
-                Id = a.Id,
-                CustomerUserId = a.CustomerUserId,
-                CustomerFullName = $"{a.Customer.FirstName} {a.Customer.LastName}",
-                CustomerPhoneNumber = a.Customer.PhoneNumber,
-                BusinessId = a.BusinessId,
-                BranchId = a.BranchId,
-                BranchName = a.Branch.Name,
-                StaffProfileId = a.StaffProfileId,
-                StaffFullName = $"{a.StaffProfile.BusinessMember.User.FirstName} {a.StaffProfile.BusinessMember.User.LastName}",
-                ServiceId = a.ServiceId,
-                ServiceName = a.Service.Name,
-                StartAt = a.StartAt,
-                EndAt = a.EndAt,
-                PriceSnapshot = a.PriceSnapshot,
-                DurationSnapshot = a.DurationSnapshot,
-                Status = (int)a.Status,
-                StatusName = a.Status.ToString(),
-                CancellationReason = a.CancellationReason
-            }).ToList();
+            await AutoExpireUnacceptedReschedulesAsync(appointments, cancellationToken);
 
-            return DataResult<IReadOnlyList<AppointmentResponseDto>>.Ok(response);
+            return DataResult<IReadOnlyList<AppointmentResponseDto>>.Ok(appointments.Select(MapToDto).ToList());
         }
 
         public async Task<IDataResult<IReadOnlyList<AppointmentResponseDto>>> GetMyWorkAppointmentsAsync(CancellationToken cancellationToken = default)
@@ -709,29 +1071,9 @@ namespace BarberBooking.Business.Services
                 .OrderBy(a => a.StartAt)
                 .ToListAsync(cancellationToken);
 
-            var response = appointments.Select(a => new AppointmentResponseDto
-            {
-                Id = a.Id,
-                CustomerUserId = a.CustomerUserId,
-                CustomerFullName = $"{a.Customer.FirstName} {a.Customer.LastName}",
-                CustomerPhoneNumber = a.Customer.PhoneNumber,
-                BusinessId = a.BusinessId,
-                BranchId = a.BranchId,
-                BranchName = a.Branch.Name,
-                StaffProfileId = a.StaffProfileId,
-                StaffFullName = $"{a.StaffProfile.BusinessMember.User.FirstName} {a.StaffProfile.BusinessMember.User.LastName}",
-                ServiceId = a.ServiceId,
-                ServiceName = a.Service.Name,
-                StartAt = a.StartAt,
-                EndAt = a.EndAt,
-                PriceSnapshot = a.PriceSnapshot,
-                DurationSnapshot = a.DurationSnapshot,
-                Status = (int)a.Status,
-                StatusName = a.Status.ToString(),
-                CancellationReason = a.CancellationReason
-            }).ToList();
+            await AutoExpireUnacceptedReschedulesAsync(appointments, cancellationToken);
 
-            return DataResult<IReadOnlyList<AppointmentResponseDto>>.Ok(response);
+            return DataResult<IReadOnlyList<AppointmentResponseDto>>.Ok(appointments.Select(MapToDto).ToList());
         }
 
         public async Task<IResult> UpdateMyWorkAppointmentStatusAsync(UpdateAppointmentStatusRequestDto request, CancellationToken cancellationToken = default)
@@ -776,29 +1118,9 @@ namespace BarberBooking.Business.Services
 
             var appointments = await query.OrderBy(a => a.StartAt).ToListAsync(cancellationToken);
 
-            var response = appointments.Select(a => new AppointmentResponseDto
-            {
-                Id = a.Id,
-                CustomerUserId = a.CustomerUserId,
-                CustomerFullName = $"{a.Customer.FirstName} {a.Customer.LastName}",
-                CustomerPhoneNumber = a.Customer.PhoneNumber,
-                BusinessId = a.BusinessId,
-                BranchId = a.BranchId,
-                BranchName = a.Branch.Name,
-                StaffProfileId = a.StaffProfileId,
-                StaffFullName = $"{a.StaffProfile.BusinessMember.User.FirstName} {a.StaffProfile.BusinessMember.User.LastName}",
-                ServiceId = a.ServiceId,
-                ServiceName = a.Service.Name,
-                StartAt = a.StartAt,
-                EndAt = a.EndAt,
-                PriceSnapshot = a.PriceSnapshot,
-                DurationSnapshot = a.DurationSnapshot,
-                Status = (int)a.Status,
-                StatusName = a.Status.ToString(),
-                CancellationReason = a.CancellationReason
-            }).ToList();
+            await AutoExpireUnacceptedReschedulesAsync(appointments, cancellationToken);
 
-            return DataResult<IReadOnlyList<AppointmentResponseDto>>.Ok(response);
+            return DataResult<IReadOnlyList<AppointmentResponseDto>>.Ok(appointments.Select(MapToDto).ToList());
         }
     }
 }

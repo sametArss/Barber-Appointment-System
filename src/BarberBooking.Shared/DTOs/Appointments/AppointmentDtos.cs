@@ -37,6 +37,19 @@ namespace BarberBooking.Shared.DTOs.Appointments
         public string? Note { get; set; }
     }
 
+    public class ProposeRescheduleRequestDto
+    {
+        public Guid AppointmentId { get; set; }
+        public DateTimeOffset NewStartAt { get; set; }
+        public string? Note { get; set; }
+    }
+
+    public class RespondRescheduleRequestDto
+    {
+        public Guid AppointmentId { get; set; }
+        public bool Accept { get; set; }
+    }
+
     public class AppointmentResponseDto
     {
         public Guid Id { get; set; }
@@ -57,5 +70,10 @@ namespace BarberBooking.Shared.DTOs.Appointments
         public int Status { get; set; }
         public string StatusName { get; set; } = string.Empty;
         public string? CancellationReason { get; set; }
+        public bool HasPendingReschedule { get; set; }
+        public DateTimeOffset? ProposedStartAt { get; set; }
+        public DateTimeOffset? ProposedEndAt { get; set; }
+        public string? RescheduleNote { get; set; }
+        public DateTimeOffset? RescheduleProposedAt { get; set; }
     }
 }

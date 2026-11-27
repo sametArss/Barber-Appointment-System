@@ -63,6 +63,21 @@ namespace BarberBooking.DataAccess.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<DateTimeOffset?>("ProposedEndAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("ProposedStartAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RescheduleNote")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("RescheduleProposedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("RescheduleProposedByUserId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("ServiceId")
                         .HasColumnType("uuid");
 

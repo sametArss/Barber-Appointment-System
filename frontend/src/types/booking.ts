@@ -191,6 +191,11 @@ export interface AppointmentResponse {
   status: AppointmentStatus;
   statusName: string;
   cancellationReason: string | null;
+  hasPendingReschedule?: boolean;
+  proposedStartAt?: string | null;
+  proposedEndAt?: string | null;
+  rescheduleNote?: string | null;
+  rescheduleProposedAt?: string | null;
 }
 
 /**

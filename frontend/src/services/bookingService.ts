@@ -79,6 +79,23 @@ export const bookingService = {
     return data;
   },
 
+  async proposeReschedule(payload: {
+    appointmentId: string;
+    newStartAt: string;
+    note?: string;
+  }): Promise<Result> {
+    const { data } = await apiClient.post<Result>('/api/appointments/reschedule/propose', payload);
+    return data;
+  },
+
+  async respondToReschedule(payload: {
+    appointmentId: string;
+    accept: boolean;
+  }): Promise<Result> {
+    const { data } = await apiClient.post<Result>('/api/appointments/reschedule/respond', payload);
+    return data;
+  },
+
   async getMyPenaltyStatus(businessId: string): Promise<DataResult<CustomerPenaltyStatus>> {
     const { data } = await apiClient.get<DataResult<CustomerPenaltyStatus>>(
       `/api/penalties/my-status/${businessId}`,

@@ -1,6 +1,17 @@
 import React, { useState } from 'react';
-import { Check, Clock3, MapPin, Phone, Scissors, ShieldAlert, Store, X } from 'lucide-react';
+import {
+  CalendarClock,
+  Check,
+  Clock3,
+  MapPin,
+  Phone,
+  Scissors,
+  ShieldAlert,
+  Store,
+  X,
+} from 'lucide-react';
 import { NoShowConfirmModal } from '@/components/appointments/NoShowConfirmModal';
+import { ProposeRescheduleModal } from '@/components/appointments/ProposeRescheduleModal';
 import { Badge, Button } from '@/components/ui';
 import { cn, formatCurrency } from '@/lib/utils';
 import {
@@ -58,8 +69,10 @@ export const EmployeeAppointmentCard: React.FC<{
   appointment: AppointmentResponse;
   updating: boolean;
   onUpdate: (status: number) => void;
-}> = ({ appointment, updating, onUpdate }) => {
+  onRefresh?: () => void | Promise<void>;
+}> = ({ appointment, updating, onUpdate, onRefresh }) => {
   const [confirmNoShow, setConfirmNoShow] = useState(false);
+  const [openReschedule, setOpenReschedule] = useState(false);
 
   const isPending = appointment.status === AppointmentStatus.Pending;
   const isConfirmed = appointment.status === AppointmentStatus.Confirmed;
@@ -219,19 +232,44 @@ export const EmployeeAppointmentCard: React.FC<{
                       Gelmedi
                     </Button>
                     {isBeforeStart && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-9 gap-1.5 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/15"
-                        disabled={updating}
-                        onClick={() => onUpdate(AppointmentStatus.Cancelled)}
-                      >
-                        İptal Et
-                      </Button>
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-9 gap-1.5 rounded-xl border-amber-500/40 text-xs font-semibold text-[#B45309] hover:bg-amber-50 dark:border-amber-400/35 dark:text-amber-300 dark:hover:bg-amber-500/15"
+                          disabled={updating}
+                          onClick={() => setOpenReschedule(true)}
+                        >
+                          <CalendarClock className="h-3.5 w-3.5" />
+                          {appointment.hasPendingReschedule ? 'Teklifi Güncelle' : 'Saat Değiştir'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-9 gap-1.5 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/15"
+                          disabled={updating}
+                          onClick={() => onUpdate(AppointmentStatus.Cancelled)}
+                        >
+                          İptal Et
+                        </Button>
+                      </>
                     )}
                   </>
                 )}
               </div>
+
+              {appointment.hasPendingReschedule && appointment.proposedStartAt && (
+                <p className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-[#B45309] dark:text-amber-300">
+                  <CalendarClock className="h-3 w-3" />
+                  Müşteri onayı bekleniyor →{' '}
+                  {new Date(appointment.proposedStartAt).toLocaleString('tr-TR', {
+                    day: '2-digit',
+                    month: 'short',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </p>
+              )}
 
               {isPending && !isBeforeStart && (
                 <p className="text-[11px] text-amber-600 dark:text-amber-400">
@@ -256,6 +294,12 @@ export const EmployeeAppointmentCard: React.FC<{
           setConfirmNoShow(false);
           onUpdate(AppointmentStatus.NoShow);
         }}
+      />
+
+      <ProposeRescheduleModal
+        appointment={openReschedule ? appointment : null}
+        onClose={() => setOpenReschedule(false)}
+        onSuccess={() => onRefresh?.()}
       />
     </>
   );
