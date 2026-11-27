@@ -17,9 +17,13 @@ namespace BarberBooking.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetMyNotifications([FromQuery] bool unreadOnly, CancellationToken cancellationToken)
+        public async Task<IActionResult> GetMyNotifications(
+            [FromQuery] bool unreadOnly = false,
+            [FromQuery] int skip = 0,
+            [FromQuery] int take = 50,
+            CancellationToken cancellationToken = default)
         {
-            var result = await _notificationService.GetMyNotificationsAsync(unreadOnly, cancellationToken);
+            var result = await _notificationService.GetMyNotificationsAsync(unreadOnly, skip, take, cancellationToken);
             return Ok(result);
         }
 

@@ -79,7 +79,11 @@ const ratingLabels: Record<number, string> = {
 export const MyAppointmentsPage: React.FC = () => {
   const navigate = useNavigate();
 
+  const PAGE_SIZE = 20;
+
   const [appointments, setAppointments] = useState<AppointmentResponse[]>([]);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [favoriteBranches, setFavoriteBranches] = useState<FavoriteBranchResponse[]>([]);
   const [removingFavId, setRemovingFavId] = useState<string | null>(null);
   const [reviewedAppointmentIds, setReviewedAppointmentIds] = useState<Set<string>>(
@@ -105,7 +109,7 @@ export const MyAppointmentsPage: React.FC = () => {
     setLoading(true);
     try {
       const [res, favRes] = await Promise.all([
-        bookingService.getMyAppointments(),
+        bookingService.getMyAppointments({ skip: 0, take: PAGE_SIZE }),
         favoriteService.getMyFavorites().catch(() => null),
       ]);
 
@@ -116,27 +120,10 @@ export const MyAppointmentsPage: React.FC = () => {
       if (res.success && res.data) {
         const list = res.data;
         setAppointments(list);
-
-        const completedBranchIds = Array.from(
-          new Set(
-            list
-              .filter((a) => a.status === AppointmentStatus.Completed)
-              .map((a) => a.branchId),
-          ),
+        setHasMore(list.length === PAGE_SIZE);
+        setReviewedAppointmentIds(
+          new Set(list.filter((a) => a.hasReview).map((a) => a.id)),
         );
-
-        if (completedBranchIds.length > 0) {
-          const reviewResponses = await Promise.allSettled(
-            completedBranchIds.map((bId) => reviewService.getBranchReviews(bId)),
-          );
-          const reviewed = new Set<string>();
-          reviewResponses.forEach((result) => {
-            if (result.status === 'fulfilled' && result.value.success && result.value.data) {
-              result.value.data.forEach((rev) => reviewed.add(rev.appointmentId));
-            }
-          });
-          setReviewedAppointmentIds(reviewed);
-        }
       }
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Randevularınız yüklenemedi.'));
@@ -144,6 +131,33 @@ export const MyAppointmentsPage: React.FC = () => {
       setLoading(false);
     }
   }, []);
+
+  const handleLoadMore = async () => {
+    setLoadingMore(true);
+    try {
+      const res = await bookingService.getMyAppointments({
+        skip: appointments.length,
+        take: PAGE_SIZE,
+      });
+      if (res.success && res.data) {
+        const nextItems = res.data;
+        setAppointments((prev) => {
+          const existingIds = new Set(prev.map((a) => a.id));
+          return [...prev, ...nextItems.filter((a) => !existingIds.has(a.id))];
+        });
+        setHasMore(nextItems.length === PAGE_SIZE);
+        setReviewedAppointmentIds((prev) => {
+          const next = new Set(prev);
+          nextItems.filter((a) => a.hasReview).forEach((a) => next.add(a.id));
+          return next;
+        });
+      }
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Daha fazla randevu yüklenemedi.'));
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   useEffect(() => {
     loadAppointmentsAndReviews();
@@ -654,6 +668,19 @@ export const MyAppointmentsPage: React.FC = () => {
               </motion.article>
             );
           })}
+
+          {hasMore && (
+            <div className="flex justify-center pt-2">
+              <Button
+                variant="outline"
+                onClick={handleLoadMore}
+                isLoading={loadingMore}
+                className="h-10 rounded-xl border-slate-200 bg-white/80 px-6 text-xs font-semibold text-slate-700 hover:border-amber-500/50 hover:text-amber-700 dark:border-white/15 dark:bg-slate-900/60 dark:text-slate-200 dark:hover:border-amber-400/50"
+              >
+                Daha Fazla Randevu Yükle
+              </Button>
+            </div>
+          )}
         </div>
       )}
 

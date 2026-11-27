@@ -1036,7 +1036,7 @@ namespace BarberBooking.Business.Services
             }
         }
 
-        public async Task<IDataResult<IReadOnlyList<AppointmentResponseDto>>> GetMyAppointmentsAsync(CancellationToken cancellationToken = default)
+        public async Task<IDataResult<IReadOnlyList<AppointmentResponseDto>>> GetMyAppointmentsAsync(int skip = 0, int take = 20, int? status = null, CancellationToken cancellationToken = default)
         {
             var userId = _tenantService.UserId;
             if (!userId.HasValue)
@@ -1044,37 +1044,141 @@ namespace BarberBooking.Business.Services
                 return DataResult<IReadOnlyList<AppointmentResponseDto>>.Fail("Oturum açmanız gerekmektedir.", 401);
             }
 
-            var appointments = await _unitOfWork.Repository<Appointment>().Query()
+            var safeSkip = Math.Max(0, skip);
+            var safeTake = Math.Clamp(take, 1, 100);
+
+            // Süresi dolmuş saat değişikliği tekliflerini (varsa) yalnızca ilk sayfada hafifçe temizle
+            if (safeSkip == 0)
+            {
+                var now = DateTimeOffset.UtcNow;
+                var expiredCandidates = await _unitOfWork.Repository<Appointment>().Query()
+                    .IgnoreQueryFilters()
+                    .Include(a => a.Branch)
+                    .Include(a => a.Customer)
+                    .Include(a => a.StaffProfile).ThenInclude(sp => sp.BusinessMember)
+                    .Where(a => a.CustomerUserId == userId.Value &&
+                                a.Status == AppointmentStatus.Confirmed &&
+                                a.ProposedStartAt != null &&
+                                a.StartAt <= now)
+                    .ToListAsync(cancellationToken);
+
+                if (expiredCandidates.Count > 0)
+                {
+                    await AutoExpireUnacceptedReschedulesAsync(expiredCandidates, cancellationToken);
+                }
+            }
+
+            var query = _unitOfWork.Repository<Appointment>().QueryAsNoTracking()
+                .IgnoreQueryFilters()
                 .Include(a => a.Branch)
                 .Include(a => a.Service)
                 .Include(a => a.StaffProfile).ThenInclude(sp => sp.BusinessMember).ThenInclude(bm => bm.User)
                 .Include(a => a.Customer)
-                .Where(a => a.CustomerUserId == userId.Value)
+                .Where(a => a.CustomerUserId == userId.Value);
+
+            if (status.HasValue && Enum.IsDefined(typeof(AppointmentStatus), status.Value))
+            {
+                var statusEnum = (AppointmentStatus)status.Value;
+                query = query.Where(a => a.Status == statusEnum);
+            }
+
+            var appointments = await query
                 .OrderByDescending(a => a.StartAt)
+                .Skip(safeSkip)
+                .Take(safeTake)
                 .ToListAsync(cancellationToken);
 
-            await AutoExpireUnacceptedReschedulesAsync(appointments, cancellationToken);
+            var reviewedIds = await GetReviewedAppointmentIdsAsync(appointments, cancellationToken);
+            var dtos = appointments.Select(a =>
+            {
+                var dto = MapToDto(a);
+                dto.HasReview = reviewedIds.Contains(a.Id);
+                return dto;
+            }).ToList();
 
-            return DataResult<IReadOnlyList<AppointmentResponseDto>>.Ok(appointments.Select(MapToDto).ToList());
+            return DataResult<IReadOnlyList<AppointmentResponseDto>>.Ok(dtos);
         }
 
-        public async Task<IDataResult<IReadOnlyList<AppointmentResponseDto>>> GetMyWorkAppointmentsAsync(CancellationToken cancellationToken = default)
+        public async Task<IDataResult<IReadOnlyList<AppointmentResponseDto>>> GetMyWorkAppointmentsAsync(int skip = 0, int take = 50, int? status = null, CancellationToken cancellationToken = default)
         {
             var userId = _tenantService.UserId;
             if (!userId.HasValue)
                 return DataResult<IReadOnlyList<AppointmentResponseDto>>.Fail("Oturum açmanız gerekmektedir.", 401);
 
-            var appointments = await _unitOfWork.Repository<Appointment>().Query()
+            var safeSkip = Math.Max(0, skip);
+            var safeTake = Math.Clamp(take, 1, 100);
+
+            if (safeSkip == 0)
+            {
+                var now = DateTimeOffset.UtcNow;
+                var expiredCandidates = await _unitOfWork.Repository<Appointment>().Query()
+                    .IgnoreQueryFilters()
+                    .Include(a => a.Branch)
+                    .Include(a => a.Customer)
+                    .Include(a => a.StaffProfile).ThenInclude(sp => sp.BusinessMember)
+                    .Where(a => a.StaffProfile.BusinessMember.UserId == userId.Value &&
+                                a.Status == AppointmentStatus.Confirmed &&
+                                a.ProposedStartAt != null &&
+                                a.StartAt <= now)
+                    .ToListAsync(cancellationToken);
+
+                if (expiredCandidates.Count > 0)
+                {
+                    await AutoExpireUnacceptedReschedulesAsync(expiredCandidates, cancellationToken);
+                }
+            }
+
+            var query = _unitOfWork.Repository<Appointment>().QueryAsNoTracking()
+                .IgnoreQueryFilters()
                 .Include(a => a.Branch).Include(a => a.Service)
                 .Include(a => a.StaffProfile).ThenInclude(profile => profile.BusinessMember).ThenInclude(member => member.User)
                 .Include(a => a.Customer)
-                .Where(a => a.StaffProfile.BusinessMember.UserId == userId.Value)
-                .OrderBy(a => a.StartAt)
+                .Where(a => a.StaffProfile.BusinessMember.UserId == userId.Value);
+
+            if (status.HasValue && Enum.IsDefined(typeof(AppointmentStatus), status.Value))
+            {
+                var statusEnum = (AppointmentStatus)status.Value;
+                query = query.Where(a => a.Status == statusEnum);
+            }
+
+            var appointments = await query
+                .OrderByDescending(a => a.StartAt)
+                .Skip(safeSkip)
+                .Take(safeTake)
                 .ToListAsync(cancellationToken);
 
-            await AutoExpireUnacceptedReschedulesAsync(appointments, cancellationToken);
+            var reviewedIds = await GetReviewedAppointmentIdsAsync(appointments, cancellationToken);
+            var dtos = appointments.Select(a =>
+            {
+                var dto = MapToDto(a);
+                dto.HasReview = reviewedIds.Contains(a.Id);
+                return dto;
+            }).ToList();
 
-            return DataResult<IReadOnlyList<AppointmentResponseDto>>.Ok(appointments.Select(MapToDto).ToList());
+            return DataResult<IReadOnlyList<AppointmentResponseDto>>.Ok(dtos);
+        }
+
+        private async Task<HashSet<Guid>> GetReviewedAppointmentIdsAsync(
+            IReadOnlyList<Appointment> appointments,
+            CancellationToken cancellationToken)
+        {
+            var completedIds = appointments
+                .Where(a => a.Status == AppointmentStatus.Completed)
+                .Select(a => a.Id)
+                .ToList();
+
+            if (completedIds.Count == 0)
+            {
+                return new HashSet<Guid>();
+            }
+
+            var reviewed = await _unitOfWork.Repository<Entities.Reviews.Review>().QueryAsNoTracking()
+                .IgnoreQueryFilters()
+                .Where(r => completedIds.Contains(r.AppointmentId))
+                .Select(r => r.AppointmentId)
+                .ToListAsync(cancellationToken);
+
+            return new HashSet<Guid>(reviewed);
         }
 
         public async Task<IResult> UpdateMyWorkAppointmentStatusAsync(UpdateAppointmentStatusRequestDto request, CancellationToken cancellationToken = default)

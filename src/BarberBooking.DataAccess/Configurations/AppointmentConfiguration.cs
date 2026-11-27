@@ -21,6 +21,7 @@ namespace BarberBooking.DataAccess.Configurations
             builder.HasIndex(a => a.BranchId);
             builder.HasIndex(a => a.StaffProfileId);
             builder.HasIndex(a => a.CustomerUserId);
+            builder.HasIndex(a => new { a.CustomerUserId, a.StartAt });
             builder.HasIndex(a => a.ServiceId);
             builder.HasIndex(a => new { a.StaffProfileId, a.StartAt, a.EndAt });
 

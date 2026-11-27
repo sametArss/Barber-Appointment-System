@@ -57,15 +57,27 @@ export const bookingService = {
     return data;
   },
 
-  async getMyAppointments(): Promise<DataResult<AppointmentResponse[]>> {
+  async getMyAppointments(params?: {
+    skip?: number;
+    take?: number;
+    status?: number;
+  }): Promise<DataResult<AppointmentResponse[]>> {
     const { data } = await apiClient.get<DataResult<AppointmentResponse[]>>(
       '/api/appointments/my-appointments',
+      { params },
     );
     return data;
   },
 
-  async getMyWorkAppointments(): Promise<DataResult<AppointmentResponse[]>> {
-    const { data } = await apiClient.get<DataResult<AppointmentResponse[]>>('/api/appointments/my-work-appointments');
+  async getMyWorkAppointments(params?: {
+    skip?: number;
+    take?: number;
+    status?: number;
+  }): Promise<DataResult<AppointmentResponse[]>> {
+    const { data } = await apiClient.get<DataResult<AppointmentResponse[]>>(
+      '/api/appointments/my-work-appointments',
+      { params },
+    );
     return data;
   },
 

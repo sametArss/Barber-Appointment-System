@@ -6,9 +6,12 @@ namespace BarberBooking.API.BackgroundServices
     {
         private static readonly TimeSpan StartupDelay = TimeSpan.FromSeconds(10);
         private static readonly TimeSpan PollInterval = TimeSpan.FromMinutes(1);
+        private static readonly TimeSpan CleanupInterval = TimeSpan.FromHours(6);
+        private const int NotificationRetentionDays = 30;
 
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<AppointmentReminderBackgroundService> _logger;
+        private DateTimeOffset _lastCleanupUtc = DateTimeOffset.MinValue;
 
         public AppointmentReminderBackgroundService(
             IServiceScopeFactory scopeFactory,
@@ -54,6 +57,22 @@ namespace BarberBooking.API.BackgroundServices
                         "AppointmentReminderBackgroundService turu tamamlandı: {RemindersSent} hatırlatma gönderildi, {ExpiredReschedules} süresi dolan teklif iptal edildi.",
                         remindersSent,
                         expiredReschedules);
+                }
+
+                // 30 günden eski bildirimleri periyodik olarak (başlangıçta ve 6 saatte bir) temizle
+                var now = DateTimeOffset.UtcNow;
+                if (now - _lastCleanupUtc >= CleanupInterval)
+                {
+                    var deletedNotifications = await processor.CleanupOldNotificationsAsync(NotificationRetentionDays, stoppingToken);
+                    _lastCleanupUtc = now;
+
+                    if (deletedNotifications > 0)
+                    {
+                        _logger.LogInformation(
+                            "Otomatik bildirim temizliği (TTL {Days} gün): {DeletedCount} eski bildirim veritabanından silindi.",
+                            NotificationRetentionDays,
+                            deletedNotifications);
+                    }
                 }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)

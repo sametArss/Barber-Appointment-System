@@ -68,9 +68,13 @@ namespace BarberBooking.API.Controllers
         }
 
         [HttpGet("my-appointments")]
-        public async Task<IActionResult> GetMyAppointments(CancellationToken cancellationToken)
+        public async Task<IActionResult> GetMyAppointments(
+            [FromQuery] int skip = 0,
+            [FromQuery] int take = 20,
+            [FromQuery] int? status = null,
+            CancellationToken cancellationToken = default)
         {
-            var result = await _appointmentService.GetMyAppointmentsAsync(cancellationToken);
+            var result = await _appointmentService.GetMyAppointmentsAsync(skip, take, status, cancellationToken);
             if (!result.Success)
             {
                 return StatusCode(result.StatusCode, result);
@@ -81,9 +85,13 @@ namespace BarberBooking.API.Controllers
 
         [HttpGet("my-work-appointments")]
         [Authorize(Roles = "Employee")]
-        public async Task<IActionResult> GetMyWorkAppointments(CancellationToken cancellationToken)
+        public async Task<IActionResult> GetMyWorkAppointments(
+            [FromQuery] int skip = 0,
+            [FromQuery] int take = 50,
+            [FromQuery] int? status = null,
+            CancellationToken cancellationToken = default)
         {
-            var result = await _appointmentService.GetMyWorkAppointmentsAsync(cancellationToken);
+            var result = await _appointmentService.GetMyWorkAppointmentsAsync(skip, take, status, cancellationToken);
             if (!result.Success) return StatusCode(result.StatusCode, result);
             return Ok(result);
         }

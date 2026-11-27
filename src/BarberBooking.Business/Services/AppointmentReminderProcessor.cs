@@ -172,5 +172,19 @@ namespace BarberBooking.Business.Services
 
             return (remindersSent, expiredCount);
         }
+
+        public async Task<int> CleanupOldNotificationsAsync(int retentionDays = 30, CancellationToken cancellationToken = default)
+        {
+            var safeDays = Math.Max(1, retentionDays);
+            var cutoffUtc = DateTimeOffset.UtcNow.AddDays(-safeDays);
+
+            // Bulk SQL DELETE: 30 günden eski bildirimleri RAM'e çekmeden tek sorguda temizler
+            var deletedCount = await _unitOfWork.Repository<Notification>().Query()
+                .IgnoreQueryFilters()
+                .Where(n => n.CreatedAt < cutoffUtc)
+                .ExecuteDeleteAsync(cancellationToken);
+
+            return deletedCount;
+        }
     }
 }

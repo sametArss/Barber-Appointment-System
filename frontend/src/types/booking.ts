@@ -196,6 +196,7 @@ export interface AppointmentResponse {
   proposedEndAt?: string | null;
   rescheduleNote?: string | null;
   rescheduleProposedAt?: string | null;
+  hasReview?: boolean;
 }
 
 /**

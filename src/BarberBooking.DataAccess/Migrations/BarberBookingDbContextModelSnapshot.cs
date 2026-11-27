@@ -108,6 +108,8 @@ namespace BarberBooking.DataAccess.Migrations
 
                     b.HasIndex("StaffProfileId");
 
+                    b.HasIndex("CustomerUserId", "StartAt");
+
                     b.HasIndex("StaffProfileId", "StartAt", "EndAt");
 
                     b.ToTable("Appointments", (string)null);

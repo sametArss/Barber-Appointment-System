@@ -68,7 +68,7 @@ namespace BarberBooking.Business.Services
             return Result.Ok();
         }
 
-        public async Task<IDataResult<IReadOnlyList<NotificationResponseDto>>> GetMyNotificationsAsync(bool unreadOnly = false, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<IReadOnlyList<NotificationResponseDto>>> GetMyNotificationsAsync(bool unreadOnly = false, int skip = 0, int take = 50, CancellationToken cancellationToken = default)
         {
             var userId = _tenantService.UserId;
             if (!userId.HasValue)
@@ -76,7 +76,10 @@ namespace BarberBooking.Business.Services
                 return DataResult<IReadOnlyList<NotificationResponseDto>>.Fail("Oturum açmanız gerekmektedir.", 401);
             }
 
-            var query = _unitOfWork.Repository<Notification>().Query()
+            var safeSkip = Math.Max(0, skip);
+            var safeTake = Math.Clamp(take, 1, 100);
+
+            var query = _unitOfWork.Repository<Notification>().QueryAsNoTracking()
                 .Where(n => n.UserId == userId.Value);
 
             if (unreadOnly)
@@ -86,7 +89,8 @@ namespace BarberBooking.Business.Services
 
             var notifications = await query
                 .OrderByDescending(n => n.CreatedAt)
-                .Take(50)
+                .Skip(safeSkip)
+                .Take(safeTake)
                 .ToListAsync(cancellationToken);
 
             var response = notifications.Select(n => new NotificationResponseDto
@@ -157,19 +161,18 @@ namespace BarberBooking.Business.Services
                 return Result.Fail("Oturum açmanız gerekmektedir.", 401);
             }
 
-            var notificationRepo = _unitOfWork.Repository<Notification>();
-            var unreadNotifications = await notificationRepo.GetAsync(
-                n => n.UserId == userId.Value && !n.IsRead,
-                cancellationToken);
-
             var now = DateTimeOffset.UtcNow;
-            foreach (var n in unreadNotifications)
-            {
-                n.IsRead = true;
-                n.ReadAt = now;
-            }
 
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            // Bulk SQL UPDATE: binlerce okunmamış bildirimi RAM'e çekmeden tek sorguda okundu işaretler
+            await _unitOfWork.Repository<Notification>().Query()
+                .Where(n => n.UserId == userId.Value && !n.IsRead)
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(n => n.IsRead, true)
+                        .SetProperty(n => n.ReadAt, now)
+                        .SetProperty(n => n.UpdatedAt, now),
+                    cancellationToken);
+
             return Result.Ok("Tüm bildirimler okundu olarak işaretlendi.");
         }
     }

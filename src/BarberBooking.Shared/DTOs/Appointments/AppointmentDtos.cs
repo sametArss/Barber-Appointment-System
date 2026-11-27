@@ -75,5 +75,6 @@ namespace BarberBooking.Shared.DTOs.Appointments
         public DateTimeOffset? ProposedEndAt { get; set; }
         public string? RescheduleNote { get; set; }
         public DateTimeOffset? RescheduleProposedAt { get; set; }
+        public bool HasReview { get; set; }
     }
 }

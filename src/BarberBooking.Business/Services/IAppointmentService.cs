@@ -9,8 +9,8 @@ namespace BarberBooking.Business.Services
         Task<IDataResult<AppointmentResponseDto>> CreateAppointmentAsync(CreateAppointmentRequestDto request, CancellationToken cancellationToken = default);
         Task<IResult> CancelAppointmentAsync(CancelAppointmentRequestDto request, CancellationToken cancellationToken = default);
         Task<IResult> UpdateStatusAsync(UpdateAppointmentStatusRequestDto request, CancellationToken cancellationToken = default);
-        Task<IDataResult<IReadOnlyList<AppointmentResponseDto>>> GetMyAppointmentsAsync(CancellationToken cancellationToken = default);
-        Task<IDataResult<IReadOnlyList<AppointmentResponseDto>>> GetMyWorkAppointmentsAsync(CancellationToken cancellationToken = default);
+        Task<IDataResult<IReadOnlyList<AppointmentResponseDto>>> GetMyAppointmentsAsync(int skip = 0, int take = 20, int? status = null, CancellationToken cancellationToken = default);
+        Task<IDataResult<IReadOnlyList<AppointmentResponseDto>>> GetMyWorkAppointmentsAsync(int skip = 0, int take = 50, int? status = null, CancellationToken cancellationToken = default);
         Task<IResult> UpdateMyWorkAppointmentStatusAsync(UpdateAppointmentStatusRequestDto request, CancellationToken cancellationToken = default);
         Task<IResult> ProposeRescheduleAsync(ProposeRescheduleRequestDto request, CancellationToken cancellationToken = default);
         Task<IResult> RespondToRescheduleAsync(RespondRescheduleRequestDto request, CancellationToken cancellationToken = default);
