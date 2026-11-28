@@ -225,15 +225,27 @@ namespace BarberBooking.Business.Services
                 a => a.StaffProfileId == request.StaffProfileId,
                 cancellationToken);
 
-            assignmentRepo.RemoveRange(existingAssignments);
+            var existingBranchIds = existingAssignments.Select(a => a.BranchId).ToHashSet();
 
             if (request.BranchIds.Count > 0)
             {
                 var branchRepo = _unitOfWork.Repository<Branch>();
-                var validBranchIds = await branchRepo.Query()
+                var validBranchIds = await branchRepo.QueryAsNoTracking()
                     .Where(b => b.BusinessId == businessId.Value && request.BranchIds.Contains(b.Id))
                     .Select(b => b.Id)
                     .ToListAsync(cancellationToken);
+
+                // Yeni eklenecek şubeler için abonelik personel limiti kontrolü
+                foreach (var branchId in validBranchIds.Where(id => !existingBranchIds.Contains(id)))
+                {
+                    var limitCheck = await _subscriptionService.CheckStaffLimitAsync(businessId.Value, branchId, cancellationToken);
+                    if (!limitCheck.Success)
+                    {
+                        return limitCheck;
+                    }
+                }
+
+                assignmentRepo.RemoveRange(existingAssignments);
 
                 foreach (var branchId in validBranchIds)
                 {
@@ -244,6 +256,10 @@ namespace BarberBooking.Business.Services
                         AssignedAt = DateTimeOffset.UtcNow
                     }, cancellationToken);
                 }
+            }
+            else
+            {
+                assignmentRepo.RemoveRange(existingAssignments);
             }
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -374,8 +390,9 @@ namespace BarberBooking.Business.Services
                     UserId = a.StaffProfile.BusinessMember.UserId,
                     BusinessId = a.StaffProfile.BusinessMember.BusinessId,
                     FullName = $"{a.StaffProfile.BusinessMember.User.FirstName} {a.StaffProfile.BusinessMember.User.LastName}",
-                    Email = a.StaffProfile.BusinessMember.User.Email,
-                    PhoneNumber = a.StaffProfile.BusinessMember.User.PhoneNumber,
+                    // Public/anonim şube personel listesinde kişisel iletişim PII'ı döndürülmez (KVKK/GDPR)
+                    Email = string.Empty,
+                    PhoneNumber = string.Empty,
                     Biography = a.StaffProfile.Biography,
                     ProfileImageUrl = a.StaffProfile.ProfileImageUrl,
                     IsBookable = a.StaffProfile.IsBookable,

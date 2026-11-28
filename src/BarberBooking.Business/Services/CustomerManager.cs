@@ -52,9 +52,9 @@ namespace BarberBooking.Business.Services
             var completedAppointments = await apptQuery.CountAsync(a => a.Status == AppointmentStatus.Completed, cancellationToken);
 
             var now = DateTimeOffset.UtcNow;
-            var activePenalties = await _unitOfWork.Repository<CustomerPenalty>().CountAsync(
-                p => p.CustomerUserId == userId.Value && p.IsActive && p.ExpiresAt > now,
-                cancellationToken);
+            var activePenalties = await _unitOfWork.Repository<CustomerPenalty>().QueryAsNoTracking()
+                .IgnoreQueryFilters()
+                .CountAsync(p => p.CustomerUserId == userId.Value && p.IsActive && p.ExpiresAt > now, cancellationToken);
 
             var response = new CustomerProfileResponseDto
             {

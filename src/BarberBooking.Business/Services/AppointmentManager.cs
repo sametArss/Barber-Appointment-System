@@ -251,11 +251,12 @@ namespace BarberBooking.Business.Services
                 return DataResult<AppointmentResponseDto>.Fail("Geçmiş zamana randevu alınamaz.", 400);
             }
 
-            // Şube kapalı/tatil kontrolü
+            // Şube kapalı/tatil kontrolü (yalnızca Closed tipindeki istisnalar)
             var hasBranchClosure = await _unitOfWork.Repository<BranchScheduleException>().QueryAsNoTracking()
                 .IgnoreQueryFilters()
                 .AnyAsync(
                     e => e.BranchId == request.BranchId &&
+                         e.Type == BranchScheduleExceptionType.Closed &&
                          e.StartAt < endUtc &&
                          e.EndAt > startUtc,
                     cancellationToken);
@@ -435,9 +436,9 @@ namespace BarberBooking.Business.Services
                 return Result.Fail("Randevu bulunamadı.", 404);
             }
 
-            if (appointment.Status == AppointmentStatus.Cancelled)
+            if (appointment.Status is AppointmentStatus.Completed or AppointmentStatus.Cancelled or AppointmentStatus.NoShow)
             {
-                return Result.Fail("Randevu zaten iptal edilmiştir.", 400);
+                return Result.Fail("Tamamlanmış, gelinmemiş veya zaten iptal edilmiş randevular iptal edilemez.", 400);
             }
 
             // Randevuyu sadece müşteri, işletme sahibi/yöneticisi veya atanan personel iptal edebilir
@@ -1050,7 +1051,14 @@ namespace BarberBooking.Business.Services
                     Note = $"Müşteri yeni saati onayladı: {oldStr} -> {newStr}"
                 }, cancellationToken);
 
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                try
+                {
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+                }
+                catch (DbUpdateException ex) when (IsOverlapExclusionViolation(ex))
+                {
+                    return Result.Fail("Teklif edilen saat dilimi başka bir randevu tarafından dolduruldu. Lütfen işletmeyle iletişime geçiniz.", 409);
+                }
 
                 await TryNotifyBusinessAndStaffAsync(
                     appointment.BusinessId,

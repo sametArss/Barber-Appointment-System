@@ -32,9 +32,13 @@ builder.Services.AddProblemDetails();
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<BarberBookingDbContext>("Database");
 
-// JWT Authentication Kaydı (eksikse sessizce geçme, startup'ta hata fırlat)
+// JWT Authentication Kaydı (eksik veya zayıf secret varsa startup'ta hata fırlat)
 var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>()
     ?? throw new InvalidOperationException("JwtSettings yapılandırması bulunamadı.");
+if (string.IsNullOrWhiteSpace(jwtSettings.SecretKey) || jwtSettings.SecretKey.Length < 32)
+{
+    throw new InvalidOperationException("JwtSettings:SecretKey en az 32 karakter olmalıdır.");
+}
 
 builder.Services.AddAuthentication(options =>
 {
@@ -130,11 +134,11 @@ var app = builder.Build();
 
 app.UseForwardedHeaders();
 
-// Otomatik Migration ve Seed Veri Yükleme
+// Otomatik Migration ve Rol Seed (Demo kullanıcı verisi yalnızca Development ortamında)
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<BarberBookingDbContext>();
-    await DatabaseSeeder.SeedAsync(dbContext);
+    await DatabaseSeeder.SeedAsync(dbContext, seedDemoData: app.Environment.IsDevelopment());
 }
 
 if (app.Environment.IsDevelopment())

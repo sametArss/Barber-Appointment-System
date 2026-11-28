@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
   CalendarClock,
@@ -167,8 +167,11 @@ export const AdminCalendarPage: React.FC = () => {
     };
   }, [selectedBranchId]);
 
+  const calendarSeqRef = useRef(0);
+
   const fetchCalendarData = useCallback(async () => {
     if (!selectedBranchId) return;
+    const seq = ++calendarSeqRef.current;
 
     setLoadingCalendar(true);
     try {
@@ -184,11 +187,15 @@ export const AdminCalendarPage: React.FC = () => {
             })();
 
       const apptRes = await adminService.getBranchAppointments(selectedBranchId, rangeParam);
+      if (seq !== calendarSeqRef.current) return;
       setAppointments(apptRes.data ?? []);
     } catch (error) {
+      if (seq !== calendarSeqRef.current) return;
       toast.error(getApiErrorMessage(error, 'Takvim verileri alınamadı.'));
     } finally {
-      setLoadingCalendar(false);
+      if (seq === calendarSeqRef.current) {
+        setLoadingCalendar(false);
+      }
     }
   }, [selectedBranchId, selectedDate, viewMode]);
 

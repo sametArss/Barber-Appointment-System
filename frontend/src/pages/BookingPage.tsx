@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   AlertTriangle,
@@ -160,8 +160,11 @@ export const BookingPage: React.FC = () => {
     routeState?.branch,
   ]);
 
+  const slotsSeqRef = useRef(0);
+
   const fetchSlotsAndSchedule = useCallback(async () => {
     if (!branchId || !selectedStaff || !selectedService || !selectedDate) return;
+    const seq = ++slotsSeqRef.current;
 
     setLoadingSlots(true);
     try {
@@ -174,14 +177,18 @@ export const BookingPage: React.FC = () => {
         }),
         bookingService.getStaffWorkingHours(selectedStaff.id, branchId),
       ]);
+      if (seq !== slotsSeqRef.current) return;
 
       setAvailableSlots(slotsRes.data ?? []);
       setWorkingHours(whRes.data ?? []);
     } catch (error) {
+      if (seq !== slotsSeqRef.current) return;
       toast.error(getApiErrorMessage(error, 'Müsait saatler alınamadı.'));
       setAvailableSlots([]);
     } finally {
-      setLoadingSlots(false);
+      if (seq === slotsSeqRef.current) {
+        setLoadingSlots(false);
+      }
     }
   }, [branchId, selectedDate, selectedService, selectedStaff]);
 

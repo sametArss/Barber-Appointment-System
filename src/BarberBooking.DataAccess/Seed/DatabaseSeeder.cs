@@ -11,11 +11,11 @@ namespace BarberBooking.DataAccess.Seed
 {
     public static class DatabaseSeeder
     {
-        public static async Task SeedAsync(BarberBookingDbContext context)
+        public static async Task SeedAsync(BarberBookingDbContext context, bool seedDemoData = true)
         {
             await context.Database.MigrateAsync();
 
-            // 1. Roller
+            // 1. Roller (tüm ortamlarda idempotent olarak garanti edilir)
             var roles = new[] { "SystemAdmin", "BusinessOwner", "BusinessManager", "Employee", "Customer" };
             foreach (var roleName in roles)
             {
@@ -29,6 +29,12 @@ namespace BarberBooking.DataAccess.Seed
                 }
             }
             await context.SaveChangesAsync();
+
+            // Production ortamında demo kullanıcı/işletme verisi (123456 şifreli) asla yüklenmez
+            if (!seedDemoData)
+            {
+                return;
+            }
 
             // Şifre: 123456 (PasswordHasher formatı: SaltBase64.HashBase64 - PBKDF2 SHA512 100.000 iterasyon)
             const string defaultPasswordHash = "u9c4vYqT3f8L1xXz0wKmJQ==.R2DCgtTdKQYdsd0/y0xH/v+aWi+Mo7Ic8h5P/ZZdm58=";

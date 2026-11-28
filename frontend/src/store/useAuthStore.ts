@@ -95,7 +95,7 @@ export const useAuthStore = create<AuthState>()(
 // Cross-tab oturum/token senkronizasyonu (bir sekmede çıkış/yenileme olunca diğer sekmeler anında güncellenir)
 if (typeof window !== 'undefined') {
   window.addEventListener('storage', (event) => {
-    if (event.key === 'barberbooking-auth') {
+    if (event.key === 'barberbooking-auth' || event.key === null) {
       void useAuthStore.persist.rehydrate();
     }
   });

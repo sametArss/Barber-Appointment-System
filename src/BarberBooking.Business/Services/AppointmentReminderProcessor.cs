@@ -123,6 +123,8 @@ namespace BarberBooking.Business.Services
                     a.Status == AppointmentStatus.Confirmed &&
                     a.ProposedStartAt != null &&
                     a.StartAt <= now)
+                .OrderBy(a => a.StartAt)
+                .Take(200)
                 .ToListAsync(cancellationToken);
 
             var expiredCount = 0;

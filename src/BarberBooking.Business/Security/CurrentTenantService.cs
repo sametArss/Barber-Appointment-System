@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using BarberBooking.Entities.Common;
 using Microsoft.AspNetCore.Http;
 
@@ -33,6 +33,7 @@ namespace BarberBooking.Business.Security
         }
 
         public bool IsSuperAdmin =>
-            _httpContextAccessor.HttpContext?.User?.IsInRole("SuperAdmin") ?? false;
+            (_httpContextAccessor.HttpContext?.User?.IsInRole("SystemAdmin") ?? false) ||
+            (_httpContextAccessor.HttpContext?.User?.IsInRole("SuperAdmin") ?? false);
     }
 }

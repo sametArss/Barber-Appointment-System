@@ -83,11 +83,12 @@ export const NotificationBell: React.FC = () => {
     }
   }, [isAuthenticated]);
 
-  const fetchNotifications = useCallback(async () => {
+  const fetchNotifications = useCallback(async (targetTab: 'all' | 'unread' = tab) => {
     if (!isAuthenticated) return;
     setLoading(true);
     try {
-      const res = await notificationService.getMyNotifications(false, 0, PAGE_SIZE);
+      const unreadOnly = targetTab === 'unread';
+      const res = await notificationService.getMyNotifications(unreadOnly, 0, PAGE_SIZE);
       if (res.success && res.data) {
         setNotifications(res.data);
         setHasMore(res.data.length === PAGE_SIZE);
@@ -98,13 +99,13 @@ export const NotificationBell: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, fetchUnreadCount]);
+  }, [isAuthenticated, fetchUnreadCount, tab]);
 
   const handleLoadMore = async () => {
     if (!isAuthenticated || loadingMore) return;
     setLoadingMore(true);
     try {
-      const res = await notificationService.getMyNotifications(false, notifications.length, PAGE_SIZE);
+      const res = await notificationService.getMyNotifications(tab === 'unread', notifications.length, PAGE_SIZE);
       if (res.success && res.data) {
         const incoming = res.data;
         setNotifications((prev) => {
@@ -169,7 +170,14 @@ export const NotificationBell: React.FC = () => {
     const nextOpen = !open;
     setOpen(nextOpen);
     if (nextOpen) {
-      await fetchNotifications();
+      await fetchNotifications(tab);
+    }
+  };
+
+  const handleSwitchTab = (nextTab: 'all' | 'unread') => {
+    setTab(nextTab);
+    if (open) {
+      void fetchNotifications(nextTab);
     }
   };
 
@@ -244,7 +252,7 @@ export const NotificationBell: React.FC = () => {
             <div className="mt-2.5 inline-flex rounded-xl border border-slate-200/80 bg-slate-50/80 p-0.5 dark:border-white/10 dark:bg-slate-950/60">
               <button
                 type="button"
-                onClick={() => setTab('all')}
+                onClick={() => handleSwitchTab('all')}
                 className={cn(
                   'cursor-pointer rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors',
                   tab === 'all'
@@ -256,7 +264,7 @@ export const NotificationBell: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={() => setTab('unread')}
+                onClick={() => handleSwitchTab('unread')}
                 className={cn(
                   'cursor-pointer rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors',
                   tab === 'unread'

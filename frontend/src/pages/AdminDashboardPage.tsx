@@ -460,7 +460,7 @@ export const AdminDashboardPage: React.FC = () => {
             </div>
             <CardDescription>
               {subscription
-                ? `${subscription.planName} Plan - ${subscription.currentBranchCount}/${subscription.maxBranchCount} Şube, ${subscription.currentStaffCount}/${subscription.maxStaffPerBranch} Personel Kullanımda`
+                ? `${subscription.planName} Plan - ${subscription.currentBranchCount}/${subscription.maxBranchCount} Şube, ${subscription.currentStaffCount}/${subscription.maxStaffPerBranch * subscription.maxBranchCount} Personel Kullanımda`
                 : 'Aktif abonelik kotası yükleniyor...'}
             </CardDescription>
           </CardHeader>
