@@ -103,7 +103,7 @@ namespace BarberBooking.DataAccess.Repositories
                 if (disposing)
                 {
                     _currentTransaction?.Dispose();
-                    _context.Dispose();
+                    _currentTransaction = null;
                 }
 
                 _disposed = true;
@@ -117,8 +117,6 @@ namespace BarberBooking.DataAccess.Repositories
                 await _currentTransaction.DisposeAsync();
                 _currentTransaction = null;
             }
-
-            await _context.DisposeAsync();
         }
     }
 }

@@ -3,10 +3,14 @@ import type { DataResult, Result } from '@/types/api';
 import type { NotificationResponse, UnreadNotificationCount } from '@/types/notification';
 
 export const notificationService = {
-  async getMyNotifications(unreadOnly = false): Promise<DataResult<NotificationResponse[]>> {
+  async getMyNotifications(
+    unreadOnly = false,
+    skip = 0,
+    take = 20,
+  ): Promise<DataResult<NotificationResponse[]>> {
     const { data } = await apiClient.get<DataResult<NotificationResponse[]>>(
       '/api/notifications',
-      { params: { unreadOnly } },
+      { params: { unreadOnly, skip, take } },
     );
     return data;
   },

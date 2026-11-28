@@ -121,7 +121,7 @@ export const AdminReportsPage: React.FC = () => {
                 ) : (
                   data.topServices.map((srv) => (
                     <div
-                      key={srv.serviceName}
+                      key={srv.serviceId}
                       className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-950/60 text-xs"
                     >
                       <span className="font-bold text-slate-800 dark:text-zinc-200">

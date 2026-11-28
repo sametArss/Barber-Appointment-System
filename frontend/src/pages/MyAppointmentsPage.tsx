@@ -105,11 +105,18 @@ export const MyAppointmentsPage: React.FC = () => {
   const [comment, setComment] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
 
-  const loadAppointmentsAndReviews = useCallback(async () => {
+  const getTabStatusParam = (tab: AppointmentTab): number | undefined => {
+    if (tab === 'active') return AppointmentStatus.Confirmed;
+    if (tab === 'pending') return AppointmentStatus.Pending;
+    return undefined;
+  };
+
+  const loadAppointmentsAndReviews = useCallback(async (tab: AppointmentTab = activeTab) => {
     setLoading(true);
     try {
+      const statusParam = getTabStatusParam(tab);
       const [res, favRes] = await Promise.all([
-        bookingService.getMyAppointments({ skip: 0, take: PAGE_SIZE }),
+        bookingService.getMyAppointments({ skip: 0, take: PAGE_SIZE, status: statusParam }),
         favoriteService.getMyFavorites().catch(() => null),
       ]);
 
@@ -130,7 +137,7 @@ export const MyAppointmentsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [activeTab]);
 
   const handleLoadMore = async () => {
     setLoadingMore(true);
@@ -138,6 +145,7 @@ export const MyAppointmentsPage: React.FC = () => {
       const res = await bookingService.getMyAppointments({
         skip: appointments.length,
         take: PAGE_SIZE,
+        status: getTabStatusParam(activeTab),
       });
       if (res.success && res.data) {
         const nextItems = res.data;
@@ -160,8 +168,8 @@ export const MyAppointmentsPage: React.FC = () => {
   };
 
   useEffect(() => {
-    loadAppointmentsAndReviews();
-  }, [loadAppointmentsAndReviews]);
+    loadAppointmentsAndReviews(activeTab);
+  }, [activeTab, loadAppointmentsAndReviews]);
 
   const counts = useMemo(() => {
     const active = appointments.filter((a) => a.status === AppointmentStatus.Confirmed).length;

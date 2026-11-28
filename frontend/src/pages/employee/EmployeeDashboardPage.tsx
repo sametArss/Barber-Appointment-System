@@ -8,14 +8,13 @@ import { useEmployeeData } from './useEmployeeData';
 export const EmployeeDashboardPage: React.FC = () => {
   const { workplaces, appointments, loading, updatingId, refresh, updateStatus } =
     useEmployeeData();
-  const upcoming = appointments
-    .filter(
-      (appointment) =>
-        (appointment.status === AppointmentStatus.Pending ||
-          appointment.status === AppointmentStatus.Confirmed) &&
-        new Date(appointment.startAt) >= new Date(),
-    )
-    .slice(0, 4);
+  const allUpcoming = appointments.filter(
+    (appointment) =>
+      (appointment.status === AppointmentStatus.Pending ||
+        appointment.status === AppointmentStatus.Confirmed) &&
+      new Date(appointment.startAt) >= new Date(),
+  );
+  const upcoming = allUpcoming.slice(0, 4);
   const pendingCount = appointments.filter(
     (appointment) => appointment.status === AppointmentStatus.Pending,
   ).length;
@@ -74,7 +73,7 @@ export const EmployeeDashboardPage: React.FC = () => {
               Yaklaşan Randevular
             </p>
             <p className="mt-2 font-serif text-3xl font-bold text-slate-900 dark:text-white">
-              {upcoming.length}
+              {allUpcoming.length}
             </p>
           </div>
         </div>

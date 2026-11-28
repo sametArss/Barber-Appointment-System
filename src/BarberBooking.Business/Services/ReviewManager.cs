@@ -111,103 +111,113 @@ namespace BarberBooking.Business.Services
             return DataResult<ReviewResponseDto>.Ok(response, "Değerlendirmeniz başarıyla kaydedildi.");
         }
 
-        public async Task<IDataResult<IReadOnlyList<ReviewResponseDto>>> GetBranchReviewsAsync(Guid branchId, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<IReadOnlyList<ReviewResponseDto>>> GetBranchReviewsAsync(Guid branchId, int skip = 0, int take = 30, CancellationToken cancellationToken = default)
         {
-            var reviews = await _unitOfWork.Repository<Review>().Query()
-                .Include(r => r.Customer)
-                .Include(r => r.Appointment).ThenInclude(a => a.Branch)
-                .Include(r => r.Appointment).ThenInclude(a => a.Service)
-                .Include(r => r.Appointment).ThenInclude(a => a.StaffProfile).ThenInclude(sp => sp.BusinessMember).ThenInclude(bm => bm.User)
+            var safeSkip = Math.Max(0, skip);
+            var safeTake = Math.Clamp(take, 1, 100);
+
+            var response = await _unitOfWork.Repository<Review>().QueryAsNoTracking()
+                .IgnoreQueryFilters()
                 .Where(r => r.Appointment.BranchId == branchId)
                 .OrderByDescending(r => r.CreatedAt)
+                .Skip(safeSkip)
+                .Take(safeTake)
+                .Select(r => new ReviewResponseDto
+                {
+                    Id = r.Id,
+                    AppointmentId = r.AppointmentId,
+                    CustomerUserId = r.CustomerUserId,
+                    CustomerFullName = r.Customer.FirstName + " " + r.Customer.LastName,
+                    BusinessId = r.BusinessId,
+                    BranchId = r.Appointment.BranchId,
+                    BranchName = r.Appointment.Branch.Name,
+                    StaffProfileId = r.Appointment.StaffProfileId,
+                    StaffFullName = r.Appointment.StaffProfile.BusinessMember.User.FirstName + " " + r.Appointment.StaffProfile.BusinessMember.User.LastName,
+                    ServiceName = r.Appointment.Service.Name,
+                    Rating = r.Rating,
+                    Comment = r.Comment,
+                    CreatedDate = r.CreatedAt
+                })
                 .ToListAsync(cancellationToken);
-
-            var response = reviews.Select(r => new ReviewResponseDto
-            {
-                Id = r.Id,
-                AppointmentId = r.AppointmentId,
-                CustomerUserId = r.CustomerUserId,
-                CustomerFullName = $"{r.Customer.FirstName} {r.Customer.LastName}",
-                BusinessId = r.BusinessId,
-                BranchId = r.Appointment.BranchId,
-                BranchName = r.Appointment.Branch.Name,
-                StaffProfileId = r.Appointment.StaffProfileId,
-                StaffFullName = $"{r.Appointment.StaffProfile.BusinessMember.User.FirstName} {r.Appointment.StaffProfile.BusinessMember.User.LastName}",
-                ServiceName = r.Appointment.Service.Name,
-                Rating = r.Rating,
-                Comment = r.Comment,
-                CreatedDate = r.CreatedAt
-            }).ToList();
 
             return DataResult<IReadOnlyList<ReviewResponseDto>>.Ok(response);
         }
 
-        public async Task<IDataResult<IReadOnlyList<ReviewResponseDto>>> GetStaffReviewsAsync(Guid staffProfileId, CancellationToken cancellationToken = default)
+        public async Task<IDataResult<IReadOnlyList<ReviewResponseDto>>> GetStaffReviewsAsync(Guid staffProfileId, int skip = 0, int take = 30, CancellationToken cancellationToken = default)
         {
-            var reviews = await _unitOfWork.Repository<Review>().Query()
-                .Include(r => r.Customer)
-                .Include(r => r.Appointment).ThenInclude(a => a.Branch)
-                .Include(r => r.Appointment).ThenInclude(a => a.Service)
-                .Include(r => r.Appointment).ThenInclude(a => a.StaffProfile).ThenInclude(sp => sp.BusinessMember).ThenInclude(bm => bm.User)
+            var safeSkip = Math.Max(0, skip);
+            var safeTake = Math.Clamp(take, 1, 100);
+
+            var response = await _unitOfWork.Repository<Review>().QueryAsNoTracking()
+                .IgnoreQueryFilters()
                 .Where(r => r.Appointment.StaffProfileId == staffProfileId)
                 .OrderByDescending(r => r.CreatedAt)
+                .Skip(safeSkip)
+                .Take(safeTake)
+                .Select(r => new ReviewResponseDto
+                {
+                    Id = r.Id,
+                    AppointmentId = r.AppointmentId,
+                    CustomerUserId = r.CustomerUserId,
+                    CustomerFullName = r.Customer.FirstName + " " + r.Customer.LastName,
+                    BusinessId = r.BusinessId,
+                    BranchId = r.Appointment.BranchId,
+                    BranchName = r.Appointment.Branch.Name,
+                    StaffProfileId = r.Appointment.StaffProfileId,
+                    StaffFullName = r.Appointment.StaffProfile.BusinessMember.User.FirstName + " " + r.Appointment.StaffProfile.BusinessMember.User.LastName,
+                    ServiceName = r.Appointment.Service.Name,
+                    Rating = r.Rating,
+                    Comment = r.Comment,
+                    CreatedDate = r.CreatedAt
+                })
                 .ToListAsync(cancellationToken);
-
-            var response = reviews.Select(r => new ReviewResponseDto
-            {
-                Id = r.Id,
-                AppointmentId = r.AppointmentId,
-                CustomerUserId = r.CustomerUserId,
-                CustomerFullName = $"{r.Customer.FirstName} {r.Customer.LastName}",
-                BusinessId = r.BusinessId,
-                BranchId = r.Appointment.BranchId,
-                BranchName = r.Appointment.Branch.Name,
-                StaffProfileId = r.Appointment.StaffProfileId,
-                StaffFullName = $"{r.Appointment.StaffProfile.BusinessMember.User.FirstName} {r.Appointment.StaffProfile.BusinessMember.User.LastName}",
-                ServiceName = r.Appointment.Service.Name,
-                Rating = r.Rating,
-                Comment = r.Comment,
-                CreatedDate = r.CreatedAt
-            }).ToList();
 
             return DataResult<IReadOnlyList<ReviewResponseDto>>.Ok(response);
         }
 
         public async Task<IDataResult<BusinessReviewSummaryDto>> GetBusinessReviewSummaryAsync(Guid businessId, CancellationToken cancellationToken = default)
         {
-            var reviews = await _unitOfWork.Repository<Review>().Query()
-                .Include(r => r.Customer)
-                .Include(r => r.Appointment).ThenInclude(a => a.Branch)
-                .Include(r => r.Appointment).ThenInclude(a => a.Service)
-                .Include(r => r.Appointment).ThenInclude(a => a.StaffProfile).ThenInclude(sp => sp.BusinessMember).ThenInclude(bm => bm.User)
-                .Where(r => r.BusinessId == businessId)
+            var baseQuery = _unitOfWork.Repository<Review>().QueryAsNoTracking()
+                .IgnoreQueryFilters()
+                .Where(r => r.BusinessId == businessId);
+
+            // SQL-side ortalama & toplam sayı (RAM'e tüm yorumları çekmez)
+            var stats = await baseQuery
+                .GroupBy(_ => 1)
+                .Select(g => new
+                {
+                    Total = g.Count(),
+                    Avg = g.Average(r => (double)r.Rating)
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            var recentReviews = await baseQuery
                 .OrderByDescending(r => r.CreatedAt)
-                .ToListAsync(cancellationToken);
-
-            int total = reviews.Count;
-            double avg = total > 0 ? Math.Round(reviews.Average(r => r.Rating), 1) : 0.0;
-
-            var summary = new BusinessReviewSummaryDto
-            {
-                BusinessId = businessId,
-                AverageRating = avg,
-                TotalReviewCount = total,
-                RecentReviews = reviews.Take(10).Select(r => new ReviewResponseDto
+                .Take(10)
+                .Select(r => new ReviewResponseDto
                 {
                     Id = r.Id,
                     AppointmentId = r.AppointmentId,
                     CustomerUserId = r.CustomerUserId,
-                    CustomerFullName = $"{r.Customer.FirstName} {r.Customer.LastName}",
+                    CustomerFullName = r.Customer.FirstName + " " + r.Customer.LastName,
                     BusinessId = r.BusinessId,
                     BranchId = r.Appointment.BranchId,
                     BranchName = r.Appointment.Branch.Name,
                     StaffProfileId = r.Appointment.StaffProfileId,
-                    StaffFullName = $"{r.Appointment.StaffProfile.BusinessMember.User.FirstName} {r.Appointment.StaffProfile.BusinessMember.User.LastName}",
+                    StaffFullName = r.Appointment.StaffProfile.BusinessMember.User.FirstName + " " + r.Appointment.StaffProfile.BusinessMember.User.LastName,
                     ServiceName = r.Appointment.Service.Name,
                     Rating = r.Rating,
                     Comment = r.Comment,
                     CreatedDate = r.CreatedAt
-                }).ToList()
+                })
+                .ToListAsync(cancellationToken);
+
+            var summary = new BusinessReviewSummaryDto
+            {
+                BusinessId = businessId,
+                AverageRating = stats != null ? Math.Round(stats.Avg, 1) : 0.0,
+                TotalReviewCount = stats?.Total ?? 0,
+                RecentReviews = recentReviews
             };
 
             return DataResult<BusinessReviewSummaryDto>.Ok(summary);

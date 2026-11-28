@@ -31,17 +31,25 @@ namespace BarberBooking.API.Controllers
 
         [HttpGet("branch/{branchId:guid}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetBranchReviews([FromRoute] Guid branchId, CancellationToken cancellationToken)
+        public async Task<IActionResult> GetBranchReviews(
+            [FromRoute] Guid branchId,
+            [FromQuery] int skip = 0,
+            [FromQuery] int take = 30,
+            CancellationToken cancellationToken = default)
         {
-            var result = await _reviewService.GetBranchReviewsAsync(branchId, cancellationToken);
+            var result = await _reviewService.GetBranchReviewsAsync(branchId, skip, take, cancellationToken);
             return Ok(result);
         }
 
         [HttpGet("staff/{staffProfileId:guid}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetStaffReviews([FromRoute] Guid staffProfileId, CancellationToken cancellationToken)
+        public async Task<IActionResult> GetStaffReviews(
+            [FromRoute] Guid staffProfileId,
+            [FromQuery] int skip = 0,
+            [FromQuery] int take = 30,
+            CancellationToken cancellationToken = default)
         {
-            var result = await _reviewService.GetStaffReviewsAsync(staffProfileId, cancellationToken);
+            var result = await _reviewService.GetStaffReviewsAsync(staffProfileId, skip, take, cancellationToken);
             return Ok(result);
         }
 

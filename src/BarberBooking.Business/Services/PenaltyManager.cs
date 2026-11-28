@@ -137,7 +137,7 @@ namespace BarberBooking.Business.Services
             return await CheckCustomerRestrictionAsync(userId.Value, businessId, cancellationToken);
         }
 
-        public async Task<IDataResult<IReadOnlyList<BusinessPenaltyItemDto>>> GetBusinessPenaltiesAsync(CancellationToken cancellationToken = default)
+        public async Task<IDataResult<IReadOnlyList<BusinessPenaltyItemDto>>> GetBusinessPenaltiesAsync(int skip = 0, int take = 50, CancellationToken cancellationToken = default)
         {
             var businessId = _tenantService.BusinessId;
             if (!businessId.HasValue)
@@ -145,8 +145,11 @@ namespace BarberBooking.Business.Services
                 return DataResult<IReadOnlyList<BusinessPenaltyItemDto>>.Fail("İşletme yetkiniz bulunamadı.", 403);
             }
 
+            var safeSkip = Math.Max(0, skip);
+            var safeTake = Math.Clamp(take, 1, 100);
             var now = DateTimeOffset.UtcNow;
-            var penalties = await _unitOfWork.Repository<CustomerPenalty>().Query()
+
+            var penalties = await _unitOfWork.Repository<CustomerPenalty>().QueryAsNoTracking()
                 .IgnoreQueryFilters()
                 .Include(p => p.Customer)
                 .Include(p => p.Appointment).ThenInclude(a => a!.Branch)
@@ -154,12 +157,22 @@ namespace BarberBooking.Business.Services
                 .Where(p => p.BusinessId == businessId.Value)
                 .OrderByDescending(p => p.IsActive && p.ExpiresAt > now)
                 .ThenByDescending(p => p.CreatedAt)
+                .Skip(safeSkip)
+                .Take(safeTake)
                 .ToListAsync(cancellationToken);
 
-            var activeCounts = penalties
-                .Where(p => p.IsActive && p.ExpiresAt > now)
-                .GroupBy(p => p.CustomerUserId)
-                .ToDictionary(g => g.Key, g => g.Count());
+            var customerIds = penalties.Select(p => p.CustomerUserId).Distinct().ToList();
+            var activeCounts = customerIds.Count == 0
+                ? new Dictionary<Guid, int>()
+                : await _unitOfWork.Repository<CustomerPenalty>().QueryAsNoTracking()
+                    .IgnoreQueryFilters()
+                    .Where(p => p.BusinessId == businessId.Value &&
+                                customerIds.Contains(p.CustomerUserId) &&
+                                p.IsActive &&
+                                p.ExpiresAt > now)
+                    .GroupBy(p => p.CustomerUserId)
+                    .Select(g => new { CustomerUserId = g.Key, Count = g.Count() })
+                    .ToDictionaryAsync(x => x.CustomerUserId, x => x.Count, cancellationToken);
 
             var result = penalties.Select(p => new BusinessPenaltyItemDto
             {

@@ -310,7 +310,7 @@ namespace BarberBooking.Business.Services
                 return DataResult<IReadOnlyList<ServiceResponseDto>>.Fail("İşletme yetkiniz bulunamadı.", 403);
             }
 
-            var services = await _unitOfWork.Repository<Service>().Query()
+            var services = await _unitOfWork.Repository<Service>().QueryAsNoTracking()
                 .Include(s => s.BranchServices)
                     .ThenInclude(bs => bs.Branch)
                 .Where(s => s.BusinessId == businessId.Value)
@@ -406,7 +406,7 @@ namespace BarberBooking.Business.Services
                 return DataResult<IReadOnlyList<BranchServiceResponseDto>>.Ok(new List<BranchServiceResponseDto>());
             }
 
-            var branchServices = await _unitOfWork.Repository<BranchService>().Query()
+            var branchServices = await _unitOfWork.Repository<BranchService>().QueryAsNoTracking()
                 .Include(bs => bs.Service)
                 .Where(bs => bs.BranchId == branchId &&
                              bs.IsActive &&
@@ -532,7 +532,7 @@ namespace BarberBooking.Business.Services
                 return Result.Fail("Oturum açmanız gerekmektedir.", 401);
             }
 
-            var staffQuery = _unitOfWork.Repository<StaffProfile>().Query()
+            var staffQuery = _unitOfWork.Repository<StaffProfile>().QueryAsNoTracking()
                 .Include(sp => sp.BusinessMember)
                 .Include(sp => sp.BranchAssignments)
                 .Where(sp => sp.BusinessMember.UserId == userId.Value && sp.BusinessMember.IsActive);
@@ -634,7 +634,7 @@ namespace BarberBooking.Business.Services
                 return DataResult<IReadOnlyList<ServiceResponseDto>>.Fail("Oturum açmanız gerekmektedir.", 401);
             }
 
-            var staffQuery = _unitOfWork.Repository<StaffProfile>().Query()
+            var staffQuery = _unitOfWork.Repository<StaffProfile>().QueryAsNoTracking()
                 .Include(sp => sp.BusinessMember)
                 .Where(sp => sp.BusinessMember.UserId == userId.Value && sp.BusinessMember.IsActive);
 
@@ -652,7 +652,7 @@ namespace BarberBooking.Business.Services
 
         public async Task<IDataResult<IReadOnlyList<ServiceResponseDto>>> GetStaffServicesAsync(Guid staffProfileId, Guid? branchId = null, CancellationToken cancellationToken = default)
         {
-            var query = _unitOfWork.Repository<StaffService>().Query()
+            var query = _unitOfWork.Repository<StaffService>().QueryAsNoTracking()
                 .Include(ss => ss.Service)
                 .Where(ss => ss.StaffProfileId == staffProfileId && ss.Service.IsActive);
 

@@ -59,19 +59,21 @@ namespace BarberBooking.API.BackgroundServices
                         expiredReschedules);
                 }
 
-                // 30 günden eski bildirimleri periyodik olarak (başlangıçta ve 6 saatte bir) temizle
+                // 30 günden eski bildirimleri ve süresi dolan RefreshToken'ları periyodik olarak (başlangıçta ve 6 saatte bir) temizle
                 var now = DateTimeOffset.UtcNow;
                 if (now - _lastCleanupUtc >= CleanupInterval)
                 {
                     var deletedNotifications = await processor.CleanupOldNotificationsAsync(NotificationRetentionDays, stoppingToken);
+                    var deletedTokens = await processor.CleanupExpiredRefreshTokensAsync(7, stoppingToken);
                     _lastCleanupUtc = now;
 
-                    if (deletedNotifications > 0)
+                    if (deletedNotifications > 0 || deletedTokens > 0)
                     {
                         _logger.LogInformation(
-                            "Otomatik bildirim temizliği (TTL {Days} gün): {DeletedCount} eski bildirim veritabanından silindi.",
+                            "Periyodik temizlik tamamlandı: {DeletedNotifications} eski bildirim (TTL {Days} gün), {DeletedTokens} süresi dolmuş RefreshToken silindi.",
+                            deletedNotifications,
                             NotificationRetentionDays,
-                            deletedNotifications);
+                            deletedTokens);
                     }
                 }
             }

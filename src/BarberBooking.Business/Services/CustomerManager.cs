@@ -43,9 +43,13 @@ namespace BarberBooking.Business.Services
                 return DataResult<CustomerProfileResponseDto>.Fail("Kullanıcı bulunamadı.", 404);
             }
 
-            var appointments = await _unitOfWork.Repository<Appointment>().GetAsync(
-                a => a.CustomerUserId == userId.Value,
-                cancellationToken);
+            // SQL-side randevu sayımı (tüm randevuları RAM'e çekmez)
+            var apptQuery = _unitOfWork.Repository<Appointment>().QueryAsNoTracking()
+                .IgnoreQueryFilters()
+                .Where(a => a.CustomerUserId == userId.Value);
+
+            var totalAppointments = await apptQuery.CountAsync(cancellationToken);
+            var completedAppointments = await apptQuery.CountAsync(a => a.Status == AppointmentStatus.Completed, cancellationToken);
 
             var now = DateTimeOffset.UtcNow;
             var activePenalties = await _unitOfWork.Repository<CustomerPenalty>().CountAsync(
@@ -59,8 +63,8 @@ namespace BarberBooking.Business.Services
                 LastName = user.LastName,
                 Email = user.Email,
                 PhoneNumber = user.PhoneNumber,
-                TotalAppointments = appointments.Count,
-                CompletedAppointments = appointments.Count(a => a.Status == AppointmentStatus.Completed),
+                TotalAppointments = totalAppointments,
+                CompletedAppointments = completedAppointments,
                 ActivePenalties = activePenalties,
                 IsRestricted = activePenalties >= 3
             };
@@ -121,6 +125,14 @@ namespace BarberBooking.Business.Services
             user.PasswordHash = _passwordHasher.HashPassword(request.NewPassword);
             userRepo.Update(user);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            // Güvenlik: Şifre değiştiğinde tüm cihazlardaki aktif refresh token'ları iptal et
+            var nowUtc = DateTime.UtcNow;
+            await _unitOfWork.Repository<RefreshToken>().Query()
+                .Where(rt => rt.UserId == userId.Value && rt.RevokedAt == null)
+                .ExecuteUpdateAsync(
+                    setters => setters.SetProperty(rt => rt.RevokedAt, nowUtc),
+                    cancellationToken);
 
             return Result.Ok("Şifreniz başarıyla değiştirildi.");
         }

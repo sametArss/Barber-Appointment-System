@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("BarberBooking.Business")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9b473a42dcea1559ff96300bfd97aa53f23326a3")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+eec35ee329918ab451425dfbff05b5d3410cf16a")]
 [assembly: System.Reflection.AssemblyProductAttribute("BarberBooking.Business")]
 [assembly: System.Reflection.AssemblyTitleAttribute("BarberBooking.Business")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

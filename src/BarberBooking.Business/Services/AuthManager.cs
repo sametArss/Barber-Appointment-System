@@ -1,4 +1,4 @@
-﻿using System.Security.Cryptography;
+using System.Security.Cryptography;
 using System.Text;
 using BarberBooking.Business.Security;
 using BarberBooking.DataAccess.Repositories;
@@ -104,10 +104,34 @@ namespace BarberBooking.Business.Services
                 return DataResult<AuthResponseDto>.Fail("Geçersiz e-posta veya şifre.", 401);
             }
 
+            var nowUtc = DateTimeOffset.UtcNow;
+            if (user.LockoutEnd.HasValue && user.LockoutEnd.Value > nowUtc)
+            {
+                var remainingMin = Math.Max(1, (int)Math.Ceiling((user.LockoutEnd.Value - nowUtc).TotalMinutes));
+                return DataResult<AuthResponseDto>.Fail(
+                    $"Çok fazla başarısız giriş denemesi. Hesabınız {remainingMin} dakika süreyle kilitlendi.",
+                    429);
+            }
+
             var isPasswordValid = _passwordHasher.VerifyPassword(request.Password, user.PasswordHash);
             if (!isPasswordValid)
             {
+                user.FailedLoginAttempts++;
+                if (user.FailedLoginAttempts >= 5)
+                {
+                    user.LockoutEnd = nowUtc.AddMinutes(10);
+                    user.FailedLoginAttempts = 0;
+                }
+                userRepo.Update(user);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
                 return DataResult<AuthResponseDto>.Fail("Geçersiz e-posta veya şifre.", 401);
+            }
+
+            if (user.FailedLoginAttempts > 0 || user.LockoutEnd.HasValue)
+            {
+                user.FailedLoginAttempts = 0;
+                user.LockoutEnd = null;
+                userRepo.Update(user);
             }
 
             var roles = user.UserRoles.Select(ur => ur.Role.Name).ToList();

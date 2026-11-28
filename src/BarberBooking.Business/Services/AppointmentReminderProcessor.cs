@@ -1,3 +1,4 @@
+using BarberBooking.DataAccess.Context;
 using BarberBooking.DataAccess.Repositories;
 using BarberBooking.Entities.Appointments;
 using BarberBooking.Entities.Notifications;
@@ -9,28 +10,45 @@ namespace BarberBooking.Business.Services
     public class AppointmentReminderProcessor : IAppointmentReminderProcessor
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly BarberBookingDbContext _dbContext;
         private readonly INotificationService _notificationService;
         private readonly ILogger<AppointmentReminderProcessor> _logger;
 
         private static readonly TimeSpan ReminderWindow = TimeSpan.FromHours(2);
+        private const long ReminderAdvisoryLockKey = 78451239L;
 
         public AppointmentReminderProcessor(
             IUnitOfWork unitOfWork,
+            BarberBookingDbContext dbContext,
             INotificationService notificationService,
             ILogger<AppointmentReminderProcessor> logger)
         {
             _unitOfWork = unitOfWork;
+            _dbContext = dbContext;
             _notificationService = notificationService;
             _logger = logger;
         }
 
         public async Task<(int RemindersSent, int ExpiredReschedules)> ProcessAsync(CancellationToken cancellationToken = default)
         {
+            // Multi-replica güvenliği: transaction-scoped PostgreSQL advisory lock
+            // Aynı anda birden fazla API sunucusu çalışsa bile bu turu yalnızca 1 sunucu yürütür
+            await using var lockTx = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+            var lockAcquired = await _dbContext.Database
+                .SqlQueryRaw<bool>($"SELECT pg_try_advisory_xact_lock({ReminderAdvisoryLockKey}) AS \"Value\"")
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (!lockAcquired)
+            {
+                await lockTx.RollbackAsync(cancellationToken);
+                return (0, 0);
+            }
+
             var now = DateTimeOffset.UtcNow;
             var windowEnd = now.Add(ReminderWindow);
             var appointmentRepo = _unitOfWork.Repository<Appointment>();
 
-            // 1) Randevuya 2 saat (veya daha az) kalan onaylı ve henüz hatırlatma gitmemiş randevular
+            // 1) Randevuya 2 saat (veya daha az) kalan onaylı ve henüz hatırlatma gitmemiş randevular (batch: 200)
             var upcomingAppointments = await appointmentRepo.Query()
                 .IgnoreQueryFilters()
                 .Include(a => a.Branch)
@@ -42,52 +60,57 @@ namespace BarberBooking.Business.Services
                     a.ProposedStartAt == null &&
                     a.StartAt > now &&
                     a.StartAt <= windowEnd)
+                .OrderBy(a => a.StartAt)
+                .Take(200)
                 .ToListAsync(cancellationToken);
 
             var remindersSent = 0;
 
-            foreach (var appt in upcomingAppointments)
+            if (upcomingAppointments.Count > 0)
             {
-                var remainingMinutes = Math.Max(1, (int)Math.Round((appt.StartAt - now).TotalMinutes));
-                var remainingText = remainingMinutes >= 90
-                    ? "yaklaşık 2 saat"
-                    : remainingMinutes >= 45
-                        ? "yaklaşık 1 saat"
-                        : $"{remainingMinutes} dakika";
+                var notificationRepo = _unitOfWork.Repository<Notification>();
 
-                var timeStr = appt.StartAt.ToOffset(TimeSpan.FromHours(3)).ToString("HH:mm");
-                var staffName = appt.StaffProfile?.BusinessMember?.User != null
-                    ? $"{appt.StaffProfile.BusinessMember.User.FirstName} {appt.StaffProfile.BusinessMember.User.LastName}".Trim()
-                    : "personeliniz";
-                var branchName = appt.Branch?.Name ?? "Salon";
-                var serviceName = appt.Service?.Name ?? "Hizmet";
-
-                var title = remainingMinutes >= 90
-                    ? "Randevunuza 2 Saat Kaldı"
-                    : "Randevu Hatırlatması";
-                var message =
-                    $"{branchName} şubesinde {staffName} ile saat {timeStr} için planlanan {serviceName} randevunuza {remainingText} kaldı.";
-
-                try
+                foreach (var appt in upcomingAppointments)
                 {
+                    var remainingMinutes = Math.Max(1, (int)Math.Round((appt.StartAt - now).TotalMinutes));
+                    var remainingText = remainingMinutes >= 90
+                        ? "yaklaşık 2 saat"
+                        : remainingMinutes >= 45
+                            ? "yaklaşık 1 saat"
+                            : $"{remainingMinutes} dakika";
+
+                    var timeStr = appt.StartAt.ToOffset(TimeSpan.FromHours(3)).ToString("HH:mm");
+                    var staffName = appt.StaffProfile?.BusinessMember?.User != null
+                        ? $"{appt.StaffProfile.BusinessMember.User.FirstName} {appt.StaffProfile.BusinessMember.User.LastName}".Trim()
+                        : "personeliniz";
+                    var branchName = appt.Branch?.Name ?? "Salon";
+                    var serviceName = appt.Service?.Name ?? "Hizmet";
+
+                    var title = remainingMinutes >= 90
+                        ? "Randevunuza 2 Saat Kaldı"
+                        : "Randevu Hatırlatması";
+                    var message =
+                        $"{branchName} şubesinde {staffName} ile saat {timeStr} için planlanan {serviceName} randevunuza {remainingText} kaldı.";
+
                     appt.ReminderSentAt = now;
                     appointmentRepo.Update(appt);
-                    await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-                    await _notificationService.SendNotificationAsync(
-                        appt.CustomerUserId,
-                        NotificationType.AppointmentReminder,
-                        title,
-                        message,
-                        appt.Id,
-                        cancellationToken);
+                    await notificationRepo.AddAsync(new Notification
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = appt.CustomerUserId,
+                        Type = NotificationType.AppointmentReminder,
+                        Title = title,
+                        Message = message,
+                        RelatedEntityId = appt.Id,
+                        IsRead = false
+                    }, cancellationToken);
 
                     remindersSent++;
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Randevu hatırlatma bildirimi gönderilirken hata oluştu. AppointmentId={AppointmentId}", appt.Id);
-                }
+
+                // Tek SaveChangesAsync ile tüm ReminderSentAt + Notification kayıtları toplu yazılır
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
             }
 
             // 2) Saat değişikliği teklifi süresi dolmuş (StartAt geçmiş) randevuları arka planda otomatik iptal et
@@ -170,6 +193,7 @@ namespace BarberBooking.Business.Services
                 }
             }
 
+            await lockTx.CommitAsync(cancellationToken);
             return (remindersSent, expiredCount);
         }
 
@@ -182,6 +206,20 @@ namespace BarberBooking.Business.Services
             var deletedCount = await _unitOfWork.Repository<Notification>().Query()
                 .IgnoreQueryFilters()
                 .Where(n => n.CreatedAt < cutoffUtc)
+                .ExecuteDeleteAsync(cancellationToken);
+
+            return deletedCount;
+        }
+
+        public async Task<int> CleanupExpiredRefreshTokensAsync(int revokedRetentionDays = 7, CancellationToken cancellationToken = default)
+        {
+            var nowUtc = DateTime.UtcNow;
+            var revokedCutoffUtc = nowUtc.AddDays(-Math.Max(1, revokedRetentionDays));
+
+            // Bulk SQL DELETE: süresi dolmuş veya 7+ gündür iptal edilmiş refresh token'ları temizler
+            var deletedCount = await _unitOfWork.Repository<Entities.Identity.RefreshToken>().Query()
+                .IgnoreQueryFilters()
+                .Where(rt => rt.ExpiresAt <= nowUtc || (rt.RevokedAt != null && rt.RevokedAt < revokedCutoffUtc))
                 .ExecuteDeleteAsync(cancellationToken);
 
             return deletedCount;

@@ -49,7 +49,7 @@ namespace BarberBooking.Business.Services
             }
 
             // Hizmet ve Süre Bilgisi (Şube Override öncelikli)
-            var branchService = await _unitOfWork.Repository<BranchService>().Query()
+            var branchService = await _unitOfWork.Repository<BranchService>().QueryAsNoTracking()
                 .Include(bs => bs.Service)
                 .FirstOrDefaultAsync(bs => bs.BranchId == query.BranchId && bs.ServiceId == query.ServiceId && bs.IsActive, cancellationToken);
 
@@ -75,7 +75,7 @@ namespace BarberBooking.Business.Services
             var dayOfWeek = query.Date.DayOfWeek;
 
             // 1. Personel o gün çalışıyor mu?
-            var staffWorkingHour = await _unitOfWork.Repository<StaffWorkingHour>().Query()
+            var staffWorkingHour = await _unitOfWork.Repository<StaffWorkingHour>().QueryAsNoTracking()
                 .Include(swh => swh.Breaks)
                 .FirstOrDefaultAsync(swh => swh.StaffProfileId == query.StaffProfileId && swh.BranchId == query.BranchId && swh.DayOfWeek == dayOfWeek, cancellationToken);
 
@@ -101,7 +101,7 @@ namespace BarberBooking.Business.Services
                 return DataResult<IReadOnlyList<AvailableSlotResponseDto>>.Ok(new List<AvailableSlotResponseDto>(), "Şube seçilen tarihte kapalıdır.");
             }
 
-            var staffExceptions = await _unitOfWork.Repository<StaffScheduleException>().Query()
+            var staffExceptions = await _unitOfWork.Repository<StaffScheduleException>().QueryAsNoTracking()
                 .Where(e => e.StaffProfileId == query.StaffProfileId &&
                             e.BranchId == query.BranchId &&
                             e.StartAt < dayEndUtc &&
@@ -110,7 +110,7 @@ namespace BarberBooking.Business.Services
                 .ToListAsync(cancellationToken);
 
             // 3. Mevcut Randevular (aynı personelin tüm şubelerindeki çakışan randevuları dahil)
-            var activeAppointments = await _unitOfWork.Repository<Appointment>().Query()
+            var activeAppointments = await _unitOfWork.Repository<Appointment>().QueryAsNoTracking()
                 .IgnoreQueryFilters()
                 .Where(a => a.StaffProfileId == query.StaffProfileId &&
                             a.StartAt < dayEndUtc &&
@@ -721,15 +721,17 @@ namespace BarberBooking.Business.Services
         {
             Id = a.Id,
             CustomerUserId = a.CustomerUserId,
-            CustomerFullName = $"{a.Customer.FirstName} {a.Customer.LastName}".Trim(),
-            CustomerPhoneNumber = a.Customer.PhoneNumber ?? string.Empty,
+            CustomerFullName = a.Customer != null ? $"{a.Customer.FirstName} {a.Customer.LastName}".Trim() : string.Empty,
+            CustomerPhoneNumber = a.Customer?.PhoneNumber ?? string.Empty,
             BusinessId = a.BusinessId,
             BranchId = a.BranchId,
-            BranchName = a.Branch.Name,
+            BranchName = a.Branch?.Name ?? string.Empty,
             StaffProfileId = a.StaffProfileId,
-            StaffFullName = $"{a.StaffProfile.BusinessMember.User.FirstName} {a.StaffProfile.BusinessMember.User.LastName}".Trim(),
+            StaffFullName = a.StaffProfile?.BusinessMember?.User != null
+                ? $"{a.StaffProfile.BusinessMember.User.FirstName} {a.StaffProfile.BusinessMember.User.LastName}".Trim()
+                : string.Empty,
             ServiceId = a.ServiceId,
-            ServiceName = a.Service.Name,
+            ServiceName = a.Service?.Name ?? string.Empty,
             StartAt = a.StartAt,
             EndAt = a.EndAt,
             PriceSnapshot = a.PriceSnapshot,

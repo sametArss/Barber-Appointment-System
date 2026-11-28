@@ -115,7 +115,10 @@ export const EmployeeSchedulePage: React.FC = () => {
     return workplaces[0];
   }, [workplaces, selectedWorkplaceKey]);
 
+  const loadSeqRef = React.useRef(0);
+
   const loadSchedule = useCallback(async (workplace: EmployeeWorkplace | null) => {
+    const seq = ++loadSeqRef.current;
     if (!workplace) {
       setDays(createEmptyWeek());
       setExceptions([]);
@@ -127,6 +130,7 @@ export const EmployeeSchedulePage: React.FC = () => {
         employeeService.getMyWorkingHours(workplace.staffProfileId, workplace.branchId),
         employeeService.getMyExceptions(workplace.staffProfileId, workplace.branchId),
       ]);
+      if (seq !== loadSeqRef.current) return;
 
       const nextWeek = createEmptyWeek();
       for (const item of whRes.data ?? []) {
@@ -145,9 +149,12 @@ export const EmployeeSchedulePage: React.FC = () => {
       setHasUnsavedHours(false);
       setExceptions(exRes.data ?? []);
     } catch (error) {
+      if (seq !== loadSeqRef.current) return;
       toast.error(getApiErrorMessage(error, 'Çalışma saatleri yüklenemedi.'));
     } finally {
-      setLoadingSchedule(false);
+      if (seq === loadSeqRef.current) {
+        setLoadingSchedule(false);
+      }
     }
   }, []);
 

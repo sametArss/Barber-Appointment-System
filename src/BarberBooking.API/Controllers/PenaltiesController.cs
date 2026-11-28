@@ -44,9 +44,12 @@ namespace BarberBooking.API.Controllers
 
         [HttpGet("my-business")]
         [Authorize(Roles = "BusinessOwner,BusinessManager")]
-        public async Task<IActionResult> GetBusinessPenalties(CancellationToken cancellationToken)
+        public async Task<IActionResult> GetBusinessPenalties(
+            [FromQuery] int skip = 0,
+            [FromQuery] int take = 50,
+            CancellationToken cancellationToken = default)
         {
-            var result = await _penaltyService.GetBusinessPenaltiesAsync(cancellationToken);
+            var result = await _penaltyService.GetBusinessPenaltiesAsync(skip, take, cancellationToken);
             if (!result.Success)
             {
                 return StatusCode(result.StatusCode, result);

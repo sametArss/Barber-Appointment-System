@@ -145,6 +145,28 @@ export const AdminCalendarPage: React.FC = () => {
     };
   }, []);
 
+  // Personel listesini sadece şube değiştiğinde çek (tarih değiştikçe gereksiz API çağrısı atma)
+  useEffect(() => {
+    if (!selectedBranchId) {
+      setStaffList([]);
+      return;
+    }
+    let cancelled = false;
+    bookingService
+      .getBranchStaff(selectedBranchId)
+      .then((staffRes) => {
+        if (!cancelled) {
+          setStaffList((staffRes.data ?? []).filter((s) => s.isBookable));
+        }
+      })
+      .catch(() => {
+        // Takvim yüklemesi devam edebilir
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedBranchId]);
+
   const fetchCalendarData = useCallback(async () => {
     if (!selectedBranchId) return;
 
@@ -161,12 +183,7 @@ export const AdminCalendarPage: React.FC = () => {
               };
             })();
 
-      const [staffRes, apptRes] = await Promise.all([
-        bookingService.getBranchStaff(selectedBranchId),
-        adminService.getBranchAppointments(selectedBranchId, rangeParam),
-      ]);
-
-      setStaffList((staffRes.data ?? []).filter((s) => s.isBookable));
+      const apptRes = await adminService.getBranchAppointments(selectedBranchId, rangeParam);
       setAppointments(apptRes.data ?? []);
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Takvim verileri alınamadı.'));

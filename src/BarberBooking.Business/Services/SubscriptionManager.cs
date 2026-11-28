@@ -95,6 +95,11 @@ namespace BarberBooking.Business.Services
                 return Result.Fail("İşletme yetkiniz bulunamadı.", 403);
             }
 
+            if (!Enum.IsDefined(typeof(SubscriptionBillingCycle), request.BillingCycle))
+            {
+                return Result.Fail("Geçersiz faturalandırma dönemi.", 400);
+            }
+
             var plan = await _unitOfWork.Repository<SubscriptionPlan>().GetByIdAsync(request.PlanId, cancellationToken);
             if (plan == null || !plan.IsActive)
             {
@@ -164,15 +169,18 @@ namespace BarberBooking.Business.Services
 
         public async Task<IResult> CheckBranchLimitAsync(Guid businessId, CancellationToken cancellationToken = default)
         {
-            var sub = await _unitOfWork.Repository<BusinessSubscription>().Query()
+            var now = DateTimeOffset.UtcNow;
+            var sub = await _unitOfWork.Repository<BusinessSubscription>().QueryAsNoTracking()
                 .Include(s => s.Plan)
-                .Where(s => s.BusinessId == businessId && (s.Status == SubscriptionStatus.Active || s.Status == SubscriptionStatus.Trial))
+                .Where(s => s.BusinessId == businessId &&
+                            (s.Status == SubscriptionStatus.Active || s.Status == SubscriptionStatus.Trial) &&
+                            s.EndDate > now)
                 .OrderByDescending(s => s.EndDate)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (sub == null)
             {
-                return Result.Fail("İşletmenizin aktif bir abonelik paketi bulunmuyor.", 403);
+                return Result.Fail("İşletmenizin aktif bir abonelik paketi bulunmuyor veya süresi dolmuş.", 403);
             }
 
             var currentCount = await _unitOfWork.Repository<Branch>()
@@ -188,15 +196,18 @@ namespace BarberBooking.Business.Services
 
         public async Task<IResult> CheckStaffLimitAsync(Guid businessId, Guid branchId, CancellationToken cancellationToken = default)
         {
-            var sub = await _unitOfWork.Repository<BusinessSubscription>().Query()
+            var now = DateTimeOffset.UtcNow;
+            var sub = await _unitOfWork.Repository<BusinessSubscription>().QueryAsNoTracking()
                 .Include(s => s.Plan)
-                .Where(s => s.BusinessId == businessId && (s.Status == SubscriptionStatus.Active || s.Status == SubscriptionStatus.Trial))
+                .Where(s => s.BusinessId == businessId &&
+                            (s.Status == SubscriptionStatus.Active || s.Status == SubscriptionStatus.Trial) &&
+                            s.EndDate > now)
                 .OrderByDescending(s => s.EndDate)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (sub == null)
             {
-                return Result.Fail("İşletmenizin aktif bir abonelik paketi bulunmuyor.", 403);
+                return Result.Fail("İşletmenizin aktif bir abonelik paketi bulunmuyor veya süresi dolmuş.", 403);
             }
 
             var currentStaffInBranch = await _unitOfWork.Repository<StaffBranchAssignment>()

@@ -308,7 +308,7 @@ namespace BarberBooking.Business.Services
                 return DataResult<IReadOnlyList<StaffResponseDto>>.Fail("İşletme yetkiniz bulunamadı.", 403);
             }
 
-            var staffList = await _unitOfWork.Repository<StaffProfile>().Query()
+            var staffList = await _unitOfWork.Repository<StaffProfile>().QueryAsNoTracking()
                 .Include(sp => sp.BusinessMember)
                     .ThenInclude(bm => bm.User)
                 .Include(sp => sp.BranchAssignments)
@@ -316,7 +316,7 @@ namespace BarberBooking.Business.Services
                 .ToListAsync(cancellationToken);
 
             var staffIds = staffList.Select(sp => sp.Id).ToList();
-            var staffServicesLookup = (await _unitOfWork.Repository<StaffService>().Query()
+            var staffServicesLookup = (await _unitOfWork.Repository<StaffService>().QueryAsNoTracking()
                 .Include(ss => ss.Service)
                 .Where(ss => staffIds.Contains(ss.StaffProfileId) && ss.Service.IsActive)
                 .ToListAsync(cancellationToken))
@@ -349,7 +349,7 @@ namespace BarberBooking.Business.Services
 
         public async Task<IDataResult<IReadOnlyList<StaffResponseDto>>> GetBranchStaffAsync(Guid branchId, CancellationToken cancellationToken = default)
         {
-            var assignments = await _unitOfWork.Repository<StaffBranchAssignment>().Query()
+            var assignments = await _unitOfWork.Repository<StaffBranchAssignment>().QueryAsNoTracking()
                 .Include(a => a.StaffProfile)
                     .ThenInclude(sp => sp.BusinessMember)
                         .ThenInclude(bm => bm.User)
@@ -357,7 +357,7 @@ namespace BarberBooking.Business.Services
                 .ToListAsync(cancellationToken);
 
             var staffIds = assignments.Select(a => a.StaffProfileId).Distinct().ToList();
-            var staffServicesLookup = (await _unitOfWork.Repository<StaffService>().Query()
+            var staffServicesLookup = (await _unitOfWork.Repository<StaffService>().QueryAsNoTracking()
                 .Include(ss => ss.Service)
                 .Where(ss => staffIds.Contains(ss.StaffProfileId) && ss.BranchId == branchId && ss.Service.IsActive)
                 .ToListAsync(cancellationToken))
@@ -394,7 +394,7 @@ namespace BarberBooking.Business.Services
             if (!userId.HasValue)
                 return DataResult<IReadOnlyList<EmployeeWorkplaceResponseDto>>.Fail("Oturum açmanız gerekmektedir.", 401);
 
-            var profiles = await _unitOfWork.Repository<StaffProfile>().Query()
+            var profiles = await _unitOfWork.Repository<StaffProfile>().QueryAsNoTracking()
                 .Include(profile => profile.BusinessMember).ThenInclude(member => member.Business)
                 .Include(profile => profile.BranchAssignments).ThenInclude(assignment => assignment.Branch)
                 .Where(profile => profile.BusinessMember.UserId == userId.Value && profile.BusinessMember.IsActive)

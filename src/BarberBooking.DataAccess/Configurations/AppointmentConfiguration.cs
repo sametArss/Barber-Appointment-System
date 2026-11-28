@@ -18,12 +18,15 @@ namespace BarberBooking.DataAccess.Configurations
                 .HasMaxLength(500);
 
             builder.HasIndex(a => a.BusinessId);
+            builder.HasIndex(a => new { a.BusinessId, a.StartAt });
             builder.HasIndex(a => a.BranchId);
+            builder.HasIndex(a => new { a.BranchId, a.StartAt });
             builder.HasIndex(a => a.StaffProfileId);
             builder.HasIndex(a => a.CustomerUserId);
             builder.HasIndex(a => new { a.CustomerUserId, a.StartAt });
             builder.HasIndex(a => a.ServiceId);
             builder.HasIndex(a => new { a.StaffProfileId, a.StartAt, a.EndAt });
+            builder.HasIndex(a => new { a.Status, a.ReminderSentAt, a.StartAt });
 
             builder.HasOne(a => a.Business)
                 .WithMany()

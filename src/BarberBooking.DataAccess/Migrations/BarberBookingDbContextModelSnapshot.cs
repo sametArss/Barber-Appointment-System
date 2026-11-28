@@ -108,9 +108,15 @@ namespace BarberBooking.DataAccess.Migrations
 
                     b.HasIndex("StaffProfileId");
 
+                    b.HasIndex("BranchId", "StartAt");
+
+                    b.HasIndex("BusinessId", "StartAt");
+
                     b.HasIndex("CustomerUserId", "StartAt");
 
                     b.HasIndex("StaffProfileId", "StartAt", "EndAt");
+
+                    b.HasIndex("Status", "ReminderSentAt", "StartAt");
 
                     b.ToTable("Appointments", (string)null);
                 });
@@ -203,7 +209,13 @@ namespace BarberBooking.DataAccess.Migrations
 
                     b.HasIndex("BusinessId");
 
-                    b.ToTable("Branches");
+                    b.HasIndex("Location");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Location"), "GIST");
+
+                    b.HasIndex("IsActive", "City", "District");
+
+                    b.ToTable("Branches", (string)null);
                 });
 
             modelBuilder.Entity("BarberBooking.Entities.Businesses.Business", b =>
@@ -278,11 +290,11 @@ namespace BarberBooking.DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BusinessId");
-
                     b.HasIndex("UserId");
 
-                    b.ToTable("BusinessMembers");
+                    b.HasIndex("BusinessId", "UserId");
+
+                    b.ToTable("BusinessMembers", (string)null);
                 });
 
             modelBuilder.Entity("BarberBooking.Entities.Businesses.StaffBranchAssignment", b =>
@@ -432,9 +444,13 @@ namespace BarberBooking.DataAccess.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TokenHash");
+
                     b.HasIndex("UserId");
 
-                    b.ToTable("RefreshTokens");
+                    b.HasIndex("ExpiresAt", "RevokedAt");
+
+                    b.ToTable("RefreshTokens", (string)null);
                 });
 
             modelBuilder.Entity("BarberBooking.Entities.Identity.Role", b =>
@@ -513,7 +529,10 @@ namespace BarberBooking.DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users");
+                    b.HasIndex("NormalizedEmail")
+                        .IsUnique();
+
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("BarberBooking.Entities.Identity.UserRole", b =>

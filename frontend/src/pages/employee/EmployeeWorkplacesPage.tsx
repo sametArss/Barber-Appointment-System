@@ -27,7 +27,10 @@ export const EmployeeWorkplacesPage: React.FC = () => {
     return workplaces[0];
   }, [workplaces, selectedWorkplaceKey]);
 
+  const loadSeqRef = React.useRef(0);
+
   const loadServicesForWorkplace = useCallback(async (workplace: EmployeeWorkplace | null) => {
+    const seq = ++loadSeqRef.current;
     if (!workplace) {
       setBranchServices([]);
       setSelectedServiceIds([]);
@@ -39,6 +42,7 @@ export const EmployeeWorkplacesPage: React.FC = () => {
         bookingService.getBranchServices(workplace.branchId),
         employeeService.getMyAssignedServices(workplace.staffProfileId, workplace.branchId),
       ]);
+      if (seq !== loadSeqRef.current) return;
       const activeBranchServices = (branchSrvRes.data ?? []).filter((s) => s.isActive);
       setBranchServices(activeBranchServices);
 
@@ -46,11 +50,14 @@ export const EmployeeWorkplacesPage: React.FC = () => {
       const branchServiceIdSet = new Set(activeBranchServices.map((s) => s.serviceId));
       setSelectedServiceIds(assignedIds.filter((id) => branchServiceIdSet.has(id)));
     } catch (error) {
+      if (seq !== loadSeqRef.current) return;
       toast.error(getApiErrorMessage(error, 'Seçili salonun hizmetleri yüklenemedi.'));
       setBranchServices([]);
       setSelectedServiceIds([]);
     } finally {
-      setLoadingServices(false);
+      if (seq === loadSeqRef.current) {
+        setLoadingServices(false);
+      }
     }
   }, []);
 

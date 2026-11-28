@@ -4,5 +4,6 @@ namespace BarberBooking.Business.Services
     {
         Task<(int RemindersSent, int ExpiredReschedules)> ProcessAsync(CancellationToken cancellationToken = default);
         Task<int> CleanupOldNotificationsAsync(int retentionDays = 30, CancellationToken cancellationToken = default);
+        Task<int> CleanupExpiredRefreshTokensAsync(int revokedRetentionDays = 7, CancellationToken cancellationToken = default);
     }
 }

@@ -50,18 +50,27 @@ namespace BarberBooking.Business.Services
             await _unitOfWork.Repository<Notification>().AddAsync(notification, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // Opsiyonel: E-posta ve SMS bilgilendirmesi
-            var user = await _unitOfWork.Repository<User>().GetByIdAsync(userId, cancellationToken);
+            // Opsiyonel: E-posta ve SMS bilgilendirmesi (HTTP request iptalinden bağımsız güvenli çalıştırma)
+            var user = await _unitOfWork.Repository<User>().QueryAsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
             if (user != null)
             {
                 if (!string.IsNullOrWhiteSpace(user.Email))
                 {
-                    _ = _emailSender.SendEmailAsync(user.Email, title, message, cancellationToken);
+                    _ = Task.Run(async () =>
+                    {
+                        try { await _emailSender.SendEmailAsync(user.Email, title, message, CancellationToken.None); }
+                        catch { /* Arka plan bildirim gönderimi ana akışı kesmemeli */ }
+                    });
                 }
 
                 if (!string.IsNullOrWhiteSpace(user.PhoneNumber))
                 {
-                    _ = _smsSender.SendSmsAsync(user.PhoneNumber, $"{title}: {message}", cancellationToken);
+                    _ = Task.Run(async () =>
+                    {
+                        try { await _smsSender.SendSmsAsync(user.PhoneNumber, $"{title}: {message}", CancellationToken.None); }
+                        catch { /* Arka plan bildirim gönderimi ana akışı kesmemeli */ }
+                    });
                 }
             }
 

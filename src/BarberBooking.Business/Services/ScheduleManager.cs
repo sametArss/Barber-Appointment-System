@@ -121,7 +121,7 @@ namespace BarberBooking.Business.Services
 
         public async Task<IDataResult<IReadOnlyList<WorkingHourResponseDto>>> GetBranchWorkingHoursAsync(Guid branchId, CancellationToken cancellationToken = default)
         {
-            var workingHours = await _unitOfWork.Repository<BranchWorkingHour>().Query()
+            var workingHours = await _unitOfWork.Repository<BranchWorkingHour>().QueryAsNoTracking()
                 .Include(wh => wh.Breaks)
                 .Where(wh => wh.BranchId == branchId)
                 .OrderBy(wh => wh.DayOfWeek)
@@ -188,7 +188,7 @@ namespace BarberBooking.Business.Services
 
         public async Task<IDataResult<IReadOnlyList<ScheduleExceptionResponseDto>>> GetBranchExceptionsAsync(Guid branchId, CancellationToken cancellationToken = default)
         {
-            var exceptions = await _unitOfWork.Repository<BranchScheduleException>().Query()
+            var exceptions = await _unitOfWork.Repository<BranchScheduleException>().QueryAsNoTracking()
                 .Where(e => e.BranchId == branchId && e.EndAt >= DateTimeOffset.UtcNow)
                 .OrderBy(e => e.StartAt)
                 .ToListAsync(cancellationToken);
@@ -462,7 +462,7 @@ namespace BarberBooking.Business.Services
 
         public async Task<IDataResult<IReadOnlyList<ScheduleExceptionResponseDto>>> GetStaffExceptionsAsync(Guid staffProfileId, Guid branchId, CancellationToken cancellationToken = default)
         {
-            var exceptions = await _unitOfWork.Repository<StaffScheduleException>().Query()
+            var exceptions = await _unitOfWork.Repository<StaffScheduleException>().QueryAsNoTracking()
                 .Where(e => e.StaffProfileId == staffProfileId && e.BranchId == branchId && e.EndAt >= DateTimeOffset.UtcNow)
                 .OrderBy(e => e.StartAt)
                 .ToListAsync(cancellationToken);

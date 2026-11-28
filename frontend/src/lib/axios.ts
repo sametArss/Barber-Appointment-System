@@ -4,7 +4,7 @@ import type { DataResult } from '@/types/api';
 import type { LoginResponse, RefreshTokenRequest } from '@/types/auth';
 
 export const API_BASE_URL: string =
-  import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+  import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.PROD ? '' : 'http://localhost:5000');
 
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
@@ -33,9 +33,9 @@ const generateCorrelationId = (): string => {
 
 const processQueue = (error: unknown, token: string | null = null): void => {
   failedQueue.forEach((item) => {
-    if (error) {
-      item.reject(error);
-    } else if (token) {
+    if (error || !token) {
+      item.reject(error ?? new Error('Oturum yenilenemedi.'));
+    } else {
       item.resolve(token);
     }
   });
@@ -90,6 +90,7 @@ apiClient.interceptors.response.use(
     }
 
     if (isRefreshing) {
+      originalRequest._retry = true;
       return new Promise<string>((resolve, reject) => {
         failedQueue.push({ resolve, reject });
       }).then((newToken) => {

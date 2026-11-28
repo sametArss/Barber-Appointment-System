@@ -219,40 +219,44 @@ export const LoginPage: React.FC = () => {
             </Button>
           </form>
 
-          {/* Divider: Hızlı Deneme Girişleri */}
-          <div className="relative my-6 flex items-center justify-center">
-            <div className="h-px flex-1 bg-slate-200/90 dark:bg-white/10" />
-            <span className="px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Hızlı Deneme Girişleri
-            </span>
-            <div className="h-px flex-1 bg-slate-200/90 dark:bg-white/10" />
-          </div>
+          {import.meta.env.DEV && (
+            <>
+              {/* Divider: Hızlı Deneme Girişleri (Yalnızca DEV ortamı) */}
+              <div className="relative my-6 flex items-center justify-center">
+                <div className="h-px flex-1 bg-slate-200/90 dark:bg-white/10" />
+                <span className="px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                  Hızlı Deneme Girişleri
+                </span>
+                <div className="h-px flex-1 bg-slate-200/90 dark:bg-white/10" />
+              </div>
 
-          {/* Pill-Shaped Outlined Demo Buttons */}
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                setEmail('samet@musteri.com');
-                setPassword('123456');
-                setErrors({});
-              }}
-              className="h-10 cursor-pointer rounded-full border border-slate-200/90 bg-white/70 px-4 text-xs font-semibold text-slate-700 transition-all hover:border-amber-500/60 hover:bg-amber-50/70 hover:text-amber-800 dark:border-white/15 dark:bg-slate-950/50 dark:text-slate-300 dark:hover:border-amber-400/60 dark:hover:bg-amber-500/10 dark:hover:text-amber-300"
-            >
-              Müşteri Hesabı
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setEmail('ahmet@makas.com');
-                setPassword('123456');
-                setErrors({});
-              }}
-              className="h-10 cursor-pointer rounded-full border border-slate-200/90 bg-white/70 px-4 text-xs font-semibold text-slate-700 transition-all hover:border-amber-500/60 hover:bg-amber-50/70 hover:text-amber-800 dark:border-white/15 dark:bg-slate-950/50 dark:text-slate-300 dark:hover:border-amber-400/60 dark:hover:bg-amber-500/10 dark:hover:text-amber-300"
-            >
-              Salon Sahibi
-            </button>
-          </div>
+              {/* Pill-Shaped Outlined Demo Buttons */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail('samet@musteri.com');
+                    setPassword('123456');
+                    setErrors({});
+                  }}
+                  className="h-10 cursor-pointer rounded-full border border-slate-200/90 bg-white/70 px-4 text-xs font-semibold text-slate-700 transition-all hover:border-amber-500/60 hover:bg-amber-50/70 hover:text-amber-800 dark:border-white/15 dark:bg-slate-950/50 dark:text-slate-300 dark:hover:border-amber-400/60 dark:hover:bg-amber-500/10 dark:hover:text-amber-300"
+                >
+                  Müşteri Hesabı
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail('ahmet@makas.com');
+                    setPassword('123456');
+                    setErrors({});
+                  }}
+                  className="h-10 cursor-pointer rounded-full border border-slate-200/90 bg-white/70 px-4 text-xs font-semibold text-slate-700 transition-all hover:border-amber-500/60 hover:bg-amber-50/70 hover:text-amber-800 dark:border-white/15 dark:bg-slate-950/50 dark:text-slate-300 dark:hover:border-amber-400/60 dark:hover:bg-amber-500/10 dark:hover:text-amber-300"
+                >
+                  Salon Sahibi
+                </button>
+              </div>
+            </>
+          )}
 
           {/* Bottom Card Footer Link */}
           <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-5 text-xs text-slate-500 dark:border-white/10 dark:text-slate-400">

@@ -137,7 +137,7 @@ export const AdminSubscriptionPage: React.FC = () => {
                   <div
                     className="h-full bg-amber-500 rounded-full transition-all duration-300"
                     style={{
-                      width: `${Math.min(100, (sub.currentBranchCount / sub.maxBranchCount) * 100)}%`,
+                      width: `${Math.min(100, (sub.currentBranchCount / Math.max(1, sub.maxBranchCount)) * 100)}%`,
                     }}
                   />
                 </div>

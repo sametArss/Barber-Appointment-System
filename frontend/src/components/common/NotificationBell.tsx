@@ -58,11 +58,21 @@ export const NotificationBell: React.FC = () => {
   const [tab, setTab] = useState<'all' | 'unread'>('all');
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<NotificationResponse[]>([]);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [loading, setLoading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const lastPollRef = useRef<number>(0);
 
-  const fetchUnreadCount = useCallback(async () => {
+  const PAGE_SIZE = 20;
+
+  const fetchUnreadCount = useCallback(async (force = false) => {
     if (!isAuthenticated) return;
+    if (!force && document.hidden) return;
+    const now = Date.now();
+    if (!force && now - lastPollRef.current < 15000) return;
+    lastPollRef.current = now;
+
     try {
       const res = await notificationService.getUnreadCount();
       if (res.success && res.data) {
@@ -77,33 +87,66 @@ export const NotificationBell: React.FC = () => {
     if (!isAuthenticated) return;
     setLoading(true);
     try {
-      const res = await notificationService.getMyNotifications(false);
+      const res = await notificationService.getMyNotifications(false, 0, PAGE_SIZE);
       if (res.success && res.data) {
         setNotifications(res.data);
-        setUnreadCount(res.data.filter((n) => !n.isRead).length);
+        setHasMore(res.data.length === PAGE_SIZE);
       }
+      void fetchUnreadCount(true);
     } catch {
       // preserve
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchUnreadCount]);
+
+  const handleLoadMore = async () => {
+    if (!isAuthenticated || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const res = await notificationService.getMyNotifications(false, notifications.length, PAGE_SIZE);
+      if (res.success && res.data) {
+        const incoming = res.data;
+        setNotifications((prev) => {
+          const seen = new Set(prev.map((n) => n.id));
+          return [...prev, ...incoming.filter((n) => !seen.has(n.id))];
+        });
+        setHasMore(incoming.length === PAGE_SIZE);
+      }
+    } catch {
+      // preserve
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   useEffect(() => {
     if (!isAuthenticated) {
       setUnreadCount(0);
       setNotifications([]);
+      setHasMore(false);
       return;
     }
 
-    void fetchUnreadCount();
-    const interval = window.setInterval(() => void fetchUnreadCount(), 30000);
-    const onFocus = () => void fetchUnreadCount();
+    void fetchUnreadCount(true);
+    const interval = window.setInterval(() => {
+      if (!document.hidden) {
+        void fetchUnreadCount(false);
+      }
+    }, 30000);
+    const onFocus = () => void fetchUnreadCount(false);
+    const onVisibilityChange = () => {
+      if (!document.hidden) {
+        void fetchUnreadCount(false);
+      }
+    };
     window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibilityChange);
 
     return () => {
       window.clearInterval(interval);
       window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
     };
   }, [isAuthenticated, fetchUnreadCount]);
 
@@ -240,51 +283,65 @@ export const NotificationBell: React.FC = () => {
                 </p>
               </div>
             ) : (
-              visibleItems.slice(0, 15).map((item) => {
-                const { icon: Icon, boxClass } = getNotificationIcon(item);
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => !item.isRead && void handleMarkAsRead(item.id)}
-                    className={cn(
-                      'flex w-full cursor-pointer items-start gap-3 px-4 py-3.5 text-left transition-colors hover:bg-slate-50 dark:hover:bg-white/5',
-                      !item.isRead && 'bg-amber-50/45 dark:bg-amber-500/8',
-                    )}
-                  >
-                    <div
+              <>
+                {visibleItems.map((item) => {
+                  const { icon: Icon, boxClass } = getNotificationIcon(item);
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => !item.isRead && void handleMarkAsRead(item.id)}
                       className={cn(
-                        'mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border',
-                        boxClass,
+                        'flex w-full cursor-pointer items-start gap-3 px-4 py-3.5 text-left transition-colors hover:bg-slate-50 dark:hover:bg-white/5',
+                        !item.isRead && 'bg-amber-50/45 dark:bg-amber-500/8',
                       )}
                     >
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-xs font-bold text-slate-900 dark:text-white">
-                          {item.title}
-                        </p>
-                        {!item.isRead && (
-                          <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#D97706] dark:bg-amber-400" />
+                      <div
+                        className={cn(
+                          'mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border',
+                          boxClass,
                         )}
+                      >
+                        <Icon className="h-4 w-4" />
                       </div>
-                      <p className="mt-1 whitespace-normal break-words text-xs leading-relaxed text-slate-600 dark:text-slate-300">
-                        {item.message}
-                      </p>
-                      <span className="mt-1.5 inline-flex items-center gap-1 text-[10px] text-slate-400 dark:text-slate-500">
-                        <Clock className="h-3 w-3" />
-                        {new Date(item.createdDate).toLocaleString('tr-TR', {
-                          day: '2-digit',
-                          month: 'short',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-xs font-bold text-slate-900 dark:text-white">
+                            {item.title}
+                          </p>
+                          {!item.isRead && (
+                            <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#D97706] dark:bg-amber-400" />
+                          )}
+                        </div>
+                        <p className="mt-1 whitespace-normal break-words text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                          {item.message}
+                        </p>
+                        <span className="mt-1.5 inline-flex items-center gap-1 text-[10px] text-slate-400 dark:text-slate-500">
+                          <Clock className="h-3 w-3" />
+                          {new Date(item.createdDate).toLocaleString('tr-TR', {
+                            day: '2-digit',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+                {hasMore && (
+                  <div className="p-2.5 text-center">
+                    <button
+                      type="button"
+                      disabled={loadingMore}
+                      onClick={() => void handleLoadMore()}
+                      className="w-full cursor-pointer rounded-xl border border-slate-200/80 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-amber-500/40 hover:text-amber-700 disabled:opacity-50 dark:border-white/10 dark:text-slate-300 dark:hover:text-amber-300"
+                    >
+                      {loadingMore ? 'Yükleniyor...' : 'Daha Fazla Bildirim Yükle'}
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

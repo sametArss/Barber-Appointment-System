@@ -16,21 +16,20 @@ interface BranchMapProps {
   onSelectBranch: (branchId: string) => void;
 }
 
-const createUserIcon = () =>
-  L.divIcon({
-    className: 'barber-user-pin',
-    html: `<div style="
-      width: 18px; height: 18px;
-      border-radius: 9999px;
-      background: #0284c7;
-      border: 3px solid #ffffff;
-      box-shadow: 0 0 0 6px rgba(2, 132, 199, 0.35);
-    "></div>`,
-    iconSize: [18, 18],
-    iconAnchor: [9, 9],
-  });
+const USER_ICON = L.divIcon({
+  className: 'barber-user-pin',
+  html: `<div style="
+    width: 18px; height: 18px;
+    border-radius: 9999px;
+    background: #0284c7;
+    border: 3px solid #ffffff;
+    box-shadow: 0 0 0 6px rgba(2, 132, 199, 0.35);
+  "></div>`,
+  iconSize: [18, 18],
+  iconAnchor: [9, 9],
+});
 
-const createBarberIcon = (isSelected: boolean) =>
+const buildBarberIcon = (isSelected: boolean) =>
   L.divIcon({
     className: 'barber-branch-pin',
     html: `<div style="
@@ -54,16 +53,32 @@ const createBarberIcon = (isSelected: boolean) =>
     popupAnchor: [0, -22],
   });
 
-const MapViewportUpdater: React.FC<{ center: [number, number]; branches: BranchSearchResponse[]; areaSearch: boolean }> = ({ center, branches, areaSearch }) => {
+const BARBER_ICON_DEFAULT = buildBarberIcon(false);
+const BARBER_ICON_SELECTED = buildBarberIcon(true);
+
+const hasValidCoords = (lat: number, lng: number) =>
+  Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+
+const MapViewportUpdater: React.FC<{
+  centerLat: number;
+  centerLng: number;
+  branches: BranchSearchResponse[];
+  branchSignature: string;
+  areaSearch: boolean;
+}> = ({ centerLat, centerLng, branches, branchSignature, areaSearch }) => {
   const map = useMap();
 
   useEffect(() => {
     if (areaSearch && branches.length > 1) {
-      map.fitBounds(branches.map((branch) => [branch.latitude, branch.longitude]), { padding: [32, 32], maxZoom: 13 });
-    } else {
-      map.flyTo(center, map.getZoom(), { duration: 0.65 });
+      map.fitBounds(
+        branches.map((branch) => [branch.latitude, branch.longitude] as [number, number]),
+        { padding: [32, 32], maxZoom: 13 },
+      );
+    } else if (hasValidCoords(centerLat, centerLng)) {
+      map.flyTo([centerLat, centerLng], map.getZoom(), { duration: 0.65 });
     }
-  }, [center, map, branches, areaSearch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [centerLat, centerLng, branchSignature, areaSearch, map]);
 
   return null;
 };
@@ -78,10 +93,19 @@ export const BranchMap: React.FC<BranchMapProps> = ({
 }) => {
   const navigate = useNavigate();
 
-  const selectedBranch = branches.find((b) => b.branchId === selectedBranchId);
-  const center: [number, number] = selectedBranch
-    ? [selectedBranch.latitude, selectedBranch.longitude]
-    : [userLocation.lat, userLocation.lng];
+  const validBranches = React.useMemo(
+    () => branches.filter((b) => hasValidCoords(b.latitude, b.longitude)),
+    [branches],
+  );
+  const branchSignature = React.useMemo(
+    () => validBranches.map((b) => b.branchId).join(','),
+    [validBranches],
+  );
+
+  const selectedBranch = validBranches.find((b) => b.branchId === selectedBranchId);
+  const centerLat = selectedBranch ? selectedBranch.latitude : userLocation.lat;
+  const centerLng = selectedBranch ? selectedBranch.longitude : userLocation.lng;
+  const center: [number, number] = [centerLat, centerLng];
 
   // 100% Free OpenStreetMap Tile Layer - No API Key, No Rate Limits, No Watermarks
   const tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
@@ -99,7 +123,13 @@ export const BranchMap: React.FC<BranchMapProps> = ({
           url={tileUrl}
         />
 
-        <MapViewportUpdater center={center} branches={branches} areaSearch={areaSearch} />
+        <MapViewportUpdater
+          centerLat={centerLat}
+          centerLng={centerLng}
+          branches={validBranches}
+          branchSignature={branchSignature}
+          areaSearch={areaSearch}
+        />
 
         {/* User location radius */}
         {!areaSearch && radiusKm && radiusKm > 0 && <Circle
@@ -113,7 +143,7 @@ export const BranchMap: React.FC<BranchMapProps> = ({
             fillOpacity: 0.06,
           }}
         />}
-        {!areaSearch && <Marker position={[userLocation.lat, userLocation.lng]} icon={createUserIcon()}>
+        {!areaSearch && <Marker position={[userLocation.lat, userLocation.lng]} icon={USER_ICON}>
           <Popup>
             <div className="p-1 font-semibold text-xs text-slate-800">
               📍 Bulunduğunuz Konum
@@ -122,13 +152,13 @@ export const BranchMap: React.FC<BranchMapProps> = ({
         </Marker>}
 
         {/* Salon branch pins */}
-        {branches.map((branch) => {
+        {validBranches.map((branch) => {
           const isSelected = branch.branchId === selectedBranchId;
           return (
             <Marker
               key={branch.branchId}
               position={[branch.latitude, branch.longitude]}
-              icon={createBarberIcon(isSelected)}
+              icon={isSelected ? BARBER_ICON_SELECTED : BARBER_ICON_DEFAULT}
               eventHandlers={{
                 click: () => onSelectBranch(branch.branchId),
               }}
